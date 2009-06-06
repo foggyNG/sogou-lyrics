@@ -3,11 +3,12 @@ import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk
 from subprocess import Popen
+from ConfigureDialog import ConfigureDialog
+import gconf
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
 TOKEN_STRIP = ['\([^\)]*\)', ' ']
-
 ANIMATIONS = 'off'
 SHADOW = 'off'
 HALIGNMENT = 'center'
@@ -17,7 +18,9 @@ TRANSLUCENT = 'off'
 TIMEOUT = 20000
 SIZE = 20000
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%s' osd_halignment='%s'  hide_timeout='%d'><span size='%d' foreground='%s'>%%s</span></message>" % (ANIMATIONS, TRANSLUCENT, SHADOW, VPOSITION, HALIGNMENT, TIMEOUT, SIZE, FOREGOUND)
-
+gconf_keys = {	'hide' : '/apps/rhythmbox/plugins/SogouLyrics/hide',
+		'offline': '/apps/rhythmbox/plugins/SogouLyrics/offline'
+	     }
 ui_str = """
 <ui>
   <popup name="BrowserSourceViewPopup">
@@ -93,7 +96,7 @@ def parse_lyrics(lines):
 					key = minute * 60 + second
 					content[key] = lrc
 				except ValueError:
-					print 'parse timestamp error %s' % time
+					print 'invalid timestamp %s' % time
 	return content
 
 def clean_token(token):
@@ -103,13 +106,16 @@ def clean_token(token):
 	return result
 	
 def verify_lyrics(content, artist, title):
-	if not content.has_key('ar') or not content.has_key('ti'):
-		# artist or title not found in lyrics file
+	if not content.has_key('ar'):
+		print 'cannot find artist in lyrics'
+		return 0
+	elif not content.has_key('ti'):
+		print 'cannot find title in lyrics'
 		return 0
 	else:
 		ar = content['ar']
 		ti = content['ti']
-		print 'check lrc (%s - %s, %s - %s)' % (artist, title, ar, ti)
+		print '%s - %s' % (ar, ti)
 		ar = ar.lower().replace(' ', '')
 		ti = ti.lower().replace(' ', '')
 		ar1 = clean_token(artist)
@@ -131,14 +137,14 @@ def download_lyrics(artist, title):
 		m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
 		if not m is None:
 			uri = 'http://mp3.sogou.com/%s' % m.group(0)
-			print 'lrc page <%s>' % uri
+			print 'lyrics page <%s>' % uri
 			cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
 			for line in cache:
 				# grab lyrics file uri, try all of them
 				m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
 				if not m is None:				
 					uri = 'http://mp3.sogou.com/%s' % m.group(0)
-					print 'lrc file <%s>' % uri
+					print 'lyrics file <%s>' % uri
 					cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
 					lrc = []
 					for line in cache:
@@ -156,14 +162,17 @@ class SogouLyrics(rb.Plugin):
 	def __init__(self):
 		rb.Plugin.__init__(self)
 
+	def osd_display(self, message):
+		if not gconf.client_get_default().get_bool(gconf_keys['hide']):
+			self.osd.send(MESSAGE_TEMPLATE % message)
+		
 	def elapsed_changed_handler(self, player, playing):
 		if playing:
 			elapsed = player.get_playing_time()
 			if self.lrc.has_key('offset'):
 				elapsed += self.lrc['offset']
 			try:
-				print '%d >> %s' % (elapsed, self.lrc[elapsed])
-				self.osd.send(MESSAGE_TEMPLATE % self.lrc[elapsed])
+				self.osd_display(self.lrc[elapsed])
 			except KeyError:
 				pass
 		return
@@ -175,29 +184,25 @@ class SogouLyrics(rb.Plugin):
 		db = self.shell.get_property ('db')
 		artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = db.entry_get(entry, rhythmdb.PROP_TITLE)
-		print 'playing song changed to (%s - %s)' % (artist, title)
+		print '%s - %s' % (artist, title)
 		lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
 		# load lyrics content
 		self.lrc = {}
 		if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
 			self.lrc = parse_lyrics(open(lrc_path, 'r').readlines())
-			if verify_lyrics(self.lrc, artist, title):
-				self.osd.send(MESSAGE_TEMPLATE % ('(%s - %s) prepared' % (artist, title)))
-			else:
+			if not verify_lyrics(self.lrc, artist, title):
 				self.lrc = {}
-				print 'broken lrc file %s moved to %s.bak' % (lrc_path, lrc_path)
+				print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
 				try:
 					os.rename(lrc_path, '%s.bak' % lrc_path)
 				except OSError:
-					print 'move broken lrc file error'
-		if self.lrc == {}:
+					print 'move broken lyrics file failed'
+		if self.lrc == {} and not gconf.client_get_default().get_bool(gconf_keys['offline']):
 			self.lrc = download_lyrics(artist, title)
-			if self.lrc == {}:
-				print 'download (%s - %s) failed' % (artist, title)
-				self.osd.send(MESSAGE_TEMPLATE % ('(%s - %s) not found' % (artist, title)))
-			else:
-				print 'download (%s - %s) success' % (artist, title)
-				self.osd.send(MESSAGE_TEMPLATE % ('(%s - %s) prepared' % (artist, title)))
+		if self.lrc == {}:
+			self.osd_display('(%s - %s) not found' % (artist, title))
+		else:
+			self.osd_display('(%s - %s) prepared' % (artist, title))
 		return
 
 	def playing_changed_handler(self, player, playing):
@@ -250,6 +255,7 @@ class SogouLyrics(rb.Plugin):
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_string(ui_str)
 		uim.ensure_update()
+		print 'Sogou Lyrics activated'
 		return
 
 	def deactivate(self, shell):
@@ -266,6 +272,12 @@ class SogouLyrics(rb.Plugin):
 
 		self.action_group = None
 		self.action = None
+		print 'Sogou Lyrics deactivated'
 		return
 
-		
+	def create_configure_dialog(self, dialog=None):
+		if not dialog:
+			glade_file = self.find_file("ConfigureDialog.glade")
+			dialog = ConfigureDialog (glade_file, gconf_keys).get_dialog()
+		dialog.present()
+		return dialog
