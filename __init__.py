@@ -6,7 +6,7 @@ from subprocess import Popen
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
-TOKEN_STRIP = ['\([^\)]*\)']
+TOKEN_STRIP = ['\([^\)]*\)', ' ']
 
 ANIMATIONS = 'off'
 SHADOW = 'off'
@@ -110,8 +110,8 @@ def verify_lyrics(content, artist, title):
 		ar = content['ar']
 		ti = content['ti']
 		print 'check lrc (%s - %s, %s - %s)' % (artist, title, ar, ti)
-		ar = ar.lower()
-		ti = ti.lower()
+		ar = ar.lower().replace(' ', '')
+		ti = ti.lower().replace(' ', '')
 		ar1 = clean_token(artist)
 		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
