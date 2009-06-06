@@ -6,7 +6,7 @@ from subprocess import Popen
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
-TOKEN_STRIP = ['\([^\)]*\)',' ']
+TOKEN_STRIP = ['\([^\)]*\)']
 
 ANIMATIONS = 'off'
 SHADOW = 'off'
@@ -96,6 +96,12 @@ def parse_lyrics(lines):
 					print 'parse timestamp error %s' % time
 	return content
 
+def clean_token(token):
+	result = token.lower()
+	for strip in TOKEN_STRIP:
+		result = re.sub(strip, '', result)
+	return result
+	
 def verify_lyrics(content, artist, title):
 	if not content.has_key('ar') or not content.has_key('ti'):
 		# artist or title not found in lyrics file
@@ -106,11 +112,8 @@ def verify_lyrics(content, artist, title):
 		print 'check lrc (%s - %s, %s - %s)' % (artist, title, ar, ti)
 		ar = ar.lower()
 		ti = ti.lower()
-		ar1 = artist.lower()
-		ti1 = title.lower()
-		for strip in TOKEN_STRIP:
-			ar1 = re.sub(strip, '', ar1)
-			ti1 = re.sub(strip, '', ti1)
+		ar1 = clean_token(artist)
+		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
 			return 1
 		else:
@@ -118,8 +121,8 @@ def verify_lyrics(content, artist, title):
 			
 def download_lyrics(artist, title):
 	# grab song search page
-	title_encode = urllib2.quote(detect_charset(title).encode('gbk').replace(' ', ''))
-	artist_encode = urllib2.quote(detect_charset(artist).encode('gbk').replace(' ',''))
+	title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
+	artist_encode = urllib2.quote(detect_charset(clean_token(artist)).encode('gbk'))
 	uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
 	print 'search page <%s>' % uri
 	cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
