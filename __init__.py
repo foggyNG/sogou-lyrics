@@ -1,6 +1,8 @@
 import os, sys, ClientCookie, urllib2, re
 import rhythmdb, rb
 from gnomeosd import eventbridge
+import gobject, gtk
+from subprocess import Popen
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
@@ -15,6 +17,34 @@ TRANSLUCENT = 'off'
 TIMEOUT = 20000
 SIZE = 20000
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%s' osd_halignment='%s'  hide_timeout='%d'><span size='%d' foreground='%s'>%%s</span></message>" % (ANIMATIONS, TRANSLUCENT, SHADOW, VPOSITION, HALIGNMENT, TIMEOUT, SIZE, FOREGOUND)
+
+ui_str = """
+<ui>
+  <popup name="BrowserSourceViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="PlaylistViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="QueuePlaylistViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="PodcastViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+</ui>
+"""
 
 def detect_charset(s):
 	charsets = ('iso-8859-1', 'gbk', 'utf-8')
@@ -173,6 +203,25 @@ class SogouLyrics(rb.Plugin):
 		print 'player status changed to %d' % playing
 		return
 
+	def open_lyrics(self, action, shell):
+		source = shell.get_property("selected_source")
+		entry = rb.Source.get_entry_view(source)
+		selected = entry.get_selected_entries()
+		if selected != []:
+			entry = selected[0]
+			db = self.shell.get_property ('db')
+			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
+			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
+			if os.path.exists(lrc_path):
+				Popen(['xdg-open', lrc_path])
+			else:
+				message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
+				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK, message_format=message)
+				dlg.set_title('Open Lyrics')
+				dlg.run()
+				dlg.destroy()
+				
 	def activate(self, shell):
 		if not os.path.exists(LRCDIR):
 			os.mkdir(LRCDIR)
@@ -185,6 +234,19 @@ class SogouLyrics(rb.Plugin):
 			self.player.connect('elapsed-changed', self.elapsed_changed_handler),
 			self.player.connect('playing-changed', self.playing_changed_handler)]
 		self.osd = eventbridge.OSD()
+		#
+		self.action = gtk.Action('OpenLyrics', _('Open lyrics'),
+					 _('Open the lyrics of the selected song'),
+					 'SogouLyrics')
+		self.activate_id = self.action.connect('activate', self.open_lyrics, shell)
+		
+		self.action_group = gtk.ActionGroup('OpenLyricsPluginActions')
+		self.action_group.add_action(self.action)
+		
+		uim = shell.get_ui_manager ()
+		uim.insert_action_group(self.action_group, 0)
+		self.ui_id = uim.add_ui_from_string(ui_str)
+		uim.ensure_update()
 		return
 
 	def deactivate(self, shell):
@@ -194,6 +256,13 @@ class SogouLyrics(rb.Plugin):
 		del self.player
 		del self.lrc
 		del self.osd
+		#
+		uim = shell.get_ui_manager()
+		uim.remove_ui (self.ui_id)
+		uim.remove_action_group (self.action_group)
+
+		self.action_group = None
+		self.action = None
 		return
 
 		
