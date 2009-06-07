@@ -225,7 +225,7 @@ class SogouLyrics(rb.Plugin):
 				Popen(['xdg-open', lrc_path])
 			else:
 				message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
-				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK, message_format=message)
+				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
 				dlg.set_title('Open Lyrics')
 				dlg.run()
 				dlg.destroy()
