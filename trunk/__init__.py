@@ -65,6 +65,7 @@ def parse_lyrics(lines):
 	re_offset = re.compile('\[offset:[^\]]*\]')
 	re_lrc = re.compile('(\[[0-9\.:]*\])+.*')
 	re_time = re.compile('\[[0-9]{2}:[0-9]{2}\.[0-9]{2}\]')
+	offset = 0
 	for line in lines:
 		# search for title property
 		m = re_ti.search(line)
@@ -80,7 +81,8 @@ def parse_lyrics(lines):
 		m = re_offset.search(line)
 		if not m is None:
 			segment = m.group(0)
-			content['offset'] = int(segment[8:-1])/1000
+			offset = int(segment[8:-1])
+			content['offset'] = offset
 		# parse lrc
 		m = re_lrc.match(line)
 		if not m is None:
@@ -93,7 +95,8 @@ def parse_lyrics(lines):
 				try:
 					minute = int(time[1:3])
 					second = int(time[4:6])
-					key = minute * 60 + second
+					centi = int(time[7:9])
+					key = int(round(((minute * 60 + second) * 1000 + centi * 10 + offset) / 1000.0))
 					content[key] = lrc
 				except ValueError:
 					print 'invalid timestamp %s' % time
