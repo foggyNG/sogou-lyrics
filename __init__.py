@@ -10,16 +10,11 @@ LRCDIR = os.path.expanduser('~/.lyrics')
 TOKEN_STRIP = ['\([^\)]*\)', ' ']
 ANIMATIONS = 'off'
 SHADOW = 'off'
-HALIGNMENT = 'center'
-VPOSITION = 'top'
-FOREGOUND = 'yellow'
 TRANSLUCENT = 'off'
 TIMEOUT = 20000
 SIZE = 20000
-MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%s' osd_halignment='%s'  hide_timeout='%d'><span size='%d' foreground='%s'>%%s</span></message>" % (ANIMATIONS, TRANSLUCENT, SHADOW, VPOSITION, HALIGNMENT, TIMEOUT, SIZE, FOREGOUND)
-gconf_keys = {	'hide' : '/apps/rhythmbox/plugins/SogouLyrics/hide',
-		'offline': '/apps/rhythmbox/plugins/SogouLyrics/offline'
-	     }
+MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%%s' osd_halignment='%%s'  hide_timeout='%d'><span size='%d' foreground='%%s'>%%s</span></message>" % (ANIMATIONS, TRANSLUCENT, SHADOW, TIMEOUT, SIZE)
+
 ui_str = """
 <ui>
   <popup name="BrowserSourceViewPopup">
@@ -165,8 +160,10 @@ class SogouLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 
 	def osd_display(self, message):
-		if not gconf.client_get_default().get_bool(gconf_keys['hide']):
-			self.osd.send(MESSAGE_TEMPLATE % message)
+		if not self.config.get_config('hide'):
+			code = MESSAGE_TEMPLATE % (self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
+			print code
+			self.osd.send(code)
 		
 	def elapsed_changed_handler(self, player, playing):
 		if playing:
@@ -199,7 +196,7 @@ class SogouLyrics(rb.Plugin):
 					os.rename(lrc_path, '%s.bak' % lrc_path)
 				except OSError:
 					print 'move broken lyrics file failed'
-		if self.lrc == {} and not gconf.client_get_default().get_bool(gconf_keys['offline']):
+		if self.lrc == {} and not self.config.get_config('offline'):
 			self.lrc = download_lyrics(artist, title)
 		if self.lrc == {}:
 			self.osd_display('(%s - %s) not found' % (artist, title))
@@ -257,10 +254,12 @@ class SogouLyrics(rb.Plugin):
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_string(ui_str)
 		uim.ensure_update()
+		self.config = ConfigureDialog(self.find_file("ConfigureDialog.glade"))
 		print 'Sogou Lyrics activated'
 		return
 
 	def deactivate(self, shell):
+		del self.config
 		for handler in self.handler:
 			self.player.disconnect(handler)
 		del self.shell
@@ -277,9 +276,7 @@ class SogouLyrics(rb.Plugin):
 		print 'Sogou Lyrics deactivated'
 		return
 
-	def create_configure_dialog(self, dialog=None):
-		if not dialog:
-			glade_file = self.find_file("ConfigureDialog.glade")
-			dialog = ConfigureDialog (glade_file, gconf_keys).get_dialog()
+	def create_configure_dialog(self):
+		dialog = self.config.get_dialog()
 		dialog.present()
 		return dialog
