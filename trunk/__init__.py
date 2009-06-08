@@ -8,12 +8,11 @@ import gconf
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
 TOKEN_STRIP = ['\([^\)]*\)', ' ']
-ANIMATIONS = 'off'
 SHADOW = 'off'
 TRANSLUCENT = 'off'
 TIMEOUT = 20000
 SIZE = 20000
-MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%%s' osd_halignment='%%s'  hide_timeout='%d'><span size='%d' foreground='%%s'>%%s</span></message>" % (ANIMATIONS, TRANSLUCENT, SHADOW, TIMEOUT, SIZE)
+MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%%s' osd_halignment='%%s'  hide_timeout='%d'><span size='%d' foreground='%%s'>%%s</span></message>" % (TRANSLUCENT, SHADOW, TIMEOUT, SIZE)
 
 ui_str = """
 <ui>
@@ -161,7 +160,7 @@ class SogouLyrics(rb.Plugin):
 
 	def osd_display(self, message):
 		if not self.config.get_config('hide'):
-			code = MESSAGE_TEMPLATE % (self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
+			code = MESSAGE_TEMPLATE % (self.config.get_config('animation'), self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
 			self.osd.send(code)
 		
 	def elapsed_changed_handler(self, player, playing):
