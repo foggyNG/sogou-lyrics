@@ -99,7 +99,7 @@
                   <widget class="GtkLabel" id="main-setting-display-label">
                     <property name="visible">True</property>
                     <property name="xalign">0</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Display Mode&lt;/b&gt;</property>
+                    <property name="label" translatable="yes">&lt;b&gt;Display Settings&lt;/b&gt;</property>
                     <property name="use_markup">True</property>
                   </widget>
                   <packing>
@@ -109,7 +109,7 @@
                 <child>
                   <widget class="GtkTable" id="main-setting-display-table">
                     <property name="visible">True</property>
-                    <property name="n_rows">3</property>
+                    <property name="n_rows">4</property>
                     <property name="n_columns">2</property>
                     <property name="homogeneous">False</property>
                     <property name="row_spacing">6</property>
@@ -203,6 +203,36 @@
                         <property name="right_attach">2</property>
                         <property name="top_attach">2</property>
                         <property name="bottom_attach">3</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+					<child>
+                      <widget class="GtkLabel" id="main-setting-display-animation-label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Animation</property>
+                        <property name="use_markup">False</property>
+                        <property name="xalign">0</property>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="right_attach">1</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBox" id="animation">
+                        <property name="visible">True</property>
+                        <property name="items" translatable="yes"></property>
+                        <property name="add_tearoffs">False</property>
+                        <property name="focus_on_click">True</property>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
                         <property name="y_options"/>
                       </packing>
                     </child>
