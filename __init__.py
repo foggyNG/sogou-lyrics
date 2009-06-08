@@ -2,7 +2,6 @@ import os, sys, ClientCookie, urllib2, re
 import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk
-from subprocess import Popen
 from ConfigureDialog import ConfigureDialog
 import gconf
 
@@ -225,7 +224,7 @@ class SogouLyrics(rb.Plugin):
 			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
 			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
 			if os.path.exists(lrc_path):
-				Popen(['xdg-open', lrc_path])
+				os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
 			else:
 				message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
 				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
