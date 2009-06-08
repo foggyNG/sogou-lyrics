@@ -25,6 +25,11 @@ class ConfigureDialog (object):
 		self.widgets = {}
 		for key in gconf_keys.keys():
 			self.widgets[key] = self.gladexml.get_widget(key)
+		for key in ['halign', 'vpos', 'fgcolor']:
+			liststore = gtk.ListStore(gobject.TYPE_STRING)
+			for value in PRESET[key]:
+				liststore.append([value])
+			self.widgets[key].set_model(liststore)
 		# load settings
 		self.settings = {}
 		self.get_prefs()
