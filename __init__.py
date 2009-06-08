@@ -162,14 +162,11 @@ class SogouLyrics(rb.Plugin):
 	def osd_display(self, message):
 		if not self.config.get_config('hide'):
 			code = MESSAGE_TEMPLATE % (self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
-			print code
 			self.osd.send(code)
 		
 	def elapsed_changed_handler(self, player, playing):
 		if playing:
 			elapsed = player.get_playing_time()
-			if self.lrc.has_key('offset'):
-				elapsed += self.lrc['offset']
 			try:
 				self.osd_display(self.lrc[elapsed])
 			except KeyError:
