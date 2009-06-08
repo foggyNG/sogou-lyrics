@@ -2,39 +2,68 @@ import gobject, gtk, gtk.glade
 import gconf
 from os import system, path
 
+gconf_keys = {
+'hide' : '/apps/rhythmbox/plugins/SogouLyrics/hide',
+'offline' : '/apps/rhythmbox/plugins/SogouLyrics/offline',
+'halign' : '/apps/rhythmbox/plugins/SogouLyrics/halign',
+'vpos' : '/apps/rhythmbox/plugins/SogouLyrics/vpos',
+'fgcolor' : '/apps/rhythmbox/plugins/SogouLyrics/fgcolor'
+}
+PRESET = {
+'halign' : ['center', 'left', 'right'],
+'vpos' : ['top', 'center', 'bottom'],
+'fgcolor' : ['yellow', 'red', 'green', 'blue']
+}
 class ConfigureDialog (object):
-	def __init__(self, glade_file, gconf_keys):
+	def __init__(self, glade_file):
 		self.gconf = gconf.client_get_default()
-		self.gconf_keys = gconf_keys
-		
 		self.gladexml = gtk.glade.XML(glade_file)
-		self.dialog = self.gladexml.get_widget("preferences_dialog")
-		self.toggle_hide = self.gladexml.get_widget("hide")
-		self.toggle_offline = self.gladexml.get_widget("offline")
-		self.dialog.connect("response", self.dialog_response)
-		# set fields from gconf
-		settings = self.get_prefs()
-		self.toggle_hide.set_active(settings['hide'])
-		self.toggle_offline.set_active(settings['offline'])
-
+		#
+		self.dialog = self.gladexml.get_widget('preferences_dialog')
+		self.dialog.connect('response', self.dialog_response)
+		#
+		self.widgets = {}
+		for key in gconf_keys.keys():
+			self.widgets[key] = self.gladexml.get_widget(key)
+		# load settings
+		self.settings = {}
+		self.get_prefs()
+		for key in ['hide', 'offline']:
+			self.widgets[key].set_active(self.settings[key])
+			self.widgets[key].connect('toggled', self.set_prefs)
+		for key in ['halign', 'vpos', 'fgcolor']:
+			self.widgets[key].set_active(PRESET[key].index(self.settings[key]))
+			self.widgets[key].connect('changed', self.set_prefs)
 
 	def dialog_response(self, dialog, response):
-		if response == gtk.RESPONSE_OK:
-			self.set_values()
-			self.dialog.hide()
-		elif response == gtk.RESPONSE_CANCEL or response == gtk.RESPONSE_DELETE_EVENT:
-			self.dialog.hide()
-		else:
-			print "unexpected response type"
+		dialog.hide()
 
-	def set_values(self):
-		self.gconf.set_bool(self.gconf_keys['hide'], self.toggle_hide.get_active())
-		self.gconf.set_bool(self.gconf_keys['offline'], self.toggle_offline.get_active())
+	def set_prefs(self, widget):
+		for key in ['hide', 'offline']:
+			value = self.widgets[key].get_active()
+			self.settings[key] = value
+			self.gconf.set_bool(gconf_keys[key], value)
+		for key in ['halign', 'vpos', 'fgcolor']:
+			value = PRESET[key][self.widgets[key].get_active()]
+			self.settings[key] = value
+			self.gconf.set_string(gconf_keys[key], value)
 
 	def get_dialog (self):
 		return self.dialog
 	
+	def get_config(self, key):
+		return self.settings[key]
+		
 	def get_prefs (self):
-		hide = gconf.client_get_default().get_bool(self.gconf_keys['hide'])
-		offline = gconf.client_get_default().get_bool(self.gconf_keys['offline'])
-		return {'hide':hide, 'offline':offline}
+		for prop in ['hide', 'offline']:
+			self.settings[prop] = self.gconf.get_bool(gconf_keys[prop])
+		for prop in ['halign', 'vpos', 'fgcolor']:
+			value = self.gconf.get_string(gconf_keys[prop])
+			if not value:
+				value = PRESET[prop][0]
+			try:
+				index = PRESET[prop].index(value)
+			except ValueError:
+				value = PRESET[prop][0]
+			self.settings[prop] = value
+		return
