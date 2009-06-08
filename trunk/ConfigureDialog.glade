@@ -133,9 +133,7 @@
                     <child>
                       <widget class="GtkComboBox" id="halign">
                         <property name="visible">True</property>
-                        <property name="items" translatable="yes">center
-left
-right</property>
+                        <property name="items" translatable="yes"></property>
                         <property name="add_tearoffs">False</property>
                         <property name="focus_on_click">True</property>
                       </widget>
@@ -166,9 +164,7 @@ right</property>
                     <child>
                       <widget class="GtkComboBox" id="vpos">
                         <property name="visible">True</property>
-                        <property name="items" translatable="yes">top
-center
-bottom</property>
+                        <property name="items" translatable="yes"></property>
                         <property name="add_tearoffs">False</property>
                         <property name="focus_on_click">True</property>
                       </widget>
@@ -198,10 +194,7 @@ bottom</property>
                     <child>
                       <widget class="GtkComboBox" id="fgcolor">
                         <property name="visible">True</property>
-                        <property name="items" translatable="yes">yellow
-red
-green
-blue</property>
+                        <property name="items" translatable="yes"></property>
                         <property name="add_tearoffs">False</property>
                         <property name="focus_on_click">True</property>
                       </widget>
