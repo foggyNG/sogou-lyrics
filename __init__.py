@@ -102,12 +102,11 @@ def clean_token(token):
 	return result
 	
 def verify_lyrics(content, artist, title):
+	retval = 0
 	if not content.has_key('ar'):
 		print 'cannot find artist in lyrics'
-		return 0
 	elif not content.has_key('ti'):
 		print 'cannot find title in lyrics'
-		return 0
 	else:
 		ar = content['ar']
 		ti = content['ti']
@@ -117,11 +116,11 @@ def verify_lyrics(content, artist, title):
 		ar1 = clean_token(artist)
 		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
-			return 1
-		else:
-			return 0
+			retval = 1
+	return retval
 			
 def download_lyrics(artist, title):
+	retval = {}
 	# grab song search page
 	title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
 	artist_encode = urllib2.quote(detect_charset(clean_token(artist)).encode('gbk'))
@@ -149,9 +148,10 @@ def download_lyrics(artist, title):
 					if verify_lyrics(lrc_content, artist, title):
 						lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
 						open(lrc_path, 'w').writelines(lrc)
-						return lrc_content
+						retval = lrc_content
+						break
 			break
-	return {}
+	return retval
 
 class SogouLyrics(rb.Plugin):
 
@@ -159,7 +159,7 @@ class SogouLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 
 	def osd_display(self, message):
-		if not self.config.get_config('hide'):
+		if self.config.get_config('display') == 'on':
 			code = MESSAGE_TEMPLATE % (self.config.get_config('animation'), self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
 			self.osd.send(code)
 		
@@ -173,31 +173,32 @@ class SogouLyrics(rb.Plugin):
 		return
 
 	def playing_song_changed_handler(self, player, entry):
-		if entry is None:
-			return
-		# get playing song properties		
-		db = self.shell.get_property ('db')
-		artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
-		title = db.entry_get(entry, rhythmdb.PROP_TITLE)
-		print '%s - %s' % (artist, title)
-		lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
-		# load lyrics content
-		self.lrc = {}
-		if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
-			self.lrc = parse_lyrics(open(lrc_path, 'r').readlines())
-			if not verify_lyrics(self.lrc, artist, title):
-				self.lrc = {}
-				print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
-				try:
-					os.rename(lrc_path, '%s.bak' % lrc_path)
-				except OSError:
-					print 'move broken lyrics file failed'
-		if self.lrc == {} and not self.config.get_config('offline'):
-			self.lrc = download_lyrics(artist, title)
-		if self.lrc == {}:
-			self.osd_display('(%s - %s) not found' % (artist, title))
-		else:
-			self.osd_display('(%s - %s) prepared' % (artist, title))
+		print 'enter'
+		if entry:
+			# get playing song properties		
+			db = self.shell.get_property ('db')
+			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
+			print '%s - %s' % (artist, title)
+			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
+			# load lyrics content
+			self.lrc = {}
+			if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
+				self.lrc = parse_lyrics(open(lrc_path, 'r').readlines())
+				if not verify_lyrics(self.lrc, artist, title):
+					self.lrc = {}
+					print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
+					try:
+						os.rename(lrc_path, '%s.bak' % lrc_path)
+					except OSError:
+						print 'move broken lyrics file failed'
+			if self.lrc == {} and self.config.get_config('download') == 'on':
+				self.lrc = download_lyrics(artist, title)
+			if self.lrc == {}:
+				self.osd_display('(%s - %s) not found' % (artist, title))
+			else:
+				self.osd_display('(%s - %s) prepared' % (artist, title))
+		print 'leave'
 		return
 
 	def playing_changed_handler(self, player, playing):
@@ -207,6 +208,7 @@ class SogouLyrics(rb.Plugin):
 		return
 
 	def open_lyrics(self, action, shell):
+		print 'enter'
 		source = shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
@@ -217,13 +219,17 @@ class SogouLyrics(rb.Plugin):
 			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
 			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
 			if os.path.exists(lrc_path):
+				print 'open lyrics at <%s>' % lrc_path
 				os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
 			else:
+				print 'lyrics not found (%s - %s)' % (artist, title)
 				message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
 				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
 				dlg.set_title('Open Lyrics')
 				dlg.run()
 				dlg.destroy()
+		print 'leave'
+		return
 				
 	def activate(self, shell):
 		if not os.path.exists(LRCDIR):
