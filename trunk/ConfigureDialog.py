@@ -3,14 +3,16 @@ import gconf
 from os import system, path
 
 gconf_keys = {
-'hide' : '/apps/rhythmbox/plugins/SogouLyrics/hide',
-'offline' : '/apps/rhythmbox/plugins/SogouLyrics/offline',
+'display' : '/apps/rhythmbox/plugins/SogouLyrics/display',
+'download' : '/apps/rhythmbox/plugins/SogouLyrics/download',
 'halign' : '/apps/rhythmbox/plugins/SogouLyrics/halign',
 'vpos' : '/apps/rhythmbox/plugins/SogouLyrics/vpos',
 'fgcolor' : '/apps/rhythmbox/plugins/SogouLyrics/fgcolor',
 'animation' : '/apps/rhythmbox/plugins/SogouLyrics/animation'
 }
 PRESET = {
+'display' : ['on', 'off'],
+'download' : ['on', 'off'],
 'halign' : ['center', 'left', 'right'],
 'vpos' : ['top', 'center', 'bottom'],
 'fgcolor' : ['yellow', 'red', 'green', 'blue'],
@@ -27,7 +29,6 @@ class ConfigureDialog (object):
 		self.widgets = {}
 		for key in gconf_keys.keys():
 			self.widgets[key] = self.gladexml.get_widget(key)
-		for key in ['halign', 'vpos', 'fgcolor', 'animation']:
 			liststore = gtk.ListStore(gobject.TYPE_STRING)
 			for value in PRESET[key]:
 				liststore.append([value])
@@ -35,10 +36,7 @@ class ConfigureDialog (object):
 		# load settings
 		self.settings = {}
 		self.get_prefs()
-		for key in ['hide', 'offline']:
-			self.widgets[key].set_active(self.settings[key])
-			self.widgets[key].connect('toggled', self.set_prefs)
-		for key in ['halign', 'vpos', 'fgcolor', 'animation']:
+		for key in gconf_keys.keys():
 			self.widgets[key].set_active(PRESET[key].index(self.settings[key]))
 			self.widgets[key].connect('changed', self.set_prefs)
 
@@ -46,14 +44,14 @@ class ConfigureDialog (object):
 		dialog.hide()
 
 	def set_prefs(self, widget):
-		for key in ['hide', 'offline']:
-			value = self.widgets[key].get_active()
-			self.settings[key] = value
-			self.gconf.set_bool(gconf_keys[key], value)
-		for key in ['halign', 'vpos', 'fgcolor', 'animation']:
-			value = PRESET[key][self.widgets[key].get_active()]
-			self.settings[key] = value
-			self.gconf.set_string(gconf_keys[key], value)
+		print 'enter'
+		index = self.widgets.values().index(widget)
+		key = self.widgets.keys()[index]
+		value = PRESET[key][widget.get_active()]
+		self.settings[key] = value
+		self.gconf.set_string(gconf_keys[key], value)
+		print '%s : %s' % (key, value)
+		print 'leave'
 
 	def get_dialog (self):
 		return self.dialog
@@ -62,9 +60,8 @@ class ConfigureDialog (object):
 		return self.settings[key]
 		
 	def get_prefs (self):
-		for prop in ['hide', 'offline']:
-			self.settings[prop] = self.gconf.get_bool(gconf_keys[prop])
-		for prop in ['halign', 'vpos', 'fgcolor', 'animation']:
+		print 'enter'
+		for prop in gconf_keys.keys():
 			value = self.gconf.get_string(gconf_keys[prop])
 			if not value:
 				value = PRESET[prop][0]
@@ -73,4 +70,6 @@ class ConfigureDialog (object):
 			except ValueError:
 				value = PRESET[prop][0]
 			self.settings[prop] = value
+			print '%s : %s' % (prop, value)
+		print 'leave'
 		return
