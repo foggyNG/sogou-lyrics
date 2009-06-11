@@ -21,7 +21,7 @@ class Preference (object):
 			self.widgets[key] = self.gladexml.get_widget(key)
 		# load settings
 		self.settings = {}
-		self.get_prefs()
+		self.load_prefs()
 		for key in gconf_keys.keys():
 			widget = self.widgets[key];
 			widget_type = widget.__class__.__name__
@@ -37,13 +37,13 @@ class Preference (object):
 					else:
 						index += 1
 						iter = model.iter_next(iter)
-				widget.connect('changed', self.set_prefs)
+				widget.connect('changed', self.set_pref)
 			elif widget_type in ['ColorButton']:
 				widget.set_color(gtk.gdk.Color(value))
-				widget.connect('color-set', self.set_prefs)
+				widget.connect('color-set', self.set_pref)
 			elif widget_type in ['CheckButton']:
 				widget.set_active(value)
-				widget.connect('toggled', self.set_prefs)
+				widget.connect('toggled', self.set_pref)
 			else:
 				print 'unknown widget type : %s' % widget_type
 		return
@@ -53,7 +53,7 @@ class Preference (object):
 	def dialog_response(self, dialog, response):
 		dialog.hide()
 
-	def set_prefs(self, widget):
+	def set_pref(self, widget):
 		print 'enter'
 		key = widget.get_name()
 		widget_type = widget.__class__.__name__
@@ -80,10 +80,10 @@ class Preference (object):
 	def get_dialog (self):
 		return self.dialog
 	
-	def get_config(self, key):
+	def get_pref(self, key):
 		return self.settings[key]
 		
-	def get_prefs (self):
+	def load_prefs (self):
 		print 'enter'
 		for key in gconf_keys.keys():
 			widget = self.widgets[key]

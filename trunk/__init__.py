@@ -7,11 +7,7 @@ from Preference import Preference
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
 TOKEN_STRIP = ['\([^\)]*\)', ' ']
-SHADOW = 'off'
-TRANSLUCENT = 'off'
-TIMEOUT = 20000
-SIZE = 20000
-MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%%s' osd_halignment='%%s'  hide_timeout='%d'><span size='%d' foreground='%%s'>%%s</span></message>" % (TRANSLUCENT, SHADOW, TIMEOUT, SIZE)
+MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
 
 def detect_charset(s):
 	charsets = ('iso-8859-1', 'gbk', 'utf-8')
@@ -136,8 +132,8 @@ class SogouLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 
 	def osd_display(self, message):
-		if self.config.get_config('display'):
-			code = MESSAGE_TEMPLATE % (self.config.get_config('animation'), self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
+		if self.config.get_pref('display'):
+			code = MESSAGE_TEMPLATE % (self.config.get_pref('animation'), self.config.get_pref('vpos'), self.config.get_pref('halign'), self.config.get_pref('fgcolor'), message)
 			self.osd.send(code)
 		
 	def elapsed_changed_handler(self, player, playing):
@@ -169,7 +165,7 @@ class SogouLyrics(rb.Plugin):
 						os.rename(lrc_path, '%s.bak' % lrc_path)
 					except OSError:
 						print 'move broken lyrics file failed'
-			if self.lrc == {} and self.config.get_config('download'):
+			if self.lrc == {} and self.config.get_pref('download'):
 				self.lrc = download_lyrics(artist, title)
 			if self.lrc == {}:
 				self.osd_display('(%s - %s) not found' % (artist, title))
@@ -238,20 +234,20 @@ class SogouLyrics(rb.Plugin):
 		return
 
 	def deactivate(self, shell):
-		del self.config
 		for handler in self.handler:
 			self.player.disconnect(handler)
-		del self.shell
-		del self.player
-		del self.lrc
-		del self.osd
-		#
 		uim = shell.get_ui_manager()
 		uim.remove_ui (self.ui_id)
 		uim.remove_action_group (self.action_group)
-
-		self.action_group = None
-		self.action = None
+		#
+		del self.config
+		del self.shell
+		del self.player
+		del self.handler
+		del self.lrc
+		del self.osd
+		del self.action_group
+		del self.action
 		print 'Sogou Lyrics deactivated'
 		return
 
