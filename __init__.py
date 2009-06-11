@@ -180,9 +180,9 @@ class SogouLyrics(rb.Plugin):
 		print 'player status changed to %d' % playing
 		return
 
-	def open_lyrics(self, action, shell):
+	def open_lyrics(self, action):
 		print 'enter'
-		source = shell.get_property("selected_source")
+		source = self.shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
@@ -220,7 +220,7 @@ class SogouLyrics(rb.Plugin):
 		self.action = gtk.Action('OpenLyrics', _('Open lyrics'),
 					 _('Open the lyrics of the selected song'),
 					 'SogouLyrics')
-		self.activate_id = self.action.connect('activate', self.open_lyrics, shell)
+		self.activate_id = self.action.connect('activate', self.open_lyrics)
 		
 		self.action_group = gtk.ActionGroup('OpenLyricsPluginActions')
 		self.action_group.add_action(self.action)
