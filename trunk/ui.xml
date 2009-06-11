@@ -1,0 +1,25 @@
+<ui>
+  <popup name="BrowserSourceViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="PlaylistViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="QueuePlaylistViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+
+  <popup name="PodcastViewPopup">
+    <placeholder name="PluginPlaceholder">
+      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
+    </placeholder>
+  </popup>
+</ui>
