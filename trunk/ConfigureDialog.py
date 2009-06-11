@@ -1,6 +1,4 @@
-import gobject, gtk, gtk.glade, gtk.gdk, types, glib
-import gconf
-from os import system, path
+import gobject, gtk, gtk.glade, gtk.gdk, gconf
 
 gconf_keys = {
 'display' : '/apps/rhythmbox/plugins/SogouLyrics/display',

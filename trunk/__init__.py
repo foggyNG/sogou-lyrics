@@ -1,9 +1,8 @@
 import os, sys, ClientCookie, urllib2, re
 import rhythmdb, rb
 from gnomeosd import eventbridge
-import gobject, gtk
+import gobject, gtk, gconf
 from ConfigureDialog import ConfigureDialog
-import gconf
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
