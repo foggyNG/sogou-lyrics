@@ -1,4 +1,4 @@
-import os, sys, ClientCookie, urllib2, re
+import os, ClientCookie, urllib2, re
 import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
@@ -51,6 +51,7 @@ def detect_charset(s):
 	return s
 
 def parse_lyrics(lines):
+	print 'enter'
 	content = {}
 	re_ti = re.compile('\[ti:[^\]]*\]')
 	re_ar = re.compile('\[ar:[^\]]*\]')
@@ -92,6 +93,7 @@ def parse_lyrics(lines):
 					content[key] = lrc
 				except ValueError:
 					print 'invalid timestamp %s' % time
+	print 'leave'
 	return content
 
 def clean_token(token):
@@ -101,6 +103,7 @@ def clean_token(token):
 	return result
 	
 def verify_lyrics(content, artist, title):
+	print 'enter'
 	retval = 0
 	if not content.has_key('ar'):
 		print 'cannot find artist in lyrics'
@@ -116,9 +119,11 @@ def verify_lyrics(content, artist, title):
 		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
 			retval = 1
+	print 'leave'
 	return retval
 			
 def download_lyrics(artist, title):
+	print 'enter'
 	retval = {}
 	# grab song search page
 	title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
@@ -150,6 +155,7 @@ def download_lyrics(artist, title):
 						retval = lrc_content
 						break
 			break
+	print 'leave'
 	return retval
 
 class SogouLyrics(rb.Plugin):
