@@ -111,6 +111,7 @@ class ConfigureDialog (object):
 			elif widget_type in ['ColorButton']:
 				try:
 					value = self.gconf.get_string(gconf_keys[key])
+					gtk.gdk.color_parse(value)
 				except:
 					value = 'yellow'
 				self.settings[key] = value
