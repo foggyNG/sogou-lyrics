@@ -2,7 +2,7 @@ import os, ClientCookie, urllib2, re
 import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
-from ConfigureDialog import ConfigureDialog
+from Preference import Preference
 
 # global settings
 LRCDIR = os.path.expanduser('~/.lyrics')
@@ -12,34 +12,6 @@ TRANSLUCENT = 'off'
 TIMEOUT = 20000
 SIZE = 20000
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%%s' osd_fake_translucent_bg='%s' drop_shadow='%s' osd_vposition='%%s' osd_halignment='%%s'  hide_timeout='%d'><span size='%d' foreground='%%s'>%%s</span></message>" % (TRANSLUCENT, SHADOW, TIMEOUT, SIZE)
-
-ui_str = """
-<ui>
-  <popup name="BrowserSourceViewPopup">
-    <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
-    </placeholder>
-  </popup>
-
-  <popup name="PlaylistViewPopup">
-    <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
-    </placeholder>
-  </popup>
-
-  <popup name="QueuePlaylistViewPopup">
-    <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
-    </placeholder>
-  </popup>
-
-  <popup name="PodcastViewPopup">
-    <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyrics"/>
-    </placeholder>
-  </popup>
-</ui>
-"""
 
 def detect_charset(s):
 	charsets = ('iso-8859-1', 'gbk', 'utf-8')
@@ -259,9 +231,9 @@ class SogouLyrics(rb.Plugin):
 		
 		uim = shell.get_ui_manager ()
 		uim.insert_action_group(self.action_group, 0)
-		self.ui_id = uim.add_ui_from_string(ui_str)
+		self.ui_id = uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		self.config = ConfigureDialog(self.find_file("ConfigureDialog.glade"))
+		self.config = Preference(self.find_file("prefs.glade"))
 		print 'Sogou Lyrics activated'
 		return
 

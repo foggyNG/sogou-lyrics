@@ -8,12 +8,12 @@ gconf_keys = {
 'fgcolor' : '/apps/rhythmbox/plugins/SogouLyrics/fgcolor',
 'animation' : '/apps/rhythmbox/plugins/SogouLyrics/animation'
 }
-class ConfigureDialog (object):
+class Preference (object):
 	def __init__(self, glade_file):
 		self.gconf = gconf.client_get_default()
 		self.gladexml = gtk.glade.XML(glade_file)
 		#
-		self.dialog = self.gladexml.get_widget('preferences_dialog')
+		self.dialog = self.gladexml.get_widget('preference')
 		self.dialog.connect('response', self.dialog_response)
 		#
 		self.widgets = {}

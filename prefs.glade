@@ -2,7 +2,7 @@
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
 <!--*- mode: xml -*-->
 <glade-interface>
-  <widget class="GtkDialog" id="preferences_dialog">
+  <widget class="GtkDialog" id="preference">
     <property name="visible">False</property>
     <property name="title" translatable="yes">Sogou Lyrics</property>
     <property name="type">GTK_WINDOW_TOPLEVEL</property>
