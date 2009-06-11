@@ -159,7 +159,7 @@ class SogouLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 
 	def osd_display(self, message):
-		if self.config.get_config('display') == 'on':
+		if self.config.get_config('display'):
 			code = MESSAGE_TEMPLATE % (self.config.get_config('animation'), self.config.get_config('vpos'), self.config.get_config('halign'), self.config.get_config('fgcolor'), message)
 			self.osd.send(code)
 		
@@ -192,7 +192,7 @@ class SogouLyrics(rb.Plugin):
 						os.rename(lrc_path, '%s.bak' % lrc_path)
 					except OSError:
 						print 'move broken lyrics file failed'
-			if self.lrc == {} and self.config.get_config('download') == 'on':
+			if self.lrc == {} and self.config.get_config('download'):
 				self.lrc = download_lyrics(artist, title)
 			if self.lrc == {}:
 				self.osd_display('(%s - %s) not found' % (artist, title))

@@ -46,56 +46,30 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="main-common-display-label">
+              <widget class="GtkCheckButton" id="display">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Display lyrics</property>
-                <property name="use_markup">False</property>
-                <property name="xalign">0</property>
+                <property name="can_focus">True</property>
+                <property name="label">Display lyrics</property>
+                <property name="use_underline">True</property>
+                <property name="draw_indicator">True</property>
               </widget>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="right_attach">1</property>
-                <property name="top_attach">2</property>
-                <property name="bottom_attach">3</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="display">
-                <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
-                <property name="add_tearoffs">False</property>
-                <property name="focus_on_click">True</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
                 <property name="right_attach">2</property>
                 <property name="top_attach">2</property>
                 <property name="bottom_attach">3</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="main-common-download-label">
+              <widget class="GtkCheckButton" id="download">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Download lyrics</property>
-                <property name="use_markup">False</property>
-                <property name="xalign">0</property>
+                <property name="can_focus">True</property>
+                <property name="label">Download lyrics</property>
+                <property name="use_underline">True</property>
+                <property name="draw_indicator">True</property>
               </widget>
               <packing>
                 <property name="left_attach">0</property>
-                <property name="right_attach">1</property>
-                <property name="top_attach">3</property>
-                <property name="bottom_attach">4</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="download">
-                <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
-                <property name="add_tearoffs">False</property>
-                <property name="focus_on_click">True</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
                 <property name="right_attach">2</property>
                 <property name="top_attach">3</property>
                 <property name="bottom_attach">4</property>
@@ -133,7 +107,9 @@
             <child>
               <widget class="GtkComboBox" id="halign">
                 <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
+                <property name="items" translatable="yes">center
+left
+right</property>
                 <property name="add_tearoffs">False</property>
                 <property name="focus_on_click">True</property>
               </widget>
@@ -161,7 +137,9 @@
             <child>
               <widget class="GtkComboBox" id="vpos">
                 <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
+                <property name="items" translatable="yes">top
+center
+bottom</property>
                 <property name="add_tearoffs">False</property>
                 <property name="focus_on_click">True</property>
               </widget>
@@ -170,34 +148,6 @@
                 <property name="right_attach">2</property>
                 <property name="top_attach">7</property>
                 <property name="bottom_attach">8</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-display-fgcolor-label">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Foreground Color</property>
-                <property name="use_markup">False</property>
-                <property name="xalign">0</property>
-              </widget>
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="right_attach">1</property>
-                <property name="top_attach">8</property>
-                <property name="bottom_attach">9</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="fgcolor">
-                <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
-                <property name="add_tearoffs">False</property>
-                <property name="focus_on_click">True</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">8</property>
-                <property name="bottom_attach">9</property>
               </packing>
             </child>
             <child>
@@ -210,15 +160,42 @@
               <packing>
                 <property name="left_attach">0</property>
                 <property name="right_attach">1</property>
-                <property name="top_attach">9</property>
-                <property name="bottom_attach">10</property>
+                <property name="top_attach">8</property>
+                <property name="bottom_attach">9</property>
               </packing>
             </child>
             <child>
               <widget class="GtkComboBox" id="animation">
                 <property name="visible">True</property>
-                <property name="items" translatable="yes"/>
+                <property name="items" translatable="yes">off
+on</property>
                 <property name="add_tearoffs">False</property>
+                <property name="focus_on_click">True</property>
+              </widget>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+                <property name="top_attach">8</property>
+                <property name="bottom_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="main-display-fgcolor-label">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Foreground Color</property>
+                <property name="use_markup">False</property>
+                <property name="xalign">0</property>
+              </widget>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="right_attach">1</property>
+                <property name="top_attach">9</property>
+                <property name="bottom_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkColorButton" id="fgcolor">
+                <property name="visible">True</property>
                 <property name="focus_on_click">True</property>
               </widget>
               <packing>
