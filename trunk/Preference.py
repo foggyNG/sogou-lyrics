@@ -21,6 +21,9 @@ class Preference (object):
 		self.widgets = {}
 		for key in gconf_keys.keys():
 			self.widgets[key] = self.gladexml.get_widget(key)
+		filter = gtk.FileFilter()
+		filter.add_mime_type('inode/directory')
+		self.widgets['folder'].set_filter(filter)
 		# load settings
 		self.settings = {}
 		self.load_prefs()
