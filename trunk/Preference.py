@@ -1,4 +1,4 @@
-import gobject, gtk, gtk.glade, gtk.gdk, gconf
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf
 
 gconf_keys = {
 'display' : '/apps/rhythmbox/plugins/SogouLyrics/display',
@@ -6,10 +6,12 @@ gconf_keys = {
 'halign' : '/apps/rhythmbox/plugins/SogouLyrics/halign',
 'vpos' : '/apps/rhythmbox/plugins/SogouLyrics/vpos',
 'fgcolor' : '/apps/rhythmbox/plugins/SogouLyrics/fgcolor',
-'animation' : '/apps/rhythmbox/plugins/SogouLyrics/animation'
+'animation' : '/apps/rhythmbox/plugins/SogouLyrics/animation',
+'folder' : '/apps/rhythmbox/plugins/SogouLyrics/folder'
 }
 class Preference (object):
 	def __init__(self, glade_file):
+		print 'enter'
 		self.gconf = gconf.client_get_default()
 		self.gladexml = gtk.glade.XML(glade_file)
 		#
@@ -44,8 +46,13 @@ class Preference (object):
 			elif widget_type in ['CheckButton']:
 				widget.set_active(value)
 				widget.connect('toggled', self.set_pref)
+			elif widget_type in ['FileChooserButton']:
+				widget.set_filename(value)
+				widget.connect('file-set', self.set_pref)
+				widget.connect('selection-changed', self.set_pref)
 			else:
 				print 'unknown widget type : %s' % widget_type
+		print 'leave'
 		return
 		
 		
@@ -72,6 +79,11 @@ class Preference (object):
 			self.settings[key] = value
 			self.gconf.set_bool(gconf_keys[key], value)
 			print '%s : %d' % (key, value)
+		elif widget_type in ['FileChooserButton']:
+			value = widget.get_filename()
+			self.settings[key] = value
+			self.gconf.set_string(gconf_keys[key], value)
+			print '%s : %s' % (key, value)
 		else:
 			print 'unknown widget type : %s' % widget_type
 		print 'leave'
@@ -121,6 +133,15 @@ class Preference (object):
 					value = True
 				self.settings[key] = value
 				print '%s : %d' % (key, value)
+			elif widget_type in ['FileChooserButton']:
+				try:
+					value = self.gconf.get_string(gconf_keys[key])
+					if not value:
+						value = os.path.expanduser('~/.lyrics')
+				except:
+					value = os.path.expanduser('~/.lyrics')
+				self.settings[key] = value
+				print '%s : %s' % (key, value)
 			else:
 				print 'unknown widget type : %s' % widget_type
 		print 'leave'

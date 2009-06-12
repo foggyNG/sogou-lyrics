@@ -4,8 +4,6 @@ from gnomeosd import eventbridge
 import gobject, gtk, gconf
 from Preference import Preference
 
-# global settings
-LRCDIR = os.path.expanduser('~/.lyrics')
 TOKEN_STRIP = ['\([^\)]*\)', ' ']
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
 
@@ -89,42 +87,6 @@ def verify_lyrics(content, artist, title):
 			retval = 1
 	print 'leave'
 	return retval
-			
-def download_lyrics(artist, title):
-	print 'enter'
-	retval = {}
-	# grab song search page
-	title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
-	artist_encode = urllib2.quote(detect_charset(clean_token(artist)).encode('gbk'))
-	uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
-	print 'search page <%s>' % uri
-	cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-	for line in cache:
-		# grab lyrics search page, only use the first
-		m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
-		if not m is None:
-			uri = 'http://mp3.sogou.com/%s' % m.group(0)
-			print 'lyrics page <%s>' % uri
-			cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-			for line in cache:
-				# grab lyrics file uri, try all of them
-				m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
-				if not m is None:				
-					uri = 'http://mp3.sogou.com/%s' % m.group(0)
-					print 'lyrics file <%s>' % uri
-					cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-					lrc = []
-					for line in cache:
-						lrc.append(line.decode('gbk').encode('utf-8'))
-					lrc_content = parse_lyrics(lrc)
-					if verify_lyrics(lrc_content, artist, title):
-						lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
-						open(lrc_path, 'w').writelines(lrc)
-						retval = lrc_content
-						break
-			break
-	print 'leave'
-	return retval
 
 class SogouLyrics(rb.Plugin):
 
@@ -153,7 +115,7 @@ class SogouLyrics(rb.Plugin):
 			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
 			print '%s - %s' % (artist, title)
-			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
+			lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
 			# load lyrics content
 			self.lrc = {}
 			if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
@@ -166,7 +128,7 @@ class SogouLyrics(rb.Plugin):
 					except OSError:
 						print 'move broken lyrics file failed'
 			if self.lrc == {} and self.config.get_pref('download'):
-				self.lrc = download_lyrics(artist, title)
+				self.lrc = self.download_lyrics(artist, title)
 			if self.lrc == {}:
 				self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
@@ -190,7 +152,7 @@ class SogouLyrics(rb.Plugin):
 			db = self.shell.get_property ('db')
 			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
-			lrc_path = '%s/%s - %s.lrc' % (LRCDIR, artist, title)
+			lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
 			if os.path.exists(lrc_path):
 				print 'open lyrics at <%s>' % lrc_path
 				os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
@@ -203,10 +165,47 @@ class SogouLyrics(rb.Plugin):
 				dlg.destroy()
 		print 'leave'
 		return
-				
+		
+	def download_lyrics(self, artist, title):
+		print 'enter'
+		retval = {}
+		# grab song search page
+		title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
+		artist_encode = urllib2.quote(detect_charset(clean_token(artist)).encode('gbk'))
+		uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
+		print 'search page <%s>' % uri
+		cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+		for line in cache:
+			# grab lyrics search page, only use the first
+			m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
+			if not m is None:
+				uri = 'http://mp3.sogou.com/%s' % m.group(0)
+				print 'lyrics page <%s>' % uri
+				cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+				for line in cache:
+					# grab lyrics file uri, try all of them
+					m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
+					if not m is None:				
+						uri = 'http://mp3.sogou.com/%s' % m.group(0)
+						print 'lyrics file <%s>' % uri
+						cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+						lrc = []
+						for line in cache:
+							lrc.append(line.decode('gbk').encode('utf-8'))
+						lrc_content = parse_lyrics(lrc)
+						if verify_lyrics(lrc_content, artist, title):
+							lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+							open(lrc_path, 'w').writelines(lrc)
+							retval = lrc_content
+							break
+				break
+		print 'leave'
+		return retval
+	
 	def activate(self, shell):
-		if not os.path.exists(LRCDIR):
-			os.mkdir(LRCDIR)
+		self.config = Preference(self.find_file("prefs.glade"))
+		if not os.path.exists(self.config.get_pref('folder')):
+			os.mkdir(self.config.get_pref('folder'))
 		self.playing = 0
 		self.lrc = {}
 		self.player = shell.get_player()
@@ -229,7 +228,6 @@ class SogouLyrics(rb.Plugin):
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		self.config = Preference(self.find_file("prefs.glade"))
 		print 'Sogou Lyrics activated'
 		return
 
