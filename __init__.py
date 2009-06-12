@@ -59,9 +59,14 @@ def parse_lyrics(lines):
 					cache[key] = lrc
 				except ValueError:
 					print 'invalid timestamp %s' % time
-	for key in cache.keys():
+	tags = cache.keys()
+	tags.sort()
+	for key in tags:
 		second = int(round((key + offset) / 1000.0))
-		content[second] = cache[key]
+		if second in content:
+			content[second] += cache[key]
+		else:
+			content[second] = cache[key]
 	del cache
 	print 'leave'
 	return content
