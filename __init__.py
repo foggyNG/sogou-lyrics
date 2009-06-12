@@ -142,27 +142,41 @@ class SogouLyrics(rb.Plugin):
 		print 'player status changed to %d' % playing
 		return
 
-	def open_lyrics(self, action):
+	def open_lyrics_popup(self, action):
 		print 'enter'
 		source = self.shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
 			entry = selected[0]
-			db = self.shell.get_property ('db')
-			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
-			lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
-			if os.path.exists(lrc_path):
-				print 'open lyrics at <%s>' % lrc_path
-				os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
-			else:
-				print 'lyrics not found (%s - %s)' % (artist, title)
-				message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
-				dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
-				dlg.set_title('Open Lyrics')
-				dlg.run()
-				dlg.destroy()
+			self.open_lyrics_file(entry)
+		print 'leave'
+		return
+	
+	def open_lyrics_shortcut(self, action):
+		print 'enter'
+		entry = self.player.get_playing_entry ()
+		if entry:
+			self.open_lyrics_file(entry)
+		print 'leave'
+		return
+	
+	def open_lyrics_file(self, entry):
+		print 'enter'
+		db = self.shell.get_property ('db')
+		artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
+		title = db.entry_get(entry, rhythmdb.PROP_TITLE)
+		lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+		if os.path.exists(lrc_path):
+			print 'open lyrics at <%s>' % lrc_path
+			os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
+		else:
+			print 'lyrics not found (%s - %s)' % (artist, title)
+			message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
+			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
+			dlg.set_title('Open Lyrics')
+			dlg.run()
+			dlg.destroy()	
 		print 'leave'
 		return
 		
@@ -216,13 +230,14 @@ class SogouLyrics(rb.Plugin):
 			self.player.connect('playing-changed', self.playing_changed_handler)]
 		self.osd = eventbridge.OSD()
 		#
-		self.action = gtk.Action('OpenLyrics', _('Open lyrics'),
-					 _('Open the lyrics of the selected song'),
-					 'SogouLyrics')
-		self.activate_id = self.action.connect('activate', self.open_lyrics)
-		
-		self.action_group = gtk.ActionGroup('OpenLyricsPluginActions')
-		self.action_group.add_action(self.action)
+		self.action = [
+			gtk.Action('OpenLyricsPopup', _('Open Lyrics'), _('Open the lyrics of the selected song'), 'SogouLyrics'),
+			gtk.Action('OpenLyricsShortcut', _('Open Playing _Lyrics'), _('Open the lyrics of the playing song'), 'SogouLyrics')]
+		self.action[0].connect('activate', self.open_lyrics_popup)
+		self.action[1].connect('activate', self.open_lyrics_shortcut)
+		self.action_group = gtk.ActionGroup('SogouLyricsActions')
+		self.action_group.add_action(self.action[0])
+		self.action_group.add_action_with_accel (self.action[1], "<control>L")
 		
 		uim = shell.get_ui_manager ()
 		uim.insert_action_group(self.action_group, 0)
@@ -237,6 +252,8 @@ class SogouLyrics(rb.Plugin):
 		uim = shell.get_ui_manager()
 		uim.remove_ui (self.ui_id)
 		uim.remove_action_group (self.action_group)
+		for action in self.action:
+			del action
 		#
 		del self.config
 		del self.shell
