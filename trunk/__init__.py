@@ -19,6 +19,7 @@ def detect_charset(s):
 def parse_lyrics(lines):
 	print 'enter'
 	content = {}
+	cache = {}
 	re_ti = re.compile('\[ti:[^\]]*\]')
 	re_ar = re.compile('\[ar:[^\]]*\]')
 	re_offset = re.compile('\[offset:[^\]]*\]')
@@ -41,7 +42,6 @@ def parse_lyrics(lines):
 		if not m is None:
 			segment = m.group(0)
 			offset = int(segment[8:-1])
-			content['offset'] = offset
 		# parse lrc
 		m = re_lrc.match(line)
 		if not m is None:
@@ -55,10 +55,14 @@ def parse_lyrics(lines):
 					minute = int(time[1:3])
 					second = int(time[4:6])
 					centi = int(time[7:9])
-					key = int(round(((minute * 60 + second) * 1000 + centi * 10 + offset) / 1000.0))
-					content[key] = lrc
+					key = (minute * 60 + second) * 1000 + centi * 10
+					cache[key] = lrc
 				except ValueError:
 					print 'invalid timestamp %s' % time
+	for key in cache.keys():
+		second = int(round((key + offset) / 1000.0))
+		content[second] = cache[key]
+	del cache
 	print 'leave'
 	return content
 
