@@ -4,6 +4,7 @@
   <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkDialog" id="preference">
     <property name="title" translatable="yes">Sogou Lyrics</property>
+    <property name="resizable">False</property>
     <property name="type_hint">dialog</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="main-vbox">
@@ -75,7 +76,7 @@
               <widget class="GtkLabel" id="main-display-halign-label">
                 <property name="visible">True</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">Horizontal Alignment</property>
+                <property name="label" translatable="yes">Horizontal alignment</property>
               </widget>
               <packing>
                 <property name="top_attach">7</property>
@@ -100,7 +101,7 @@ right</property>
               <widget class="GtkLabel" id="main-display-vpos-label">
                 <property name="visible">True</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">Vertical Position</property>
+                <property name="label" translatable="yes">Vertical position</property>
               </widget>
               <packing>
                 <property name="top_attach">8</property>
@@ -149,7 +150,7 @@ on</property>
               <widget class="GtkLabel" id="main-display-fgcolor-label">
                 <property name="visible">True</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">Foreground Color</property>
+                <property name="label" translatable="yes">Foreground color</property>
               </widget>
               <packing>
                 <property name="top_attach">10</property>
