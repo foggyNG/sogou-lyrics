@@ -226,7 +226,7 @@ class SogouLyrics(rb.Plugin):
 		return retval
 	
 	def activate(self, shell):
-		self.config = Preference(self.find_file("prefs.glade"))
+		self.config = Preference(self.find_file('prefs.glade'))
 		if not os.path.exists(self.config.get_pref('folder')):
 			os.mkdir(self.config.get_pref('folder'))
 		self.playing = 0
