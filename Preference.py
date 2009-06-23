@@ -44,7 +44,7 @@ class Preference (object):
 						iter = model.iter_next(iter)
 				widget.connect('changed', self.set_pref)
 			elif widget_type in ['ColorButton']:
-				widget.set_color(gtk.gdk.Color(value))
+				widget.set_color(gtk.gdk.color_parse(value))
 				widget.connect('color-set', self.set_pref)
 			elif widget_type in ['CheckButton']:
 				widget.set_active(value)
@@ -126,7 +126,7 @@ class Preference (object):
 					value = self.gconf.get_string(gconf_keys[key])
 					gtk.gdk.color_parse(value)
 				except:
-					value = 'yellow'
+					value = '#FFFF00'
 				self.settings[key] = value
 				print '%s : %s' % (key, value)
 			elif widget_type in ['CheckButton']:
