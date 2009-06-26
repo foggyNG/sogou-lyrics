@@ -4,7 +4,7 @@ from gnomeosd import eventbridge
 import gobject, gtk, gconf
 from Preference import Preference
 
-TOKEN_STRIP = ['\([^\)]*\)', ' ']
+TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
 
 def detect_charset(s):
@@ -73,8 +73,8 @@ def parse_lyrics(lines):
 
 def clean_token(token):
 	result = token.lower()
-	for strip in TOKEN_STRIP:
-		result = re.sub(strip, '', result)
+	for strip in TOKEN_STRIP.keys():
+		result = re.sub(strip, TOKEN_STRIP[strip], result)
 	return result
 	
 def verify_lyrics(content, artist, title):
@@ -88,8 +88,8 @@ def verify_lyrics(content, artist, title):
 		ar = content['ar']
 		ti = content['ti']
 		print '%s - %s' % (ar, ti)
-		ar = ar.lower().replace(' ', '')
-		ti = ti.lower().replace(' ', '')
+		ar = clean_token(ar)
+		ti = clean_token(ti)
 		ar1 = clean_token(artist)
 		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
