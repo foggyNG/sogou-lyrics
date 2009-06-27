@@ -3,155 +3,10 @@ import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
 from Preference import Preference
-import threading
+from utils import *
+from Grabber import Grabber
 
-TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
-
-def detect_charset(s):
-	charsets = ('iso-8859-1', 'gbk', 'utf-8')
-	for charset in charsets:
-		try:
-			return unicode(unicode(s, 'utf-8').encode(charset), 'gbk')
-		except:
-			continue
-	return s
-
-def parse_lyrics(lines):
-	print 'enter'
-	content = {}
-	cache = {}
-	re_ti = re.compile('\[ti:[^\]]*\]')
-	re_ar = re.compile('\[ar:[^\]]*\]')
-	re_offset = re.compile('\[offset:[^\]]*\]')
-	re_lrc = re.compile('(\[[0-9\.:]*\])+.*')
-	re_time = re.compile('\[[0-9]{2}:[0-9]{2}\.[0-9]{2}\]')
-	offset = 0
-	for line in lines:
-		# search for title property
-		m = re_ti.search(line)
-		if not m is None:
-			segment = m.group(0)
-			content['ti'] = segment[4:-1]
-		# search for artist property
-		m = re_ar.search(line)
-		if not m is None:
-			segment = m.group(0)
-			content['ar'] = segment[4:-1]
-		# search for offset property
-		m = re_offset.search(line)
-		if not m is None:
-			segment = m.group(0)
-			offset = int(segment[8:-1])
-		# parse lrc
-		m = re_lrc.match(line)
-		if not m is None:
-			pos = 0
-			tm = re_time.findall(line)
-			for time in tm:
-				pos = pos + len(time)
-			lrc = m.group(0)[pos:]
-			for time in tm:
-				try:
-					minute = int(time[1:3])
-					second = int(time[4:6])
-					centi = int(time[7:9])
-					key = (minute * 60 + second) * 1000 + centi * 10
-					cache[key] = lrc
-				except ValueError:
-					print 'invalid timestamp %s' % time
-	tags = cache.keys()
-	tags.sort()
-	for key in tags:
-		second = int(round((key + offset) / 1000.0))
-		if second in content:
-			content[second] += cache[key]
-		else:
-			content[second] = cache[key]
-	del cache
-	print 'leave'
-	return content
-
-def clean_token(token):
-	result = token.lower()
-	for strip in TOKEN_STRIP.keys():
-		result = re.sub(strip, TOKEN_STRIP[strip], result)
-	return result
-	
-def verify_lyrics(content, artist, title):
-	print 'enter'
-	retval = 0
-	if not content.has_key('ar'):
-		print 'cannot find artist in lyrics'
-	elif not content.has_key('ti'):
-		print 'cannot find title in lyrics'
-	else:
-		ar = content['ar']
-		ti = content['ti']
-		print '%s - %s' % (ar, ti)
-		ar = clean_token(ar)
-		ti = clean_token(ti)
-		ar1 = clean_token(artist)
-		ti1 = clean_token(title)
-		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
-			retval = 1
-	print 'leave'
-	return retval
-
-def load_lyrics(lrc_path, artist, title):
-	lrc = {}
-	if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
-		lrc = parse_lyrics(open(lrc_path, 'r').readlines())
-		if not verify_lyrics(lrc, artist, title):
-			lrc = {}
-			print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
-			try:
-				os.rename(lrc_path, '%s.bak' % lrc_path)
-			except OSError:
-				print 'move broken lyrics file failed'
-	return lrc
-	
-class SogouLyricsGrabber(threading.Thread):
-	
-	def __init__(self, artist, title, lrc_path):
-		self.artist = artist
-		self.title = title
-		self.lrc_path = lrc_path
-		threading.Thread.__init__(self)
-		
-	def run(self):
-		print 'enter'
-		# grab song search page
-		title_encode = urllib2.quote(detect_charset(clean_token(self.title)).encode('gbk'))
-		artist_encode = urllib2.quote(detect_charset(clean_token(self.artist)).encode('gbk'))
-		uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
-		print 'search page <%s>' % uri
-		cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-		for line in cache:
-			# grab lyrics search page, only use the first
-			m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
-			if not m is None:
-				uri = 'http://mp3.sogou.com/%s' % m.group(0)
-				print 'lyrics page <%s>' % uri
-				cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-				for line in cache:
-					# grab lyrics file uri, try all of them
-					m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
-					if not m is None:				
-						uri = 'http://mp3.sogou.com/%s' % m.group(0)
-						print 'lyrics file <%s>' % uri
-						cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-						lrc = []
-						for line in cache:
-							lrc.append(line.decode('gbk').encode('utf-8'))
-						lrc_content = parse_lyrics(lrc)
-						if verify_lyrics(lrc_content, self.artist, self.title):
-							open(self.lrc_path, 'w').writelines(lrc)
-							break
-				break
-		print 'leave'
-		return
-
 
 class SogouLyrics(rb.Plugin):
 
@@ -159,8 +14,8 @@ class SogouLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 
 	def osd_display(self, message):
-		if self.config.get_pref('display'):
-			code = MESSAGE_TEMPLATE % (self.config.get_pref('animation'), self.config.get_pref('vpos'), self.config.get_pref('halign'), self.config.get_pref('fgcolor'), message)
+		if self.prefs.get_pref('display'):
+			code = MESSAGE_TEMPLATE % (self.prefs.get_pref('animation'), self.prefs.get_pref('vpos'), self.prefs.get_pref('halign'), self.prefs.get_pref('fgcolor'), message)
 			self.osd.send(code)
 		
 	def elapsed_changed_handler(self, player, playing):
@@ -170,7 +25,7 @@ class SogouLyrics(rb.Plugin):
 				entry = self.player.get_playing_entry ()
 				artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 				title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-				lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+				lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 				self.lrc = load_lyrics(lrc_path, artist, title)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
@@ -189,13 +44,13 @@ class SogouLyrics(rb.Plugin):
 			artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			print '%s - %s' % (artist, title)
-			lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+			lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 			# load lyrics content
 			self.lrc = load_lyrics(lrc_path, artist, title)
 			if self.lrc == {}:
-				if self.config.get_pref('download'):
+				if self.prefs.get_pref('download'):
 					self.osd_display('(%s - %s) downloading' % (artist, title))
-					SogouLyricsGrabber(artist, title, lrc_path).start()
+					self.grabber.grab(artist, title, lrc_path)
 				else:
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
@@ -232,7 +87,7 @@ class SogouLyrics(rb.Plugin):
 		print 'enter'
 		artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-		lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+		lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 		if os.path.exists(lrc_path):
 			print 'open lyrics at <%s>' % lrc_path
 			os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
@@ -248,9 +103,10 @@ class SogouLyrics(rb.Plugin):
 	
 	def activate(self, shell):
 		self.load_round = 0;
-		self.config = Preference(self.find_file('prefs.glade'))
-		if not os.path.exists(self.config.get_pref('folder')):
-			os.mkdir(self.config.get_pref('folder'))
+		self.prefs = Preference(self.find_file('prefs.glade'))
+		self.grabber = Grabber(self.prefs)
+		if not os.path.exists(self.prefs.get_pref('folder')):
+			os.mkdir(self.prefs.get_pref('folder'))
 		self.playing = 0
 		self.lrc = {}
 		self.player = shell.get_player()
@@ -287,7 +143,8 @@ class SogouLyrics(rb.Plugin):
 		for action in self.action:
 			del action
 		#
-		del self.config
+		del self.prefs
+		del self.grabber
 		del self.shell
 		del self.player
 		del self.db
@@ -300,6 +157,6 @@ class SogouLyrics(rb.Plugin):
 		return
 
 	def create_configure_dialog(self):
-		dialog = self.config.get_dialog()
+		dialog = self.prefs.get_dialog()
 		dialog.present()
 		return dialog
