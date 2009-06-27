@@ -100,6 +100,7 @@ class Preference (object):
 		
 	def load_prefs (self):
 		print 'enter'
+		self.settings['grabber'] = ['ttPlayer','Sogou']
 		for key in gconf_keys.keys():
 			widget = self.widgets[key]
 			widget_type = widget.__class__.__name__
