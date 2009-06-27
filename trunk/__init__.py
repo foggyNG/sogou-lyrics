@@ -3,6 +3,7 @@ import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
 from Preference import Preference
+import threading
 
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 MESSAGE_TEMPLATE = "<message id='SogouLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
@@ -97,6 +98,61 @@ def verify_lyrics(content, artist, title):
 	print 'leave'
 	return retval
 
+def load_lyrics(lrc_path, artist, title):
+	lrc = {}
+	if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
+		lrc = parse_lyrics(open(lrc_path, 'r').readlines())
+		if not verify_lyrics(lrc, artist, title):
+			lrc = {}
+			print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
+			try:
+				os.rename(lrc_path, '%s.bak' % lrc_path)
+			except OSError:
+				print 'move broken lyrics file failed'
+	return lrc
+	
+class SogouLyricsGrabber(threading.Thread):
+	
+	def __init__(self, artist, title, lrc_path):
+		self.artist = artist
+		self.title = title
+		self.lrc_path = lrc_path
+		threading.Thread.__init__(self)
+		
+	def run(self):
+		print 'enter'
+		# grab song search page
+		title_encode = urllib2.quote(detect_charset(clean_token(self.title)).encode('gbk'))
+		artist_encode = urllib2.quote(detect_charset(clean_token(self.artist)).encode('gbk'))
+		uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
+		print 'search page <%s>' % uri
+		cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+		for line in cache:
+			# grab lyrics search page, only use the first
+			m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
+			if not m is None:
+				uri = 'http://mp3.sogou.com/%s' % m.group(0)
+				print 'lyrics page <%s>' % uri
+				cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+				for line in cache:
+					# grab lyrics file uri, try all of them
+					m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
+					if not m is None:				
+						uri = 'http://mp3.sogou.com/%s' % m.group(0)
+						print 'lyrics file <%s>' % uri
+						cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
+						lrc = []
+						for line in cache:
+							lrc.append(line.decode('gbk').encode('utf-8'))
+						lrc_content = parse_lyrics(lrc)
+						if verify_lyrics(lrc_content, self.artist, self.title):
+							open(self.lrc_path, 'w').writelines(lrc)
+							break
+				break
+		print 'leave'
+		return
+
+
 class SogouLyrics(rb.Plugin):
 
 	def __init__(self):
@@ -110,36 +166,38 @@ class SogouLyrics(rb.Plugin):
 	def elapsed_changed_handler(self, player, playing):
 		if playing:
 			elapsed = player.get_playing_time()
+			if self.lrc == {} and self.load_round % 5 == 0:
+				entry = self.player.get_playing_entry ()
+				artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+				title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
+				lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
+				self.lrc = load_lyrics(lrc_path, artist, title)
+				if self.lrc != {}:
+					self.osd_display('(%s - %s) prepared' % (artist, title))
+			self.load_round += 1;
 			try:
 				self.osd_display(self.lrc[elapsed])
 			except KeyError:
 				pass
 		return
-
+		
 	def playing_song_changed_handler(self, player, entry):
 		print 'enter'
 		if entry:
+			self.load_round = 0;
 			# get playing song properties		
-			db = self.shell.get_property ('db')
-			artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = db.entry_get(entry, rhythmdb.PROP_TITLE)
+			artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			print '%s - %s' % (artist, title)
 			lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
 			# load lyrics content
-			self.lrc = {}
-			if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
-				self.lrc = parse_lyrics(open(lrc_path, 'r').readlines())
-				if not verify_lyrics(self.lrc, artist, title):
-					self.lrc = {}
-					print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
-					try:
-						os.rename(lrc_path, '%s.bak' % lrc_path)
-					except OSError:
-						print 'move broken lyrics file failed'
-			if self.lrc == {} and self.config.get_pref('download'):
-				self.lrc = self.download_lyrics(artist, title)
+			self.lrc = load_lyrics(lrc_path, artist, title)
 			if self.lrc == {}:
-				self.osd_display('(%s - %s) not found' % (artist, title))
+				if self.config.get_pref('download'):
+					self.osd_display('(%s - %s) downloading' % (artist, title))
+					SogouLyricsGrabber(artist, title, lrc_path).start()
+				else:
+					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
 				self.osd_display('(%s - %s) prepared' % (artist, title))
 		print 'leave'
@@ -172,9 +230,8 @@ class SogouLyrics(rb.Plugin):
 	
 	def open_lyrics_file(self, entry):
 		print 'enter'
-		db = self.shell.get_property ('db')
-		artist = db.entry_get(entry, rhythmdb.PROP_ARTIST)
-		title = db.entry_get(entry, rhythmdb.PROP_TITLE)
+		artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+		title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
 		lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
 		if os.path.exists(lrc_path):
 			print 'open lyrics at <%s>' % lrc_path
@@ -188,44 +245,9 @@ class SogouLyrics(rb.Plugin):
 			dlg.destroy()	
 		print 'leave'
 		return
-		
-	def download_lyrics(self, artist, title):
-		print 'enter'
-		retval = {}
-		# grab song search page
-		title_encode = urllib2.quote(detect_charset(clean_token(title)).encode('gbk'))
-		artist_encode = urllib2.quote(detect_charset(clean_token(artist)).encode('gbk'))
-		uri = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
-		print 'search page <%s>' % uri
-		cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-		for line in cache:
-			# grab lyrics search page, only use the first
-			m = re.search('geci\.so\?[^\"]*', line.decode('gbk'))
-			if not m is None:
-				uri = 'http://mp3.sogou.com/%s' % m.group(0)
-				print 'lyrics page <%s>' % uri
-				cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-				for line in cache:
-					# grab lyrics file uri, try all of them
-					m = re.search('downlrc\.jsp\?[^\"]*', line.decode('gbk'))
-					if not m is None:				
-						uri = 'http://mp3.sogou.com/%s' % m.group(0)
-						print 'lyrics file <%s>' % uri
-						cache = ClientCookie.urlopen(ClientCookie.Request(uri)).readlines()
-						lrc = []
-						for line in cache:
-							lrc.append(line.decode('gbk').encode('utf-8'))
-						lrc_content = parse_lyrics(lrc)
-						if verify_lyrics(lrc_content, artist, title):
-							lrc_path = '%s/%s - %s.lrc' % (self.config.get_pref('folder'), artist, title)
-							open(lrc_path, 'w').writelines(lrc)
-							retval = lrc_content
-							break
-				break
-		print 'leave'
-		return retval
 	
 	def activate(self, shell):
+		self.load_round = 0;
 		self.config = Preference(self.find_file('prefs.glade'))
 		if not os.path.exists(self.config.get_pref('folder')):
 			os.mkdir(self.config.get_pref('folder'))
@@ -233,6 +255,7 @@ class SogouLyrics(rb.Plugin):
 		self.lrc = {}
 		self.player = shell.get_player()
 		self.shell = shell
+		self.db = self.shell.get_property('db')
 		self.handler = [
 			self.player.connect('playing-song-changed', self.playing_song_changed_handler),
 			self.player.connect('elapsed-changed', self.elapsed_changed_handler),
@@ -267,6 +290,7 @@ class SogouLyrics(rb.Plugin):
 		del self.config
 		del self.shell
 		del self.player
+		del self.db
 		del self.handler
 		del self.lrc
 		del self.osd
