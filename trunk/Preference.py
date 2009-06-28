@@ -12,7 +12,7 @@ gconf_keys = {
 }
 engines = ['Sogou', 'ttPlayer']
 
-class Preference (object):
+class Preference:
 	def __init__(self, glade_file):
 		print 'enter'
 		# get main dialog frome glade file
@@ -112,7 +112,6 @@ class Preference (object):
 		return self.settings[key]
 		
 	def load_prefs (self):
-		self.settings['engine'] = ['Sogou']
 		print 'enter'
 		# display
 		key = 'display'
@@ -252,7 +251,7 @@ class Preference (object):
 		key = 'engine'
 		value = None
 		try:
-			value = self.gconf.get_list(self.gconf_keys['engine'], gconf.VALUE_STRING)
+			value = self.gconf.get_list(gconf_keys[key], gconf.VALUE_STRING)
 			if value is None:
 				value = engines
 		except:

@@ -3,6 +3,7 @@ import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
 from Preference import Preference
+from LyricsChooser import LyricsChooser
 from utils import *
 from Grabber import Grabber
 
@@ -50,7 +51,7 @@ class SogouLyrics(rb.Plugin):
 			if self.lrc == {}:
 				if self.prefs.get_pref('download'):
 					self.osd_display('(%s - %s) downloading' % (artist, title))
-					self.grabber.grab(artist, title, lrc_path)
+					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path).start()
 				else:
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
@@ -104,7 +105,7 @@ class SogouLyrics(rb.Plugin):
 	def activate(self, shell):
 		self.load_round = 0;
 		self.prefs = Preference(self.find_file('prefs.glade'))
-		self.grabber = Grabber(self.prefs)
+		self.chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'))
 		if not os.path.exists(self.prefs.get_pref('folder')):
 			os.mkdir(self.prefs.get_pref('folder'))
 		self.playing = 0
@@ -144,7 +145,8 @@ class SogouLyrics(rb.Plugin):
 			del action
 		#
 		del self.prefs
-		del self.grabber
+		self.chooser.destroy()
+		self.chooser = None
 		del self.shell
 		del self.player
 		del self.db
