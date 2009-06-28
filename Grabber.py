@@ -15,7 +15,7 @@ class Grabber(object):
 		return
 	
 	def grab(self, artist, title, lrc_path):
-		for key in self.prefs.get_pref('grabber'):
+		for key in self.prefs.get_pref('engine'):
 			try:
 				grabber = grabber_map[key]
 				grabber(artist, title, lrc_path).start()
