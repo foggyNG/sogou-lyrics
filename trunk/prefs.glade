@@ -13,7 +13,7 @@
           <widget class="GtkTable" id="main-table">
             <property name="visible">True</property>
             <property name="border_width">5</property>
-            <property name="n_rows">11</property>
+            <property name="n_rows">13</property>
             <property name="n_columns">2</property>
             <property name="column_spacing">8</property>
             <property name="row_spacing">3</property>
@@ -36,6 +36,8 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Turn on/off OSD display.</property>
                 <property name="draw_indicator">True</property>
               </widget>
               <packing>
@@ -50,6 +52,8 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Turn on/off lyrics downloading.</property>
                 <property name="draw_indicator">True</property>
               </widget>
               <packing>
@@ -86,6 +90,8 @@
             <child>
               <widget class="GtkComboBox" id="halign">
                 <property name="visible">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Set horizontal alignment mode on screen.</property>
                 <property name="items" translatable="yes">center
 left
 right</property>
@@ -111,6 +117,8 @@ right</property>
             <child>
               <widget class="GtkComboBox" id="vpos">
                 <property name="visible">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Set vertical position on screen.</property>
                 <property name="items" translatable="yes">top
 center
 bottom</property>
@@ -136,6 +144,8 @@ bottom</property>
             <child>
               <widget class="GtkComboBox" id="animation">
                 <property name="visible">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Turn on/off animation.</property>
                 <property name="items" translatable="yes">off
 on</property>
               </widget>
@@ -162,6 +172,7 @@ on</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="tooltip" translatable="yes">Choose foreground color.</property>
                 <property name="title" translatable="yes">Choose foreground color</property>
               </widget>
               <packing>
@@ -185,6 +196,8 @@ on</property>
             <child>
               <widget class="GtkFileChooserButton" id="folder">
                 <property name="visible">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">Choose lyrics folder.</property>
                 <property name="action">select-folder</property>
                 <property name="title" translatable="yes">Select lyrics folder</property>
               </widget>
@@ -193,6 +206,52 @@ on</property>
                 <property name="right_attach">2</property>
                 <property name="top_attach">4</property>
                 <property name="bottom_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="main-engine-label">
+                <property name="visible">True</property>
+                <property name="xalign">0</property>
+                <property name="ypad">5</property>
+                <property name="label" translatable="yes">&lt;b&gt;Search Engine&lt;/b&gt;</property>
+                <property name="use_markup">True</property>
+              </widget>
+              <packing>
+                <property name="right_attach">2</property>
+                <property name="top_attach">11</property>
+                <property name="bottom_attach">12</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkCheckButton" id="Sogou">
+                <property name="label">Sogou</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">mp3.sogou.com</property>
+                <property name="draw_indicator">True</property>
+              </widget>
+              <packing>
+                <property name="top_attach">12</property>
+                <property name="bottom_attach">13</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkCheckButton" id="ttPlayer">
+                <property name="label">ttPlayer</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">www.qianqian.com</property>
+                <property name="draw_indicator">True</property>
+              </widget>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+                <property name="top_attach">12</property>
+                <property name="bottom_attach">13</property>
               </packing>
             </child>
           </widget>
