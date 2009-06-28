@@ -4,10 +4,9 @@
 
 import re,random,urllib
 import codecs
-import threading
 from utils import *
 
-class ttpClient(object):
+class ttpClient:
     '''
     privide ttplayer specific function, such as encoding artist and title,
     generate a Id code for server authorizition.
@@ -90,15 +89,16 @@ class ttpClient(object):
 
 	return rtn
 	
-class ttPlayerGrabber(threading.Thread):
+class ttPlayerGrabber:
 	
 	def __init__(self, artist, title, lrc_path):
 		self.artist = artist
 		self.title = title
 		self.lrc_path = lrc_path
-		self.netEncoder= 'utf8'
-		self.locale = 'utf8'
-		threading.Thread.__init__(self)
+		self.netEncoder= 'utf-8'
+		self.locale = 'utf-8'
+		return
+		
 	
 	def parse(self,a):
 		b=[]
@@ -115,8 +115,9 @@ class ttPlayerGrabber(threading.Thread):
 				b.append([_artist,_title,url])
 		return b
 	
-	def run(self):
+	def search(self):
 		print 'enter'
+		retval = []
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(ttpClient.EncodeArtTit(unicode(self.artist,self.locale).replace(u' ','').lower()), ttpClient.EncodeArtTit(unicode(self.title,self.locale).replace(u' ','').lower()))
 		print 'search uri <%s>' % url
 		try:
@@ -124,27 +125,19 @@ class ttPlayerGrabber(threading.Thread):
 			webInfo=file.read()
 			file.close()
 		except IOError:
-			return
+			pass
 		else:
 			tmpList=re.findall(r'<lrc.*?</lrc>',webInfo)
-			if(len(tmpList)==0):
-				return
-			else:
-				for instance in self.parse(tmpList):
-					try:
-						print 'lyrics file <%s>' % instance[2]
-						cache = urllib.urlopen(instance[2],None,None).readlines()
-						lrc = []
-						for line in cache:
-							lrc.append(line.decode('utf-8').encode('utf-8'))
-						lrc_content = parse_lyrics(lrc)
-						lrc_content['ar'] = self.artist
-						lrc_content['ti'] = self.title
-						if verify_lyrics(lrc_content, self.artist, self.title) and not os.path.exists(self.lrc_path):
-							open(self.lrc_path, 'w').writelines(lrc)
-							break
-					except IOError:
-						pass
+			for instance in self.parse(tmpList):
+				try:
+					print 'lyrics file <%s>' % instance[2]
+					cache = urllib.urlopen(instance[2]).readlines()
+					lrc = []
+					for line in cache:
+						lrc.append(line.decode('utf-8').encode('utf-8'))
+					retval.append(lrc)
+				except IOError:
+					pass
 		print 'leave'
-		return
+		return retval
 

@@ -1,17 +1,16 @@
-import threading
 import re, ClientCookie, urllib2
 from utils import *
 
-class SogouGrabber(threading.Thread):
+class SogouGrabber:
 	
 	def __init__(self, artist, title, lrc_path):
 		self.artist = artist
 		self.title = title
 		self.lrc_path = lrc_path
-		threading.Thread.__init__(self)
 		
-	def run(self):
+	def search(self):
 		print 'enter'
+		retval = []
 		# grab song search page
 		title_encode = urllib2.quote(detect_charset(clean_token(self.title)).encode('gbk'))
 		artist_encode = urllib2.quote(detect_charset(clean_token(self.artist)).encode('gbk'))
@@ -35,10 +34,7 @@ class SogouGrabber(threading.Thread):
 						lrc = []
 						for line in cache:
 							lrc.append(line.decode('gbk').encode('utf-8'))
-						lrc_content = parse_lyrics(lrc)
-						if verify_lyrics(lrc_content, self.artist, self.title) and not os.path.exists(self.lrc_path):
-							open(self.lrc_path, 'w').writelines(lrc)
-							break
+						retval.append(lrc)
 				break
 		print 'leave'
-		return
+		return retval
