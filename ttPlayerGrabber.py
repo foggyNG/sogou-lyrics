@@ -91,10 +91,9 @@ class ttpClient:
 	
 class ttPlayerGrabber:
 	
-	def __init__(self, artist, title, lrc_path):
+	def __init__(self, artist, title):
 		self.artist = artist
 		self.title = title
-		self.lrc_path = lrc_path
 		self.netEncoder= 'utf-8'
 		self.locale = 'utf-8'
 		return

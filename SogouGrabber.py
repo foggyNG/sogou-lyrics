@@ -3,10 +3,9 @@ from utils import *
 
 class SogouGrabber:
 	
-	def __init__(self, artist, title, lrc_path):
+	def __init__(self, artist, title):
 		self.artist = artist
 		self.title = title
-		self.lrc_path = lrc_path
 		
 	def search(self):
 		print 'enter'
