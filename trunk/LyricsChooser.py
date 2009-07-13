@@ -1,8 +1,8 @@
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
 
 class LyricsChooser:
 	def __init__(self, glade_file):
-		print 'enter'
+		logging.debug('enter')
 		# get main dialog frome glade file
 		self.gconf = gconf.client_get_default()
 		self.gladexml = gtk.glade.XML(glade_file)
@@ -13,12 +13,13 @@ class LyricsChooser:
 			self.widgets[key] = self.gladexml.get_widget(key)
 		self.widgets['ok'].connect('clicked', self.response, gtk.RESPONSE_OK)
 		self.widgets['close'].connect('clicked', self.response, gtk.RESPONSE_CLOSE)
-		print 'leave'
+		logging.debug('leave')
 		return
 		
 	def response(self, widget, response):
 		if response == gtk.RESPONSE_OK:
-			print 'choosed'
+			# TODO
+			pass
 		self.window.hide()
 		return
 	

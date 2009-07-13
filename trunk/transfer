@@ -19,18 +19,20 @@ def transfer():
 	conf = gconf.client_get_default()
 	rootdir = conf.get_string(gconf_key)
 	print 'begin transfer in <%s>' % rootdir
-	list = os.listdir(os.getcwd())
+	list = os.listdir(rootdir)
 	for lrc in list:
-		if (os.path.isfile(lrc) and lrc.endswith('.lrc')):
-			print 'transferring <%s>' % lrc
+		src = os.path.join(rootdir, lrc)
+		if (os.path.isfile(src) and lrc.endswith('.lrc')):
+			print 'transferring <%s>' % (lrc)
 			try:
 				pos = lrc.find(' - ')
 				if (pos != -1):
-					subdir = lrc[:pos]
+					subdir = os.path.join(rootdir, lrc[:pos])
 					filename = lrc[pos+3:]
 					if (not os.path.exists(subdir)):
 						os.makedirs(subdir)
-					os.rename(lrc, os.path.join(subdir, filename))
+					dst = os.path.join(subdir, filename)
+					os.rename(src, dst)
 			except Exception as e:
 				print e
 	print 'transer finished'

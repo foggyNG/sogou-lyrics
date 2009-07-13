@@ -1,4 +1,4 @@
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
 
 gconf_keys = {
 'display' : '/apps/rhythmbox/plugins/SogouLyrics/display',
@@ -14,7 +14,7 @@ engines = ['Sogou', 'ttPlayer']
 
 class Preference:
 	def __init__(self, glade_file):
-		print 'enter'
+		logging.debug('enter')
 		# get main dialog frome glade file
 		self.gconf = gconf.client_get_default()
 		self.gladexml = gtk.glade.XML(glade_file)
@@ -30,7 +30,7 @@ class Preference:
 		# load settings
 		self.settings = {}
 		self.load_prefs()
-		print 'leave'
+		logging.debug('leave')
 		return
 		
 	def dialog_response(self, dialog, response):
@@ -41,7 +41,7 @@ class Preference:
 		value = widget.get_active()
 		self.settings[key] = value
 		self.gconf.set_bool(gconf_keys[key], value)
-		print '%s : %d' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 	
 	def set_download(self, widget):
@@ -49,7 +49,7 @@ class Preference:
 		value = widget.get_active()
 		self.settings[key] = value
 		self.gconf.set_bool(gconf_keys[key], value)
-		print '%s : %d' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_halign(self, widget):
@@ -57,7 +57,7 @@ class Preference:
 		value = widget.get_active_text()
 		self.settings[key] = value
 		self.gconf.set_string(gconf_keys[key], value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_vpos(self, widget):
@@ -65,7 +65,7 @@ class Preference:
 		value = widget.get_active_text()
 		self.settings[key] = value
 		self.gconf.set_string(gconf_keys[key], value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_fgcolor(self, widget):
@@ -73,7 +73,7 @@ class Preference:
 		value = widget.get_color().to_string()
 		self.settings[key] = value
 		self.gconf.set_string(gconf_keys[key], value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_animation(self, widget):
@@ -81,7 +81,7 @@ class Preference:
 		value = widget.get_active_text()
 		self.settings[key] = value
 		self.gconf.set_string(gconf_keys[key], value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_folder(self, widget):
@@ -89,7 +89,7 @@ class Preference:
 		value = widget.get_filename()
 		self.settings[key] = value
 		self.gconf.set_string(gconf_keys[key], value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 
 	def set_engine(self, widget):
@@ -102,7 +102,7 @@ class Preference:
 			value.remove(widget_key)
 		self.settings[key] = value
 		self.gconf.set_list(gconf_keys[key], gconf.VALUE_STRING, value)
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		return
 		
 	def get_dialog (self):
@@ -112,7 +112,7 @@ class Preference:
 		return self.settings[key]
 		
 	def load_prefs (self):
-		print 'enter'
+		logging.debug('enter')
 		# display
 		key = 'display'
 		value = None
@@ -122,7 +122,7 @@ class Preference:
 		except:
 			value = True
 		self.settings[key] = value
-		print '%s : %d' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_active(value)
 		widget.connect('toggled', self.set_display)
 		# download
@@ -134,7 +134,7 @@ class Preference:
 		except:
 			value = True
 		self.settings[key] = value
-		print '%s : %d' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_active(value)
 		widget.connect('toggled', self.set_download)
 		# halign
@@ -161,7 +161,7 @@ class Preference:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_halign)
 		# vpos
@@ -188,7 +188,7 @@ class Preference:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_vpos)
 		# fgcolor
@@ -201,7 +201,7 @@ class Preference:
 		except:
 			value = '#FFFF00'
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_color(gtk.gdk.color_parse(value))
 		widget.connect('color-set', self.set_fgcolor)
 		# animation
@@ -228,7 +228,7 @@ class Preference:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_animation)
 		# folder
@@ -242,7 +242,7 @@ class Preference:
 		except:
 			value = os.path.expanduser('~/.lyrics')
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		widget.set_filename(value)
 		widget.connect('file-set', self.set_folder)
 		# pygtk bug
@@ -257,9 +257,9 @@ class Preference:
 		except:
 			value = engines
 		self.settings[key] = value
-		print '%s : %s' % (key, value)
+		logging.info('%s : %s' % (key, value))
 		for engine in engines:
 			self.widgets[engine].set_active(engine in value)
 			self.widgets[engine].connect('toggled', self.set_engine)
-		print 'leave'
+		logging.debug('leave')
 		return
