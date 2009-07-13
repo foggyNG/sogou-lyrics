@@ -1,6 +1,13 @@
-import os, re
+import os, re, logging
 
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
+LRC_PATH_TEMPLATE = ['%s/%s/%s.lrc', '%s/%s - %s.lrc']
+
+def gen_lrc_path(dir, artist, title):
+	ret = []
+	for i in LRC_PATH_TEMPLATE:
+		ret.append(i % (dir, artist, title))
+	return ret
 
 def detect_charset(s):
 	charsets = ('iso-8859-1', 'gbk', 'utf-8')
@@ -12,7 +19,7 @@ def detect_charset(s):
 	return s
 
 def parse_lyrics(lines):
-	print 'enter'
+	logging.debug('enter')
 	content = {}
 	cache = {}
 	re_ti = re.compile('\[ti:[^\]]*\]')
@@ -53,7 +60,7 @@ def parse_lyrics(lines):
 					key = (minute * 60 + second) * 1000 + centi * 10
 					cache[key] = lrc
 				except ValueError:
-					print 'invalid timestamp %s' % time
+					logging.error('invalid timestamp %s' % time)
 	tags = cache.keys()
 	tags.sort()
 	for key in tags:
@@ -63,7 +70,7 @@ def parse_lyrics(lines):
 		else:
 			content[second] = cache[key]
 	del cache
-	print 'leave'
+	logging.debug('leave')
 	return content
 
 def clean_token(token):
@@ -73,35 +80,32 @@ def clean_token(token):
 	return result
 	
 def verify_lyrics(content, artist, title):
-	print 'enter'
+	logging.debug('enter')
 	retval = 0
 	if not content.has_key('ar'):
-		print 'cannot find artist in lyrics'
+		logging.warning('cannot find artist')
 	elif not content.has_key('ti'):
-		print 'cannot find title in lyrics'
+		logging.warning('cannot find title')
 	else:
 		ar = content['ar']
 		ti = content['ti']
-		print '%s - %s' % (ar, ti)
+		logging.debug('%s - %s' % (ar, ti))
 		ar = clean_token(ar)
 		ti = clean_token(ti)
 		ar1 = clean_token(artist)
 		ti1 = clean_token(title)
 		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
 			retval = 1
-	print 'leave'
+	logging.debug('leave')
 	return retval
 
 def load_lyrics(lrc_path, artist, title):
+	logging.debug('enter')
 	lrc = {}
-	if os.path.exists(lrc_path) and os.path.isfile(lrc_path):
-		lrc = parse_lyrics(open(lrc_path, 'r').readlines())
-		'''if not verify_lyrics(lrc, artist, title):
-			lrc = {}
-			print 'broken lyrics file %s moved to %s.bak' % (lrc_path, lrc_path)
-			try:
-				os.rename(lrc_path, '%s.bak' % lrc_path)
-			except OSError:
-				print 'move broken lyrics file failed'
-		'''
+	for i in lrc_path:
+		if os.path.isfile(i):
+			logging.debug('loading <%s>' % i)
+			lrc = parse_lyrics(open(i, 'r').readlines())
+			break
+	logging.debug('leave')
 	return lrc

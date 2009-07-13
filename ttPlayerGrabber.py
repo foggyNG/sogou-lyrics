@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 # Filename: ttPlayer.py
 
-import re,random,urllib
+import re, random, urllib, logging
 import codecs
 from utils import *
 
@@ -115,10 +115,10 @@ class ttPlayerGrabber:
 		return b
 	
 	def search(self):
-		print 'enter'
+		logging.debug('enter')
 		retval = []
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(ttpClient.EncodeArtTit(unicode(self.artist,self.locale).replace(u' ','').lower()), ttpClient.EncodeArtTit(unicode(self.title,self.locale).replace(u' ','').lower()))
-		print 'search uri <%s>' % url
+		logging.info('search uri <%s>' % url)
 		try:
 			file=urllib.urlopen(url,None,None)
 			webInfo=file.read()
@@ -129,7 +129,7 @@ class ttPlayerGrabber:
 			tmpList=re.findall(r'<lrc.*?</lrc>',webInfo)
 			for instance in self.parse(tmpList):
 				try:
-					print 'lyrics file <%s>' % instance[2]
+					logging.info('lyrics file <%s>' % instance[2])
 					cache = urllib.urlopen(instance[2]).readlines()
 					lrc = []
 					for line in cache:
@@ -137,6 +137,6 @@ class ttPlayerGrabber:
 					retval.append(lrc)
 				except IOError:
 					pass
-		print 'leave'
+		logging.debug('leave')
 		return retval
 

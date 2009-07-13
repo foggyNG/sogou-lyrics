@@ -1,4 +1,4 @@
-import os, ClientCookie, urllib2, re
+import os, ClientCookie, urllib2, re, logging
 import rhythmdb, rb
 from gnomeosd import eventbridge
 import gobject, gtk, gconf
@@ -26,7 +26,7 @@ class SogouLyrics(rb.Plugin):
 				entry = self.player.get_playing_entry ()
 				artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 				title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-				lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
+				lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
 				self.lrc = load_lyrics(lrc_path, artist, title)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
@@ -38,85 +38,83 @@ class SogouLyrics(rb.Plugin):
 		return
 		
 	def playing_song_changed_handler(self, player, entry):
-		print 'enter'
+		logging.debug('enter')
 		if entry:
 			self.load_round = 0;
 			# get playing song properties		
 			artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-			print '%s - %s' % (artist, title)
-			lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
+			logging.info('%s - %s' % (artist, title))
+			lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
 			# load lyrics content
 			self.lrc = load_lyrics(lrc_path, artist, title)
 			if self.lrc == {}:
 				if self.prefs.get_pref('download'):
 					self.osd_display('(%s - %s) downloading' % (artist, title))
-					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path, self.chooser).start()
+					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path[0], self.chooser).start()
 				else:
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
 				self.osd_display('(%s - %s) prepared' % (artist, title))
-		print 'leave'
-		return
-
-	def playing_changed_handler(self, player, playing):
-		# set player status		
-		self.playing = playing
-		print 'player status changed to %d' % playing
+		logging.debug('leave')
 		return
 
 	def open_lyrics_popup(self, action):
-		print 'enter'
+		logging.debug('enter')
 		source = self.shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
 			entry = selected[0]
 			self.open_lyrics_file(entry)
-		print 'leave'
+		logging.debug('leave')
 		return
 	
 	def open_lyrics_shortcut(self, action):
-		print 'enter'
+		logging.debug('enter')
 		entry = self.player.get_playing_entry ()
 		if entry:
 			self.open_lyrics_file(entry)
-		print 'leave'
+		logging.debug('leave')
 		return
 	
 	def open_lyrics_file(self, entry):
-		print 'enter'
+		logging.debug('enter')
+		ret = False
 		artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-		lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
-		if os.path.exists(lrc_path):
-			print 'open lyrics at <%s>' % lrc_path
-			os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
-		else:
-			print 'lyrics not found (%s - %s)' % (artist, title)
+		lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
+		for i in lrc_path:
+			if os.path.exists(i):
+				logging.info('open <%s>' % i)
+				os.system('/usr/bin/xdg-open \"%s\"' % i)
+				ret = True
+				break
+		if not ret:
+			logging.info('lyrics not found (%s - %s)' % (artist, title))
 			message = 'Artist:\t%s\nTitle:\t%s\nLyrics not found!' % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
 			dlg.set_title('Open Lyrics')
 			dlg.run()
 			dlg.destroy()	
-		print 'leave'
-		return
+		logging.debug('leave %s' % ret)
+		return ret
 	
 	def activate(self, shell):
+		# logging
+		logging.basicConfig(level=logging.DEBUG, format= 'SogouLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
 		self.load_round = 0;
 		self.prefs = Preference(self.find_file('prefs.glade'))
 		self.chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'))
 		if not os.path.exists(self.prefs.get_pref('folder')):
 			os.mkdir(self.prefs.get_pref('folder'))
-		self.playing = 0
 		self.lrc = {}
 		self.player = shell.get_player()
 		self.shell = shell
 		self.db = self.shell.get_property('db')
 		self.handler = [
 			self.player.connect('playing-song-changed', self.playing_song_changed_handler),
-			self.player.connect('elapsed-changed', self.elapsed_changed_handler),
-			self.player.connect('playing-changed', self.playing_changed_handler)]
+			self.player.connect('elapsed-changed', self.elapsed_changed_handler)]
 		self.osd = eventbridge.OSD()
 		#
 		self.action = [
@@ -132,7 +130,8 @@ class SogouLyrics(rb.Plugin):
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		print 'Sogou Lyrics activated'
+		#datefmt= '%m-%d %H:%M',)
+		logging.info('Sogou Lyrics activated')
 		return
 
 	def deactivate(self, shell):
@@ -154,7 +153,7 @@ class SogouLyrics(rb.Plugin):
 		del self.osd
 		del self.action_group
 		del self.action
-		print 'Sogou Lyrics deactivated'
+		logging.info('Sogou Lyrics deactivated')
 		return
 
 	def create_configure_dialog(self):

@@ -1,4 +1,4 @@
-import os, re
+import os, re, logging
 from utils import *
 from Preference import Preference
 from SogouGrabber import SogouGrabber
@@ -23,7 +23,7 @@ class Grabber(Thread):
 		return
 	
 	def run(self):
-		print 'enter'
+		logging.debug('enter')
 		found = False
 		candidate = []
 		for key in self.engines:
@@ -52,13 +52,13 @@ class Grabber(Thread):
 			except KeyError:
 				pass
 		if not found:
-			print '%d candidates found' % len(candidate)
+			logging.info('%d candidates found' % len(candidate))
 			for c in candidate:
-				print 'candidate: %s - %s' % (c[0], c[1])
+				logging.info('candidate: %s - %s' % (c[0], c[1]))
 			'''
 			self.chooser.get_window().show_all()
 			gdk.threads_enter()
 			'''
-		print 'leave'
+		logging.debug('leave')
 		return
 
