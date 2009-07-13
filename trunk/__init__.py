@@ -26,7 +26,7 @@ class SogouLyrics(rb.Plugin):
 				entry = self.player.get_playing_entry ()
 				artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 				title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-				lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
+				lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 				self.lrc = load_lyrics(lrc_path, artist, title)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
@@ -45,13 +45,13 @@ class SogouLyrics(rb.Plugin):
 			artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			print '%s - %s' % (artist, title)
-			lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
+			lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 			# load lyrics content
 			self.lrc = load_lyrics(lrc_path, artist, title)
 			if self.lrc == {}:
 				if self.prefs.get_pref('download'):
 					self.osd_display('(%s - %s) downloading' % (artist, title))
-					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path).start()
+					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path, self.chooser).start()
 				else:
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
@@ -88,7 +88,7 @@ class SogouLyrics(rb.Plugin):
 		print 'enter'
 		artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
-		lrc_path = '%s/%s - %s.lrc' % (self.prefs.get_pref('folder'), artist, title)
+		lrc_path = '%s/%s/%s.lrc' % (self.prefs.get_pref('folder'), artist, title)
 		if os.path.exists(lrc_path):
 			print 'open lyrics at <%s>' % lrc_path
 			os.system('/usr/bin/xdg-open \"%s\"' % lrc_path)
@@ -145,8 +145,7 @@ class SogouLyrics(rb.Plugin):
 			del action
 		#
 		del self.prefs
-		self.chooser.destroy()
-		self.chooser = None
+		del self.chooser
 		del self.shell
 		del self.player
 		del self.db
@@ -162,3 +161,10 @@ class SogouLyrics(rb.Plugin):
 		dialog = self.prefs.get_dialog()
 		dialog.present()
 		return dialog
+'''
+if __name__ == '__main__':
+	gtk.gdk.threads_init()
+	gtk.gdk.threads_enter()
+	gtk.main()
+	gtk.gdk.threads_enter()
+'''

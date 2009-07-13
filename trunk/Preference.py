@@ -246,7 +246,7 @@ class Preference:
 		widget.set_filename(value)
 		widget.connect('file-set', self.set_folder)
 		# pygtk bug
-		widget.connect('selection-changed', self.set_folder)
+		# widget.connect('selection-changed', self.set_folder)
 		# engine
 		key = 'engine'
 		value = None
