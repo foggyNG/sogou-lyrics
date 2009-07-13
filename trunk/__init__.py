@@ -102,7 +102,7 @@ class SogouLyrics(rb.Plugin):
 	
 	def activate(self, shell):
 		# logging
-		logging.basicConfig(level=logging.DEBUG, format= 'SogouLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
+		logging.basicConfig(level=logging.INFO, format= 'SogouLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
 		self.load_round = 0;
 		self.prefs = Preference(self.find_file('prefs.glade'))
 		self.chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'))
