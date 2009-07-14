@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
 import os, re, logging
 
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
@@ -99,7 +102,7 @@ def verify_lyrics(content, artist, title):
 	logging.debug('leave')
 	return retval
 
-def load_lyrics(lrc_path, artist, title):
+def load_lyrics(lrc_path):
 	logging.debug('enter')
 	lrc = {}
 	for i in lrc_path:

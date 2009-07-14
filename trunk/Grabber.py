@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
 import os, re, logging
 from utils import *
 from Preference import Preference
@@ -11,15 +14,14 @@ grabber_map = {
 	'ttPlayer' : ttPlayerGrabber,
 	'Sogou' : SogouGrabber
 }
-class Grabber(Thread):
+class Grabber:
 	
-	def __init__(self, engines, artist, title, lrc_path, chooser):
+	def __init__(self, engines, artist, title, lrc_path, callback):
 		self.engines = engines
 		self.artist = artist
 		self.title = title
 		self.lrc_path = lrc_path
-		self.chooser = chooser
-		Thread.__init__(self)
+		self.callback = callback
 		return
 	
 	def run(self):
@@ -34,10 +36,9 @@ class Grabber(Thread):
 					lrc_content = parse_lyrics(lrc)
 					if verify_lyrics(lrc_content, self.artist, self.title):
 						found = True
-						subdir = os.path.dirname(self.lrc_path)
-						if (not os.path.exists(subdir)):
-							os.makedirs(subdir)
-						open(self.lrc_path, 'w').writelines(lrc)
+						artist = lrc_content['ar']
+						title = lrc_content['ti']
+						candidate = [[artist, title, lrc]]
 						break
 					else:
 						artist = ''
@@ -51,14 +52,10 @@ class Grabber(Thread):
 					break
 			except KeyError:
 				pass
-		if not found:
-			logging.info('%d candidates found' % len(candidate))
-			for c in candidate:
-				logging.info('candidate: %s - %s' % (c[0], c[1]))
-			'''
-			self.chooser.get_window().show_all()
-			gdk.threads_enter()
-			'''
+		self.callback(found, candidate, self.artist, self.title, self.lrc_path)
 		logging.debug('leave')
 		return
-
+	
+	def get_lyrics(self):
+		self.run()
+		return

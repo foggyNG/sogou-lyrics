@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
-# Filename: ttPlayer.py
 
 import re, random, urllib, logging
 import codecs

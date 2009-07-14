@@ -5,8 +5,8 @@
   <widget class="GtkWindow" id="lyrics-chooser">
     <property name="title" translatable="yes">Lyrics Chooser</property>
     <property name="window_position">center</property>
-    <property name="default_width">400</property>
-    <property name="default_height">300</property>
+    <property name="default_width">640</property>
+    <property name="default_height">480</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -16,7 +16,7 @@
           <widget class="GtkHPaned" id="hpaned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="position">100</property>
+            <property name="position">180</property>
             <child>
               <widget class="GtkScrolledWindow" id="scrolledwindow2">
                 <property name="visible">True</property>
