@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
 import os, ClientCookie, urllib2, re, logging
 import rhythmdb, rb
 from gnomeosd import eventbridge
@@ -27,7 +30,7 @@ class SogouLyrics(rb.Plugin):
 				artist = self.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 				title = self.db.entry_get(entry, rhythmdb.PROP_TITLE)
 				lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
-				self.lrc = load_lyrics(lrc_path, artist, title)
+				self.lrc = load_lyrics(lrc_path)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
 			self.load_round += 1;
@@ -36,7 +39,27 @@ class SogouLyrics(rb.Plugin):
 			except KeyError:
 				pass
 		return
-		
+	
+	def receive_lyrics(self, found, lyrics, artist, title, lrc_path):
+		logging.debug('enter')
+		if found:
+			logging.info('(%s - %s) prepared' % (artist, title))
+			self.osd_display('(%s - %s) prepared' % (artist, title))
+			dir = os.path.dirname(lrc_path)
+			if not os.path.exists(dir):
+				os.makedirs(dir)
+			open(lrc_path, 'w').writelines(lyrics[0][2])
+		else:
+			n_candidates = len(lyrics)
+			logging.info('%d candidates found for (%s - %s)' % (n_candidates, artist, title))
+			if n_candidates == 0:
+				self.osd_display('(%s - %s) not found' % (artist, title))
+			else:
+				self.chooser.set_instance(lyrics, lrc_path)
+				self.chooser.show(artist, title)
+		logging.debug('leave')
+		return
+	
 	def playing_song_changed_handler(self, player, entry):
 		logging.debug('enter')
 		if entry:
@@ -47,11 +70,11 @@ class SogouLyrics(rb.Plugin):
 			logging.info('%s - %s' % (artist, title))
 			lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
 			# load lyrics content
-			self.lrc = load_lyrics(lrc_path, artist, title)
+			self.lrc = load_lyrics(lrc_path)
 			if self.lrc == {}:
 				if self.prefs.get_pref('download'):
 					self.osd_display('(%s - %s) downloading' % (artist, title))
-					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path[0], self.chooser).start()
+					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path[0], self.receive_lyrics).get_lyrics()
 				else:
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
@@ -130,7 +153,6 @@ class SogouLyrics(rb.Plugin):
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		#datefmt= '%m-%d %H:%M',)
 		logging.info('Sogou Lyrics activated')
 		return
 
@@ -160,10 +182,4 @@ class SogouLyrics(rb.Plugin):
 		dialog = self.prefs.get_dialog()
 		dialog.present()
 		return dialog
-'''
-if __name__ == '__main__':
-	gtk.gdk.threads_init()
-	gtk.gdk.threads_enter()
-	gtk.main()
-	gtk.gdk.threads_enter()
-'''
+

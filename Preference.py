@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
 
 gconf_keys = {
