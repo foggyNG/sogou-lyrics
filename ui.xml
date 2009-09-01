@@ -1,31 +1,37 @@
 <ui>
   <popup name="BrowserSourceViewPopup">
     <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyricsPopup"/>
+      <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
   </popup>
 
   <popup name="PlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyricsPopup"/>
+      <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
   </popup>
 
   <popup name="QueuePlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyricsPopup"/>
+      <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
   </popup>
 
   <popup name="PodcastViewPopup">
     <placeholder name="PluginPlaceholder">
-      <menuitem name="OpenLyricsPopup" action="OpenLyricsPopup"/>
+      <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
   </popup>
   
-  <menubar name="MenuBar">
+  <!--<menubar name="MenuBar">
 	<menu name="ViewMenu" action="View">
-	  <menuitem name="OpenLyricsShortcut" action="OpenLyricsShortcut"/>
+	  <menuitem name="OpenLyrics" action="OpenLyricsMenuBar"/>
 	</menu>
-  </menubar>
+  </menubar> -->
+
+  <toolbar name="ToolBar">
+  	<placeholder name="PluginPlaceHolder">
+		<toolitem name="OpenLyrics" action="OpenLyricsToolBar"/>
+	</placeholder>
+	</toolbar>
 </ui>

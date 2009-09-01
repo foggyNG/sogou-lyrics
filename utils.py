@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, re, logging
+import os, re, logging, urllib2
 
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 LRC_PATH_TEMPLATE = ['%s/%s/%s.lrc', '%s/%s - %s.lrc']
