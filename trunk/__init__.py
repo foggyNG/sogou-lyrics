@@ -33,6 +33,8 @@ class SogouLyrics(rb.Plugin):
 				self.lrc = load_lyrics(lrc_path)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
+					# self.player.do_next()
+					# return
 			self.load_round += 1;
 			try:
 				self.osd_display(self.lrc[elapsed])
@@ -54,6 +56,7 @@ class SogouLyrics(rb.Plugin):
 			logging.info('%d candidates found for (%s - %s)' % (n_candidates, artist, title))
 			if n_candidates == 0:
 				self.osd_display('(%s - %s) not found' % (artist, title))
+				# self.player.do_next()
 			else:
 				self.chooser.set_instance(lyrics, lrc_path)
 				self.chooser.show(artist, title)
@@ -79,6 +82,8 @@ class SogouLyrics(rb.Plugin):
 					self.osd_display('(%s - %s) not found' % (artist, title))
 			else:
 				self.osd_display('(%s - %s) prepared' % (artist, title))
+				# self.player.do_next()
+				# return
 		logging.debug('leave')
 		return
 
@@ -141,14 +146,27 @@ class SogouLyrics(rb.Plugin):
 		self.osd = eventbridge.OSD()
 		#
 		self.action = [
-			gtk.Action('OpenLyricsPopup', _('Open Lyrics'), _('Open the lyrics of the selected song'), 'SogouLyrics'),
-			gtk.Action('OpenLyricsShortcut', _('Open Playing _Lyrics'), _('Open the lyrics of the playing song'), 'SogouLyrics')]
-		self.action[0].connect('activate', self.open_lyrics_popup)
-		self.action[1].connect('activate', self.open_lyrics_shortcut)
+			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'SogouLyrics'),
+			gtk.Action('OpenLyricsPopup', _('Open Lyrics'), _('Open the lyrics of the selected song'), 'SogouLyrics')]
+			#gtk.Action('OpenLyricsMenuBar', _('Open Playing Lyrics'), _('Open the lyrics of the playing song'), 'SogouLyrics')]
+		self.action[0].connect('activate', self.open_lyrics_shortcut)
+		self.action[1].connect('activate', self.open_lyrics_popup)
+		#self.action[2].connect('activate', self.open_lyrics_shortcut)
 		self.action_group = gtk.ActionGroup('SogouLyricsActions')
 		self.action_group.add_action(self.action[0])
-		self.action_group.add_action_with_accel (self.action[1], "<control>L")
+		self.action_group.add_action(self.action[1])
+		#self.action_group.add_action_with_accel (self.action[2], "<control>L")
 		
+		# add icon
+		icon_file_name = self.find_file("open-lyrics.svg")
+		iconsource = gtk.IconSource()
+		iconsource.set_filename(icon_file_name)
+		iconset = gtk.IconSet()
+		iconset.add_source(iconsource)
+		iconfactory = gtk.IconFactory()
+		iconfactory.add("SogouLyrics", iconset)
+		iconfactory.add_default()
+		#
 		uim = shell.get_ui_manager ()
 		uim.insert_action_group(self.action_group, 0)
 		self.ui_id = uim.add_ui_from_file(self.find_file('ui.xml'))
@@ -162,6 +180,7 @@ class SogouLyrics(rb.Plugin):
 		uim = shell.get_ui_manager()
 		uim.remove_ui (self.ui_id)
 		uim.remove_action_group (self.action_group)
+		uim.ensure_update()
 		for action in self.action:
 			del action
 		#
