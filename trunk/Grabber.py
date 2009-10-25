@@ -31,7 +31,7 @@ class Grabber:
 		for key in self.engines:
 			try:
 				engine = grabber_map[key]
-				received = engine(self.artist, self.title).search()
+				received = engine(clean_token(self.artist), clean_token(self.title)).search()
 				for lrc in received:
 					lrc_content = parse_lyrics(lrc)
 					dist = verify_lyrics(lrc_content, self.artist, self.title)
