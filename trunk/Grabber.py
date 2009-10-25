@@ -34,25 +34,23 @@ class Grabber:
 				received = engine(self.artist, self.title).search()
 				for lrc in received:
 					lrc_content = parse_lyrics(lrc)
-					if verify_lyrics(lrc_content, self.artist, self.title):
-						found = True
+					dist = verify_lyrics(lrc_content, self.artist, self.title)
+					artist = ''
+					title = ''
+					if lrc_content.has_key('ar'):
 						artist = lrc_content['ar']
+					if lrc_content.has_key('ti'):
 						title = lrc_content['ti']
-						candidate = [[artist, title, lrc]]
+					candidate.append([dist, artist, title, lrc])
+					if dist == 0:
+						found = True
 						break
-					else:
-						artist = ''
-						title = ''
-						if lrc_content.has_key('ar'):
-							artist = lrc_content['ar']
-						if lrc_content.has_key('ti'):
-							title = lrc_content['ti']
-						candidate.append([artist, title, lrc])
 				if found:
 					break
 			except KeyError:
 				pass
-		self.callback(found, candidate, self.artist, self.title, self.lrc_path)
+		candidate.sort()
+		self.callback(candidate, self.artist, self.title, self.lrc_path)
 		logging.debug('leave')
 		return
 	

@@ -85,20 +85,13 @@ def clean_token(token):
 def verify_lyrics(content, artist, title):
 	logging.debug('enter')
 	retval = 0
-	if not content.has_key('ar'):
-		logging.warning('cannot find artist')
-	elif not content.has_key('ti'):
-		logging.warning('cannot find title')
-	else:
+	ar = ''
+	ti = ''
+	if content.has_key('ar'):
 		ar = content['ar']
+	if content.has_key('ti'):
 		ti = content['ti']
-		logging.debug('%s - %s' % (ar, ti))
-		ar = clean_token(ar)
-		ti = clean_token(ti)
-		ar1 = clean_token(artist)
-		ti1 = clean_token(title)
-		if ar.find(ar1) != -1 and ti.find(ti1) != -1:
-			retval = 1
+	retval = edit_distance(ar, artist) + edit_distance(ti, title)
 	logging.debug('leave')
 	return retval
 
@@ -112,3 +105,20 @@ def load_lyrics(lrc_path):
 			break
 	logging.debug('leave')
 	return lrc
+
+def edit_distance(left, right):
+	m = len(left)
+	n = len(right)
+	if m == 0 or n == 0:
+		return m + n
+	dist = []
+	for i in range(m+1):
+		dist.append(range(n+1))
+	for i in range(m+1):
+		dist[i][0] = i
+	for i in range(n+1):
+		dist[0][i] = i
+	for i in range(1,m+1):
+		for j in range(1,n+1):
+			dist[i][j] = min(dist[i-1][j-1] + int(left[i-1] != right[j-1]), dist[i-1][j]+1, dist[i][j-1]+1)
+	return dist[m][n]
