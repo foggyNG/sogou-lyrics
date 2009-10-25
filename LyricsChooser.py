@@ -58,9 +58,9 @@ class LyricsChooser:
 		self.lyrics = []
 		count = 0
 		for c in candidates:
-			self.token.append([count, '%s - %s' % (c[0], c[1])])
+			self.token.append([count, '%s - %s' % (c[1], c[2])])
 			count = count + 1
-			self.lyrics.append(string.join(c[2], ''))
+			self.lyrics.append(string.join(c[3], ''))
 		#
 		self.chooser.get_selection().select_iter(self.token.get_iter_first())
 		logging.debug('leave')

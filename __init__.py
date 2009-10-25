@@ -42,24 +42,22 @@ class SogouLyrics(rb.Plugin):
 				pass
 		return
 	
-	def receive_lyrics(self, found, lyrics, artist, title, lrc_path):
+	def receive_lyrics(self, lyrics, artist, title, lrc_path):
 		logging.debug('enter')
-		if found:
+		n_candidates = len(lyrics)
+		if n_candidates == 0:
+			self.osd_display('(%s - %s) not found' % (artist, title))
+		elif lyrics[0][0] == 0:
 			logging.info('(%s - %s) prepared' % (artist, title))
 			self.osd_display('(%s - %s) prepared' % (artist, title))
 			dir = os.path.dirname(lrc_path)
 			if not os.path.exists(dir):
 				os.makedirs(dir)
-			open(lrc_path, 'w').writelines(lyrics[0][2])
+			open(lrc_path, 'w').writelines(lyrics[0][3])
 		else:
-			n_candidates = len(lyrics)
 			logging.info('%d candidates found for (%s - %s)' % (n_candidates, artist, title))
-			if n_candidates == 0:
-				self.osd_display('(%s - %s) not found' % (artist, title))
-				# self.player.do_next()
-			else:
-				self.chooser.set_instance(lyrics, lrc_path)
-				self.chooser.show(artist, title)
+			self.chooser.set_instance(lyrics, lrc_path)
+			self.chooser.show(artist, title)
 		logging.debug('leave')
 		return
 	
