@@ -12,54 +12,57 @@ def gen_lrc_path(dir, artist, title):
 		ret.append(i % (dir, artist, title))
 	return ret
 
-def detect_charset(s):
-	charsets = ('iso-8859-1', 'gbk', 'utf-8')
-	for charset in charsets:
-		try:
-			return unicode(unicode(s, 'utf-8').encode(charset), 'gbk')
-		except:
-			continue
-	return s
-
-def parse_lyrics(lines):
+def load_lyrics(paths):
 	logging.debug('enter')
+	ret = {}
+	for p in paths:
+		if os.path.isfile(p):
+			ret = parse_lyrics(open(p).read())
+			break
+	logging.debug('leave')
+	return ret
+	
+def parse_lyrics(content):
+	logging.debug('enter')
+	lines = content.split(os.linesep)
 	content = {}
 	cache = {}
-	re_ti = re.compile('\[ti:[^\]]*\]')
-	re_ar = re.compile('\[ar:[^\]]*\]')
-	re_offset = re.compile('\[offset:[^\]]*\]')
+	re_ti = re.compile('\[ti:([^\]]*)\]')
+	re_ar = re.compile('\[ar:([^\]]*)\]')
+	re_offset = re.compile('\[offset:([^\]]*)\]')
 	re_lrc = re.compile('(\[[0-9\.:]*\])+.*')
-	re_time = re.compile('\[[0-9]{2}:[0-9]{2}\.[0-9]{2}\]')
+	re_time = re.compile('(\[([0-9]{2}):([0-9]{2})\.?([0-9]{2})?\])')
 	offset = 0
 	for line in lines:
 		# search for title property
 		m = re_ti.search(line)
 		if not m is None:
-			segment = m.group(0)
-			content['ti'] = segment[4:-1]
+			content['ti'] = m.groups()[0]
 		# search for artist property
 		m = re_ar.search(line)
 		if not m is None:
-			segment = m.group(0)
-			content['ar'] = segment[4:-1]
+			content['ar'] = m.groups()[0]
 		# search for offset property
 		m = re_offset.search(line)
 		if not m is None:
-			segment = m.group(0)
-			offset = int(segment[8:-1])
+			offset = int(m.groups()[0])
 		# parse lrc
 		m = re_lrc.match(line)
 		if not m is None:
 			pos = 0
 			tm = re_time.findall(line)
 			for time in tm:
-				pos = pos + len(time)
-			lrc = m.group(0)[pos:]
+				pos = pos + len(time[0])
+			lrc = line[pos:]
 			for time in tm:
+				#logging.debug(time)
 				try:
-					minute = int(time[1:3])
-					second = int(time[4:6])
-					centi = int(time[7:9])
+					minute = int(time[1])
+					second = int(time[2])
+					try:
+						centi = int(time[3])
+					except:
+						centi = 0
 					key = (minute * 60 + second) * 1000 + centi * 10
 					cache[key] = lrc
 				except ValueError:
@@ -72,7 +75,7 @@ def parse_lyrics(lines):
 			content[second] += cache[key]
 		else:
 			content[second] = cache[key]
-	del cache
+	del cache, lines
 	logging.debug('leave')
 	return content
 
@@ -82,7 +85,7 @@ def clean_token(token):
 		result = re.sub(strip, TOKEN_STRIP[strip], result)
 	return result
 	
-def verify_lyrics(content, artist, title):
+def verify_lyrics(content, lrcinfo):
 	logging.debug('enter')
 	retval = 0
 	ar = ''
@@ -91,20 +94,9 @@ def verify_lyrics(content, artist, title):
 		ar = content['ar']
 	if content.has_key('ti'):
 		ti = content['ti']
-	retval = edit_distance(ar, artist) + edit_distance(ti, title)
+	retval = edit_distance(ar, lrcinfo['ar']) + edit_distance(ti, lrcinfo['ti'])
 	logging.debug('leave')
 	return retval
-
-def load_lyrics(lrc_path):
-	logging.debug('enter')
-	lrc = {}
-	for i in lrc_path:
-		if os.path.isfile(i):
-			logging.debug('loading <%s>' % i)
-			lrc = parse_lyrics(open(i, 'r').readlines())
-			break
-	logging.debug('leave')
-	return lrc
 
 def edit_distance(left, right):
 	m = len(left)
@@ -122,3 +114,14 @@ def edit_distance(left, right):
 		for j in range(1,n+1):
 			dist[i][j] = min(dist[i-1][j-1] + int(left[i-1] != right[j-1]), dist[i-1][j]+1, dist[i][j-1]+1)
 	return dist[m][n]
+
+def gen_lrc_instance(content, lrcinfo):
+	lrc_content = parse_lyrics(content)
+	dist = verify_lyrics(lrc_content, lrcinfo)
+	artist = ''
+	title = ''
+	if lrc_content.has_key('ar'):
+		artist = lrc_content['ar']
+	if lrc_content.has_key('ti'):
+		title = lrc_content['ti']
+	return [dist, artist, title, content]

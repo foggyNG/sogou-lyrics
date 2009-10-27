@@ -43,17 +43,17 @@ class LyricsChooser:
 		
 	def response(self, widget, response):
 		if response == gtk.RESPONSE_OK:
-			dir = os.path.dirname(self.lrc_path)
+			dir = os.path.dirname(self.lrcinfo['path'][0])
 			if not os.path.exists(dir):
 				os.makedirs(dir)
 			buffer = self.viewer.get_buffer()
-			open(self.lrc_path, 'w').write(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter()))
+			open(self.lrcinfo['path'][0], 'w').write(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter()))
 		self.window.hide()
 		return
 	
-	def set_instance(self, candidates, lrc_path):
+	def set_instance(self, candidates, lrcinfo):
 		logging.debug('enter')
-		self.lrc_path = lrc_path
+		self.lrcinfo = lrcinfo
 		self.token.clear()
 		self.lyrics = []
 		count = 0
@@ -66,7 +66,7 @@ class LyricsChooser:
 		logging.debug('leave')
 		return
 		
-	def show(self, artist, title):
-		self.window.set_title('%s - %s' % (artist, title))
+	def show(self):
+		self.window.set_title('%s - %s' % (self.lrcinfo['ar'], self.lrcinfo['ti']))
 		self.window.show_all()
 		return

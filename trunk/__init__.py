@@ -33,8 +33,6 @@ class SogouLyrics(rb.Plugin):
 				self.lrc = load_lyrics(lrc_path)
 				if self.lrc != {}:
 					self.osd_display('(%s - %s) prepared' % (artist, title))
-					# self.player.do_next()
-					# return
 			self.load_round += 1;
 			try:
 				self.osd_display(self.lrc[elapsed])
@@ -42,22 +40,22 @@ class SogouLyrics(rb.Plugin):
 				pass
 		return
 	
-	def receive_lyrics(self, lyrics, artist, title, lrc_path):
+	def receive_lyrics(self, lyrics, lrcinfo):
 		logging.debug('enter')
 		n_candidates = len(lyrics)
 		if n_candidates == 0:
-			self.osd_display('(%s - %s) not found' % (artist, title))
+			self.osd_display('(%s - %s) not found' % (lrcinfo['ar'], lrcinfo['ti']))
 		elif lyrics[0][0] == 0:
-			logging.info('(%s - %s) prepared' % (artist, title))
-			self.osd_display('(%s - %s) prepared' % (artist, title))
-			dir = os.path.dirname(lrc_path)
+			logging.info('(%s - %s) prepared' % (lrcinfo['ar'], lrcinfo['ti']))
+			self.osd_display('(%s - %s) prepared' % (lrcinfo['ar'], lrcinfo['ti']))
+			dir = os.path.dirname(lrcinfo['path'][0])
 			if not os.path.exists(dir):
 				os.makedirs(dir)
-			open(lrc_path, 'w').writelines(lyrics[0][3])
+			open(lrcinfo['path'][0], 'w').write(lyrics[0][3])
 		else:
-			logging.info('%d candidates found for (%s - %s)' % (n_candidates, artist, title))
-			self.chooser.set_instance(lyrics, lrc_path)
-			self.chooser.show(artist, title)
+			logging.info('%d candidates found for (%s - %s)' % (n_candidates, lrcinfo['ar'], lrcinfo['ti']))
+			self.chooser.set_instance(lyrics, lrcinfo)
+			self.chooser.show()
 		logging.debug('leave')
 		return
 	
@@ -72,16 +70,14 @@ class SogouLyrics(rb.Plugin):
 			lrc_path = gen_lrc_path(self.prefs.get_pref('folder'), artist, title)
 			# load lyrics content
 			self.lrc = load_lyrics(lrc_path)
-			if self.lrc == {}:
-				if self.prefs.get_pref('download'):
-					self.osd_display('(%s - %s) downloading' % (artist, title))
-					Grabber(self.prefs.get_pref('engine'), artist, title, lrc_path[0], self.receive_lyrics).get_lyrics()
-				else:
-					self.osd_display('(%s - %s) not found' % (artist, title))
-			else:
+			if self.lrc != {}:
 				self.osd_display('(%s - %s) prepared' % (artist, title))
-				# self.player.do_next()
-				# return
+			elif self.prefs.get_pref('download'):
+				self.osd_display('(%s - %s) downloading' % (artist, title))
+				lrcinfo = {'ti':title, 'ar':artist, 'path':lrc_path}
+				Grabber(self.prefs.get_pref('engine'), lrcinfo, self.receive_lyrics).get_lyrics()
+			else:
+				self.osd_display('(%s - %s) not found' % (artist, title))
 		logging.debug('leave')
 		return
 
