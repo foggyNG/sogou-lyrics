@@ -4,6 +4,7 @@
 import re, random, urllib, logging
 import codecs
 from utils import *
+import chardet
 
 class ttpClient:
     '''
@@ -90,9 +91,7 @@ class ttpClient:
 	
 class ttPlayerGrabber:
 	
-	def __init__(self, artist, title):
-		self.artist = artist
-		self.title = title
+	def __init__(self):
 		self.netEncoder= 'utf-8'
 		self.locale = 'utf-8'
 		return
@@ -113,10 +112,10 @@ class ttPlayerGrabber:
 				b.append([_artist,_title,url])
 		return b
 	
-	def search(self):
+	def search(self, lrcinfo):
 		logging.debug('enter')
 		retval = []
-		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(ttpClient.EncodeArtTit(unicode(self.artist,self.locale).replace(u' ','').lower()), ttpClient.EncodeArtTit(unicode(self.title,self.locale).replace(u' ','').lower()))
+		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(ttpClient.EncodeArtTit(unicode(lrcinfo['ar'],self.locale).replace(u' ','').lower()), ttpClient.EncodeArtTit(unicode(lrcinfo['ti'],self.locale).replace(u' ','').lower()))
 		logging.info('search uri <%s>' % url)
 		try:
 			file=urllib.urlopen(url,None,None)
@@ -129,11 +128,12 @@ class ttPlayerGrabber:
 			for instance in self.parse(tmpList):
 				try:
 					logging.info('lyrics file <%s>' % instance[2])
-					cache = urllib.urlopen(instance[2]).readlines()
-					lrc = []
-					for line in cache:
-						lrc.append(line.decode('utf-8').encode('utf-8'))
-					retval.append(lrc)
+					cache = urllib.urlopen(instance[2]).read()
+					encoding = chardet.detect(cache)['encoding']
+					ins = gen_lrc_instance(cache.decode(encoding).encode('utf-8'), lrcinfo)
+					retval.append(ins)
+					if ins[0] == 0:
+						break
 				except IOError:
 					pass
 		logging.debug('leave')

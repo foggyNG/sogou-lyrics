@@ -13,7 +13,7 @@ gconf_keys = {
 'folder' : '/apps/rhythmbox/plugins/SogouLyrics/folder',
 'engine' : '/apps/rhythmbox/plugins/SogouLyrics/engine'
 }
-engines = ['Sogou', 'ttPlayer']
+engines = ['Sogou', 'ttPlayer', 'Mini']
 
 class Preference:
 	def __init__(self, glade_file):
@@ -25,7 +25,7 @@ class Preference:
 		self.dialog.connect('response', self.dialog_response)
 		# get widgets from glade file
 		self.widgets = {}
-		for key in ['display','download','halign','vpos','fgcolor','animation','folder','Sogou','ttPlayer']:
+		for key in ['display','download','halign','vpos','fgcolor','animation','folder','Sogou','ttPlayer', 'Mini']:
 			self.widgets[key] = self.gladexml.get_widget(key)
 		filter = gtk.FileFilter()
 		filter.add_mime_type('inode/directory')

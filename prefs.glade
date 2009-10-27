@@ -13,7 +13,7 @@
           <widget class="GtkTable" id="main-table">
             <property name="visible">True</property>
             <property name="border_width">5</property>
-            <property name="n_rows">13</property>
+            <property name="n_rows">14</property>
             <property name="n_columns">2</property>
             <property name="column_spacing">8</property>
             <property name="row_spacing">3</property>
@@ -253,6 +253,24 @@ on</property>
                 <property name="top_attach">12</property>
                 <property name="bottom_attach">13</property>
               </packing>
+            </child>
+            <child>
+              <widget class="GtkCheckButton" id="Mini">
+                <property name="label">MiniLyrics</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="tooltip" translatable="yes">mp3.sogou.com</property>
+                <property name="draw_indicator">True</property>
+              </widget>
+              <packing>
+                <property name="top_attach">13</property>
+                <property name="bottom_attach">14</property>
+              </packing>
+            </child>
+            <child>
+              <placeholder/>
             </child>
           </widget>
           <packing>
