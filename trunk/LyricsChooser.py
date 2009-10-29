@@ -1,31 +1,32 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging, string
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
 
 class LyricsChooser:
 	def __init__(self, glade_file):
 		logging.debug('enter')
 		# get main dialog frome glade file
-		self.gconf = gconf.client_get_default()
-		self.gladexml = gtk.glade.XML(glade_file)
-		self.window = self.gladexml.get_widget('lyrics-chooser')
+		#gconf = gconf.client_get_default()
+		gladexml = gtk.glade.XML(glade_file)
+		self.window_ = gladexml.get_widget('lyrics-chooser')
 		# get widgets from glade file
-		self.widgets = {}
+		widgets = {}
 		for key in ['chooser', 'preview', 'ok', 'close']:
-			self.widgets[key] = self.gladexml.get_widget(key)
-		self.widgets['ok'].connect('clicked', self.response, gtk.RESPONSE_OK)
-		self.widgets['close'].connect('clicked', self.response, gtk.RESPONSE_CLOSE)
+			widgets[key] = gladexml.get_widget(key)
+		widgets['ok'].connect('clicked', self.response, gtk.RESPONSE_OK)
+		widgets['close'].connect('clicked', self.response, gtk.RESPONSE_CLOSE)
 		#
-		self.lrc_path = None
-		self.token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
-		self.lyrics = []
-		self.chooser = self.widgets['chooser']
-		self.chooser.append_column(gtk.TreeViewColumn('Artist - Title', gtk.CellRendererText(), text=1))
-		self.chooser.set_model(self.token)
-		selection = self.chooser.get_selection()
+		self.token_ = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
+		self.lyrics_ = None
+		self.song_ = None
+		self.chooser_ = widgets['chooser']
+		self.chooser_.append_column(gtk.TreeViewColumn('Artist - Title', gtk.CellRendererText(), text=1))
+		self.chooser_.set_model(self.token_)
+		selection = self.chooser_.get_selection()
 		selection.connect('changed', self.selection_changed)
-		self.viewer = self.widgets['preview']
+		self.viewer_ = widgets['preview']
+		del selection, widgets, gladexml
 		logging.debug('leave')
 		return
 		
@@ -34,39 +35,42 @@ class LyricsChooser:
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
-			logging.info('select <index=%d>' % index)
-			self.viewer.get_buffer().set_text(self.lyrics[index])
+			logging.debug('select <index=%d>' % index)
+			self.viewer_.get_buffer().set_text(self.lyrics_[index].raw_)
 		else:
-			self.viewer.get_buffer().set_text('')
+			self.viewer_.get_buffer().set_text('')
 		logging.debug('leave')
 		return
 		
 	def response(self, widget, response):
 		if response == gtk.RESPONSE_OK:
-			dir = os.path.dirname(self.lrcinfo['path'][0])
-			if not os.path.exists(dir):
-				os.makedirs(dir)
-			buffer = self.viewer.get_buffer()
-			open(self.lrcinfo['path'][0], 'w').write(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter()))
-		self.window.hide()
+			selected = self.chooser_.get_selection().get_selected()
+			index = selected[0].get_value(selected[1], 0)
+			self.lyrics_[index].save()
+		self.window_.hide()
 		return
 	
-	def set_instance(self, candidates, lrcinfo):
+	def set_instance(self, lyrics, song):
 		logging.debug('enter')
-		self.lrcinfo = lrcinfo
-		self.token.clear()
-		self.lyrics = []
+		self.song_ = song
+		self.token_.clear()
+		self.lyrics_ = lyrics
 		count = 0
-		for c in candidates:
-			self.token.append([count, '%s - %s' % (c[1], c[2])])
+		for c in lyrics:
+			ar = ''
+			if c.lrcinfo_.has_key('ar'):
+				ar = c.lrcinfo_['ar']
+			ti = ''
+			if c.lrcinfo_.has_key('ti'):
+				ti = c.lrcinfo_['ti']
+			self.token_.append([count, '%s - %s' % (ar, ti)])
 			count = count + 1
-			self.lyrics.append(string.join(c[3], ''))
 		#
-		self.chooser.get_selection().select_iter(self.token.get_iter_first())
+		self.chooser_.get_selection().select_iter(self.token_.get_iter_first())
 		logging.debug('leave')
 		return
 		
 	def show(self):
-		self.window.set_title('%s - %s' % (self.lrcinfo['ar'], self.lrcinfo['ti']))
-		self.window.show_all()
+		self.window_.set_title('%s - %s' % (self.song_.songinfo_['ar'], self.song_.songinfo_['ti']))
+		self.window_.show_all()
 		return

@@ -111,7 +111,7 @@ class Preference:
 	def get_dialog (self):
 		return self.dialog
 	
-	def get_pref(self, key):
+	def get(self, key):
 		return self.settings[key]
 		
 	def load_prefs (self):
