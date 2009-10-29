@@ -55,7 +55,8 @@ class RBLyrics(rb.Plugin):
 				self.display_.show('(%s - %s) prepared' % (artist, title))
 			elif self.prefs_.get('download'):
 				self.display_.show('(%s - %s) downloading' % (artist, title))
-				Engine(self.prefs_.get('engine'), self.song_, self.receive_lyrics).get_lyrics()
+				lyrics = Engine(self.prefs_.get('engine'), self.song_).get_lyrics()
+				self.receive_lyrics(lyrics, self.song_)
 			else:
 				self.display_.show('(%s - %s) not found' % (artist, title))
 		logging.debug('leave')

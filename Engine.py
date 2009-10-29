@@ -7,36 +7,42 @@ from EngineTT import EngineTT
 from EngineMini import EngineMini
 from LyricsChooser import LyricsChooser
 from Song import song_cmp
+from multiprocessing import Pool
+import threading
 
 engine_map = {
 	'ttPlayer' : EngineTT,
 	'Sogou' : EngineSogou,
 	'Mini': EngineMini
 }
+
+def handler(engine, args):
+	return engine.search(args)
+	
 class Engine:
 	
-	def __init__(self, engine, song, callback):
+	def __init__(self, engine, song):
 		self.engine_ = engine
 		self.song_ = song
-		self.callback_ = callback
+		self.candidate_ = []
+		self.__lock = threading.Condition(threading.Lock())
 		return
 	
-	def run(self):
+	def receive_lyrics(self, lyrics):
+		self.__lock.acquire()
+		self.candidate_ += lyrics
+		self.__lock.release()
+		return
+		
+	def get_lyrics(self):
 		logging.debug('enter')
 		found = False
-		candidate = []
+		pool = Pool(len(self.engine_))
 		for key in self.engine_:
 			engine = engine_map[key]
-			received = engine().search(self.song_)
-			candidate += received
-			received.sort(song_cmp)
-			if len(received) > 0 and received[0].edit_distance_ == 0:
-				break
-		candidate.sort(song_cmp)
-		self.callback_(candidate, self.song_)
+			pool.apply_async(handler, [engine(), self.song_], {}, self.receive_lyrics)
+		pool.close()
+		pool.join()
+		self.candidate_.sort(song_cmp)
 		logging.debug('leave')
-		return
-	
-	def get_lyrics(self):
-		self.run()
-		return
+		return self.candidate_
