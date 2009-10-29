@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import re, random, urllib, logging
-import codecs
-from utils import *
-import chardet
+import re, random, urllib2, logging, chardet
+from utils import clean_token
+from Song import *
 
 class ttpClient:
     '''
@@ -89,11 +88,11 @@ class ttpClient:
 
 	return rtn
 	
-class ttPlayerGrabber:
+class EngineTT:
 	
 	def __init__(self):
-		self.netEncoder= 'utf-8'
-		self.locale = 'utf-8'
+		self.locale_ = 'utf-8'
+		self.timeout_ = 3
 		return
 		
 	
@@ -112,30 +111,33 @@ class ttPlayerGrabber:
 				b.append([_artist,_title,url])
 		return b
 	
-	def search(self, lrcinfo):
+	def search(self, song):
 		logging.debug('enter')
 		retval = []
-		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(ttpClient.EncodeArtTit(unicode(lrcinfo['ar'],self.locale).replace(u' ','').lower()), ttpClient.EncodeArtTit(unicode(lrcinfo['ti'],self.locale).replace(u' ','').lower()))
+		token = clean_token(song.songinfo_['ti'])
+		encoding = chardet.detect(token)['encoding']
+		title_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.locale_).replace(u' ','').lower())
+		token = clean_token(song.songinfo_['ar'])
+		encoding = chardet.detect(token)['encoding']
+		artist_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.locale_).replace(u' ','').lower())
+		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		logging.info('search uri <%s>' % url)
 		try:
-			file=urllib.urlopen(url,None,None)
-			webInfo=file.read()
-			file.close()
-		except IOError:
-			pass
-		else:
-			tmpList=re.findall(r'<lrc.*?</lrc>',webInfo)
+			cache = urllib2.urlopen(url, None, self.timeout_).read()
+			tmpList = re.findall(r'<lrc.*?</lrc>', cache)
 			for instance in self.parse(tmpList):
 				try:
 					logging.info('lyrics file <%s>' % instance[2])
-					cache = urllib.urlopen(instance[2]).read()
+					cache = urllib2.urlopen(instance[2], None, self.timeout_).read()
 					encoding = chardet.detect(cache)['encoding']
-					ins = gen_lrc_instance(cache.decode(encoding).encode('utf-8'), lrcinfo)
+					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
 					retval.append(ins)
-					if ins[0] == 0:
+					if ins.edit_distance_ == 0:
 						break
-				except IOError:
-					pass
+				except Exception as e:
+					logging.error(e)
+		except Exception as e:
+			logging.error(e)
 		logging.debug('leave')
 		return retval
 
