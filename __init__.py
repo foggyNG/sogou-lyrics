@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, ClientCookie, urllib2, re, logging
+import os, ClientCookie, urllib2, re, logging, gettext
 import rhythmdb, rb
 import gobject, gtk, gconf
 from Preference import Preference
@@ -9,6 +9,7 @@ from LyricsChooser import LyricsChooser
 from Song import *
 from Engine import Engine
 from DisplayOSD import DisplayOSD
+from utils import _, APP_NAME, LOCALE_DIR
 
 class RBLyrics(rb.Plugin):
 
@@ -30,10 +31,10 @@ class RBLyrics(rb.Plugin):
 		logging.debug('enter')
 		n_candidates = len(lyrics)
 		if n_candidates == 0:
-			self.display_.show('(%s - %s) not found' % (song.songinfo_['ar'], song.songinfo_['ti']))
+			self.display_.show(_('(%s - %s) not found') % (song.songinfo_['ar'], song.songinfo_['ti']))
 		elif lyrics[0].edit_distance_ == 0:
 			logging.info('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
-			self.display_.show('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
+			self.display_.show(_('(%s - %s) prepared') % (song.songinfo_['ar'], song.songinfo_['ti']))
 			lyrics[0].save()
 		else:
 			logging.info('%d candidates found for (%s - %s)' % (n_candidates, song.songinfo_['ar'], song.songinfo_['ti']))
@@ -52,13 +53,13 @@ class RBLyrics(rb.Plugin):
 			#
 			self.song_ = init_song_search(self.prefs_, artist, title)
 			if self.song_.load_lyrics():
-				self.display_.show('(%s - %s) prepared' % (artist, title))
+				self.display_.show(_('(%s - %s) prepared') % (artist, title))
 			elif self.prefs_.get('download'):
-				self.display_.show('(%s - %s) downloading' % (artist, title))
+				self.display_.show(_('(%s - %s) downloading') % (artist, title))
 				lyrics = Engine(self.prefs_.get('engine'), self.song_).get_lyrics()
 				self.receive_lyrics(lyrics, self.song_)
 			else:
-				self.display_.show('(%s - %s) not found' % (artist, title))
+				self.display_.show(_('(%s - %s) not found') % (artist, title))
 		logging.debug('leave')
 		return
 
@@ -98,11 +99,16 @@ class RBLyrics(rb.Plugin):
 		return ret
 	
 	def activate(self, shell):
+		# internationalization
+		for module in (gettext, gtk.glade):
+			module.bindtextdomain(APP_NAME, LOCALE_DIR)
+			module.textdomain(APP_NAME)
+		gettext.install(APP_NAME)
 		# logging
 		logging.basicConfig(level=logging.INFO, format= 'RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
 		self.prefs_ = Preference(self.find_file('prefs.glade'))
 		if not os.path.exists(self.prefs_.get('folder')):
-			os.mkdir(self.prefs_.get_pref('folder'))
+			os.mkdir(self.prefs_.get('folder'))
 		self.chooser_ = LyricsChooser(self.find_file('lyrics-chooser.glade'))
 		self.song_ = None
 		self.display_ = DisplayOSD()
@@ -115,7 +121,7 @@ class RBLyrics(rb.Plugin):
 		#
 		self.action_ = [
 			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),
-			gtk.Action('OpenLyricsPopup', _('Open Lyrics'), _('Open the lyrics of the selected song'), 'RBLyrics')]
+			gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), 'RBLyrics')]
 			#gtk.Action('OpenLyricsMenuBar', _('Open Playing Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics')]
 		self.action_[0].connect('activate', self.open_lyrics_shortcut)
 		self.action_[1].connect('activate', self.open_lyrics_popup)

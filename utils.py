@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import re
+import re, gettext
 
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
-
+APP_NAME = 'RBLyrics'
+LOCALE_DIR = '/home/wonder/.gnome2/rhythmbox/plugins/RBLyrics/locale'
+_ = gettext.gettext
 
 def clean_token(token):
 	result = token.lower()
