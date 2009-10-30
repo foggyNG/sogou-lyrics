@@ -9,9 +9,9 @@ from Song import song_cmp
 from multiprocessing import Pool
 
 engine_map = {
-	'ttPlayer' : EngineTT,
-	'Sogou' : EngineSogou,
-	'Mini': EngineMini
+	'ttplayer' : EngineTT,
+	'sogou' : EngineSogou,
+	'minilyrics': EngineMini
 }
 
 def handler(engine, args):

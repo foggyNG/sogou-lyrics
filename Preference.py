@@ -259,8 +259,11 @@ class Preference:
 				value = engine_map.keys()
 		except:
 			value = engine_map.keys()
-		self.__setting[key] = value
-		logging.info('%s : %s' % (key, value))
+		self.__setting[key] = []
+		for k in value:
+			if k in engine_map.keys():
+				self.__setting[key].append(k)
+		logging.info('%s : %s' % (key, self.__setting[key]))
 		for engine in engine_map.keys():
 			self.__widget[engine].set_active(engine in value)
 			self.__widget[engine].connect('toggled', self.set_engine)

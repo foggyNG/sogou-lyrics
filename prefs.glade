@@ -210,7 +210,7 @@ on</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkCheckButton" id="Sogou">
+              <widget class="GtkCheckButton" id="sogou">
                 <property name="label" translatable="yes">sogou - mp3.sogou.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -224,7 +224,7 @@ on</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkCheckButton" id="ttPlayer">
+              <widget class="GtkCheckButton" id="ttplayer">
                 <property name="label" translatable="yes">ttplayer - ttplayer.qianqian.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -238,7 +238,7 @@ on</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkCheckButton" id="Mini">
+              <widget class="GtkCheckButton" id="minilyrics">
                 <property name="label" translatable="yes">minilyrics - www.minilyrics.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
