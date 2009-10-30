@@ -2,8 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
-from utils import _
-
+from Engine import engine_map
 gconf_keys = {
 'display' : '/apps/rhythmbox/plugins/RBLyrics/display',
 'download' : '/apps/rhythmbox/plugins/RBLyrics/download',
@@ -14,141 +13,141 @@ gconf_keys = {
 'folder' : '/apps/rhythmbox/plugins/RBLyrics/folder',
 'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine'
 }
-engines = ['Sogou', 'ttPlayer', 'Mini']
 
 class Preference:
 	def __init__(self, glade_file):
 		logging.debug('enter')
 		# get main dialog frome glade file
-		self.gconf = gconf.client_get_default()
-		self.gladexml = gtk.glade.XML(glade_file)
-		self.dialog = self.gladexml.get_widget('preference')
-		self.dialog.connect('response', self.dialog_response)
+		self.__gconf = gconf.client_get_default()
+		gladexml = gtk.glade.XML(glade_file)
+		self.__dialog = gladexml.get_widget('preference')
+		self.__dialog.connect('response', self.__dialog_response)
 		# get widgets from glade file
-		self.widgets = {}
-		for key in ['display','download','halign','vpos','fgcolor','animation','folder','Sogou','ttPlayer', 'Mini']:
-			self.widgets[key] = self.gladexml.get_widget(key)
+		self.__widget = {}
+		for key in ['display','download','halign','vpos','fgcolor','animation','folder'] + engine_map.keys():
+			self.__widget[key] = gladexml.get_widget(key)
 		filter = gtk.FileFilter()
 		filter.add_mime_type('inode/directory')
-		self.widgets['folder'].set_filter(filter)
+		self.__widget['folder'].set_filter(filter)
 		# load settings
-		self.settings = {}
-		self.load_prefs()
+		self.__setting = {}
+		self.__load_prefs()
 		logging.debug('leave')
 		return
 		
-	def dialog_response(self, dialog, response):
+	def __dialog_response(self, dialog, response):
 		dialog.hide()
+		return
 	
 	def set_display(self, widget):
 		key = 'display'
 		value = widget.get_active()
-		self.settings[key] = value
-		self.gconf.set_bool(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_bool(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 	
 	def set_download(self, widget):
 		key = 'download'
 		value = widget.get_active()
-		self.settings[key] = value
-		self.gconf.set_bool(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_bool(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_halign(self, widget):
 		key = 'halign'
 		value = widget.get_active_text()
-		self.settings[key] = value
-		self.gconf.set_string(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_string(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_vpos(self, widget):
 		key = 'vpos'
 		value = widget.get_active_text()
-		self.settings[key] = value
-		self.gconf.set_string(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_string(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_fgcolor(self, widget):
 		key = 'fgcolor'
 		value = widget.get_color().to_string()
-		self.settings[key] = value
-		self.gconf.set_string(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_string(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_animation(self, widget):
 		key = 'animation'
 		value = widget.get_active_text()
-		self.settings[key] = value
-		self.gconf.set_string(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_string(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def set_folder(self, widget):
 		key = 'folder'
 		value = widget.get_filename()
-		self.settings[key] = value
-		self.gconf.set_string(gconf_keys[key], value)
+		self.__setting[key] = value
+		self.__gconf.set_string(gconf_keys[key], value)
 		logging.info('%s : %s' % (key, value))
 		return
 
 	def set_engine(self, widget):
 		key = 'engine'
 		widget_key = widget.get_name()
-		value = self.settings[key]
+		value = self.__setting[key]
 		if widget.get_active() and not widget_key in value:
 			value.append(widget_key)
 		elif not widget.get_active() and widget_key in value:
 			value.remove(widget_key)
-		self.settings[key] = value
-		self.gconf.set_list(gconf_keys[key], gconf.VALUE_STRING, value)
+		self.__setting[key] = value
+		self.__gconf.set_list(gconf_keys[key], gconf.VALUE_STRING, value)
 		logging.info('%s : %s' % (key, value))
 		return
 		
 	def get_dialog (self):
-		return self.dialog
+		return self.__dialog
 	
 	def get(self, key):
-		return self.settings[key]
+		return self.__setting[key]
 		
-	def load_prefs (self):
+	def __load_prefs (self):
 		logging.debug('enter')
 		# display
 		key = 'display'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		try:
-			value = self.gconf.get_bool(gconf_keys[key])
+			value = self.__gconf.get_bool(gconf_keys[key])
 		except:
 			value = True
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_active(value)
 		widget.connect('toggled', self.set_display)
 		# download
 		key = 'download'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		try:
-			value = self.gconf.get_bool(gconf_keys[key])
+			value = self.__gconf.get_bool(gconf_keys[key])
 		except:
 			value = True
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_active(value)
 		widget.connect('toggled', self.set_download)
 		# halign
 		key = 'halign'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		model = widget.get_model()
 		index = 0
 		try:
-			value = self.gconf.get_string(gconf_keys[key])
+			value = self.__gconf.get_string(gconf_keys[key])
 			iter = model.get_iter_first()
 			found = False
 			while iter:
@@ -164,18 +163,18 @@ class Preference:
 		except:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_halign)
 		# vpos
 		key = 'vpos'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		model = widget.get_model()
 		index = 0
 		try:
-			value = self.gconf.get_string(gconf_keys[key])
+			value = self.__gconf.get_string(gconf_keys[key])
 			iter = model.get_iter_first()
 			found = False
 			while iter:
@@ -191,31 +190,31 @@ class Preference:
 		except:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_vpos)
 		# fgcolor
 		key = 'fgcolor'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		try:
-			value = self.gconf.get_string(gconf_keys[key])
+			value = self.__gconf.get_string(gconf_keys[key])
 			gtk.gdk.color_parse(value)
 		except:
 			value = '#FFFF00'
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_color(gtk.gdk.color_parse(value))
 		widget.connect('color-set', self.set_fgcolor)
 		# animation
 		key = 'animation'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		model = widget.get_model()
 		index = 0
 		try:
-			value = self.gconf.get_string(gconf_keys[key])
+			value = self.__gconf.get_string(gconf_keys[key])
 			iter = model.get_iter_first()
 			found = False
 			while iter:
@@ -231,21 +230,21 @@ class Preference:
 		except:
 			index = 0
 			value = model.get_value(model.get_iter_first(), 0)
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self.set_animation)
 		# folder
 		key = 'folder'
 		value = None
-		widget = self.widgets[key]
+		widget = self.__widget[key]
 		try:
-			value = self.gconf.get_string(gconf_keys[key])
+			value = self.__gconf.get_string(gconf_keys[key])
 			if not value:
 				value = os.path.expanduser('~/.lyrics')
 		except:
 			value = os.path.expanduser('~/.lyrics')
-		self.settings[key] = value
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
 		widget.set_filename(value)
 		widget.connect('file-set', self.set_folder)
@@ -255,15 +254,15 @@ class Preference:
 		key = 'engine'
 		value = None
 		try:
-			value = self.gconf.get_list(gconf_keys[key], gconf.VALUE_STRING)
+			value = self.__gconf.get_list(gconf_keys[key], gconf.VALUE_STRING)
 			if value is None:
-				value = engines
+				value = engine_map.keys()
 		except:
-			value = engines
-		self.settings[key] = value
+			value = engine_map.keys()
+		self.__setting[key] = value
 		logging.info('%s : %s' % (key, value))
-		for engine in engines:
-			self.widgets[engine].set_active(engine in value)
-			self.widgets[engine].connect('toggled', self.set_engine)
+		for engine in engine_map.keys():
+			self.__widget[engine].set_active(engine in value)
+			self.__widget[engine].connect('toggled', self.set_engine)
 		logging.debug('leave')
 		return

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import re, ClientCookie, urllib2, logging, chardet, os
-from Song import *
+import re, ClientCookie, urllib2, logging, chardet
+from Song import init_song_result
 from utils import clean_token
 
 class EngineSogou:

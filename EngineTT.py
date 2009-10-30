@@ -3,7 +3,7 @@
 
 import re, random, urllib2, logging, chardet
 from utils import clean_token
-from Song import *
+from Song import init_song_result
 
 class ttpClient:
     '''
@@ -97,7 +97,7 @@ class EngineTT:
 		return
 		
 	
-	def parse(self,a):
+	def __parse(self,a):
 		b=[]
 		for i in a:
 			c=re.search('id=\"(.*?)\" artist=\"(.*?)\" title=\"(.*?)\"',i)
@@ -126,7 +126,7 @@ class EngineTT:
 		try:
 			cache = urllib2.urlopen(url, None, self.__timeout).read()
 			tmpList = re.findall(r'<lrc.*?</lrc>', cache)
-			for instance in self.parse(tmpList):
+			for instance in self.__parse(tmpList):
 				try:
 					url = instance[2]
 					cache = urllib2.urlopen(url, None, self.__timeout).read()

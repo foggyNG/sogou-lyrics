@@ -4,7 +4,7 @@
 import urllib2, logging, chardet
 from xml.dom.minidom import parse, parseString
 from hashlib import md5
-from Song import *
+from Song import init_song_result
 from utils import clean_token
 
 class EngineMini:
