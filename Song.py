@@ -40,7 +40,11 @@ class Song:
 		return
 		
 	def save_lyrics(self):
-		open(os.path.join(self.prefs_.get('folder'), self.path_[0]), 'w').write(self.raw_)
+		path = os.path.join(self.prefs_.get('folder'), self.path_[0])
+		dir = os.path.dirname(path)
+		if not os.path.exists(dir):
+			os.makedirs(dir)
+		open(path, 'w').write(self.raw_)
 		return
 		
 	def load_lyrics(self):
