@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
-
+from utils import _
 class LyricsChooser:
 	def __init__(self, glade_file):
 		logging.debug('enter')
@@ -21,7 +21,7 @@ class LyricsChooser:
 		self.lyrics_ = None
 		self.song_ = None
 		self.chooser_ = widgets['chooser']
-		self.chooser_.append_column(gtk.TreeViewColumn('Artist - Title', gtk.CellRendererText(), text=1))
+		self.chooser_.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
 		self.chooser_.set_model(self.token_)
 		selection = self.chooser_.get_selection()
 		selection.connect('changed', self.selection_changed)

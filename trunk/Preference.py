@@ -2,16 +2,17 @@
 #-*- coding: UTF-8 -*-
 
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
+from utils import _
 
 gconf_keys = {
-'display' : '/apps/rhythmbox/plugins/SogouLyrics/display',
-'download' : '/apps/rhythmbox/plugins/SogouLyrics/download',
-'halign' : '/apps/rhythmbox/plugins/SogouLyrics/halign',
-'vpos' : '/apps/rhythmbox/plugins/SogouLyrics/vpos',
-'fgcolor' : '/apps/rhythmbox/plugins/SogouLyrics/fgcolor',
-'animation' : '/apps/rhythmbox/plugins/SogouLyrics/animation',
-'folder' : '/apps/rhythmbox/plugins/SogouLyrics/folder',
-'engine' : '/apps/rhythmbox/plugins/SogouLyrics/engine'
+'display' : '/apps/rhythmbox/plugins/RBLyrics/display',
+'download' : '/apps/rhythmbox/plugins/RBLyrics/download',
+'halign' : '/apps/rhythmbox/plugins/RBLyrics/halign',
+'vpos' : '/apps/rhythmbox/plugins/RBLyrics/vpos',
+'fgcolor' : '/apps/rhythmbox/plugins/RBLyrics/fgcolor',
+'animation' : '/apps/rhythmbox/plugins/RBLyrics/animation',
+'folder' : '/apps/rhythmbox/plugins/RBLyrics/folder',
+'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine'
 }
 engines = ['Sogou', 'ttPlayer', 'Mini']
 
