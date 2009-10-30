@@ -90,9 +90,10 @@ class ttpClient:
 	
 class EngineTT:
 	
-	def __init__(self):
-		self.locale_ = 'utf-8'
-		self.timeout_ = 3
+	def __init__(self, timeout = 3, max = 5, locale = 'utf-8'):
+		self.__timeout = timeout
+		self.__max = max
+		self.__locale = locale
 		return
 		
 	
@@ -116,23 +117,24 @@ class EngineTT:
 		retval = []
 		token = clean_token(song.songinfo_['ti'])
 		encoding = chardet.detect(token)['encoding']
-		title_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.locale_).replace(u' ','').lower())
+		title_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.__locale).replace(u' ','').lower())
 		token = clean_token(song.songinfo_['ar'])
 		encoding = chardet.detect(token)['encoding']
-		artist_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.locale_).replace(u' ','').lower())
+		artist_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.__locale).replace(u' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
-		logging.info('search uri <%s>' % url)
+		logging.info('search url <%s>' % url)
 		try:
-			cache = urllib2.urlopen(url, None, self.timeout_).read()
+			cache = urllib2.urlopen(url, None, self.__timeout).read()
 			tmpList = re.findall(r'<lrc.*?</lrc>', cache)
 			for instance in self.parse(tmpList):
 				try:
-					logging.info('lyrics file <%s>' % instance[2])
-					cache = urllib2.urlopen(instance[2], None, self.timeout_).read()
+					url = instance[2]
+					cache = urllib2.urlopen(url, None, self.__timeout).read()
 					encoding = chardet.detect(cache)['encoding']
 					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
+					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
 					retval.append(ins)
-					if ins.edit_distance_ == 0:
+					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
 						break
 				except Exception as e:
 					logging.error(e)
