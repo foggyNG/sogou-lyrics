@@ -211,7 +211,7 @@ on</property>
             </child>
             <child>
               <widget class="GtkCheckButton" id="Sogou">
-                <property name="label" translatable="yes">sogou      - mp3.sogou.com</property>
+                <property name="label" translatable="yes">sogou - mp3.sogou.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
@@ -225,7 +225,7 @@ on</property>
             </child>
             <child>
               <widget class="GtkCheckButton" id="ttPlayer">
-                <property name="label" translatable="yes">ttplayer   - ttplayer.qianqian.com</property>
+                <property name="label" translatable="yes">ttplayer - ttplayer.qianqian.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>

@@ -2,59 +2,57 @@
 #-*- coding: UTF-8 -*-
 
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
-from utils import _
+
 class LyricsChooser:
 	def __init__(self, glade_file):
 		logging.debug('enter')
 		# get main dialog frome glade file
 		#gconf = gconf.client_get_default()
 		gladexml = gtk.glade.XML(glade_file)
-		self.window_ = gladexml.get_widget('lyrics-chooser')
+		self.__window = gladexml.get_widget('lyrics-chooser')
 		# get widgets from glade file
 		widgets = {}
 		for key in ['chooser', 'preview', 'ok', 'close']:
 			widgets[key] = gladexml.get_widget(key)
-		widgets['ok'].connect('clicked', self.response, gtk.RESPONSE_OK)
-		widgets['close'].connect('clicked', self.response, gtk.RESPONSE_CLOSE)
+		widgets['ok'].connect('clicked', self.__response, gtk.RESPONSE_OK)
+		widgets['close'].connect('clicked', self.__response, gtk.RESPONSE_CLOSE)
 		#
-		self.token_ = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
-		self.lyrics_ = None
-		self.song_ = None
-		self.chooser_ = widgets['chooser']
-		self.chooser_.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
-		self.chooser_.set_model(self.token_)
-		selection = self.chooser_.get_selection()
-		selection.connect('changed', self.selection_changed)
-		self.viewer_ = widgets['preview']
+		self.__token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
+		self.__lyrics = None
+		self.__song = None
+		self.__chooser = widgets['chooser']
+		self.__chooser.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
+		self.__chooser.set_model(self.__token)
+		selection = self.__chooser.get_selection()
+		selection.connect('changed', self.__selection_changed)
+		self.__viewer = widgets['preview']
 		del selection, widgets, gladexml
 		logging.debug('leave')
 		return
 		
-	def selection_changed(self, widget):
-		logging.debug('enter')
+	def __selection_changed(self, widget):
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
-			logging.debug('select <index=%d>' % index)
-			self.viewer_.get_buffer().set_text(self.lyrics_[index].raw_)
+			logging.debug('select [index = %d]' % index)
+			self.__viewer.get_buffer().set_text(self.__lyrics[index].raw_)
 		else:
-			self.viewer_.get_buffer().set_text('')
-		logging.debug('leave')
+			self.__viewer.get_buffer().set_text('')
 		return
 		
-	def response(self, widget, response):
+	def __response(self, widget, response):
 		if response == gtk.RESPONSE_OK:
-			selected = self.chooser_.get_selection().get_selected()
+			selected = self.__chooser.get_selection().get_selected()
 			index = selected[0].get_value(selected[1], 0)
-			self.lyrics_[index].save()
-		self.window_.hide()
+			self.__lyrics[index].save_lyrics()
+		self.__window.hide()
 		return
 	
 	def set_instance(self, lyrics, song):
 		logging.debug('enter')
-		self.song_ = song
-		self.token_.clear()
-		self.lyrics_ = lyrics
+		self.__song = song
+		self.__token.clear()
+		self.__lyrics = lyrics
 		count = 0
 		for c in lyrics:
 			ar = ''
@@ -63,14 +61,13 @@ class LyricsChooser:
 			ti = ''
 			if c.lrcinfo_.has_key('ti'):
 				ti = c.lrcinfo_['ti']
-			self.token_.append([count, '%s - %s' % (ar, ti)])
+			self.__token.append([count, '%s - %s' % (ar, ti)])
 			count = count + 1
-		#
-		self.chooser_.get_selection().select_iter(self.token_.get_iter_first())
+		self.__chooser.get_selection().select_iter(self.__token.get_iter_first())
 		logging.debug('leave')
 		return
 		
 	def show(self):
-		self.window_.set_title('%s - %s' % (self.song_.songinfo_['ar'], self.song_.songinfo_['ti']))
-		self.window_.show_all()
+		self.__window.set_title('%s - %s' % (self.__song.songinfo_['ar'], self.__song.songinfo_['ti']))
+		self.__window.show_all()
 		return

@@ -36,10 +36,10 @@ class Song:
 		self.lrc_ = {}
 		self.raw_ = ''
 		self.edit_distance_ = 0
-		self.last_update_ = datetime.fromtimestamp(0)
+		self.__last_update = datetime.fromtimestamp(0)
 		return
 		
-	def save(self):
+	def save_lyrics(self):
 		open(os.path.join(self.prefs_.get('folder'), self.path_[0]), 'w').write(self.raw_)
 		return
 		
@@ -47,10 +47,10 @@ class Song:
 		ret = False
 		if self.lrc_ != {}:
 			ret = True
-		elif datetime.now() - self.last_update_ < timedelta(seconds = 5):
+		elif datetime.now() - self.__last_update < timedelta(seconds = 5):
 			ret = False
 		else:
-			self.last_update_ = datetime.now()
+			self.__last_update = datetime.now()
 			for p in self.path_:
 				path = os.path.join(self.prefs_.get('folder'), p)
 				if os.path.isfile(path):
@@ -61,7 +61,7 @@ class Song:
 					break
 		return ret
 		
-	def open_lyrics_file(self):
+	def open_lyrics(self):
 		ret = False
 		for p in self.path_:
 			path = os.path.join(self.prefs_.get('folder'), p)
