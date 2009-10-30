@@ -146,7 +146,7 @@ class RBLyrics(rb.Plugin):
 		uim.insert_action_group(self.__actiongroup, 0)
 		self.__ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		logging.info('Sogou Lyrics activated')
+		logging.info('RBLyrics activated')
 		return
 
 	def deactivate(self, shell):
@@ -168,7 +168,7 @@ class RBLyrics(rb.Plugin):
 		del self.__chooser
 		del self.__display
 		del self.__prefs
-		logging.info('Sogou Lyrics deactivated')
+		logging.info('RBLyrics deactivated')
 		return
 
 	def create_configure_dialog(self):
