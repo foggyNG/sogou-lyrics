@@ -49,7 +49,7 @@ class RBLyrics(rb.Plugin):
 			# get playing song properties		
 			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
-			logging.info('%s - %s' % (artist, title))
+			logging.info('(%s - %s)' % (artist, title))
 			#
 			self.__song = init_song_search(self.__prefs, artist, title)
 			if self.__song.load_lyrics():
