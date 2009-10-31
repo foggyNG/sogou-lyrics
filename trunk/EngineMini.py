@@ -34,6 +34,7 @@ class EngineMini:
 			xml = urllib2.urlopen(url, request, self.__timeout).read()
 			dom = parseString(xml)
 			elements = dom.getElementsByTagName('fileinfo')
+			logging.info('%d candidates found' % min(len(elements), self.__max))
 			for element in elements:
 				try:
 					url = element.getAttribute('link')

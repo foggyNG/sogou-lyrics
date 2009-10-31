@@ -122,11 +122,13 @@ class EngineTT:
 		encoding = chardet.detect(token)['encoding']
 		artist_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.__locale).replace(u' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
-		logging.info('search url <%s>' % url)
+		logging.debug('search url <%s>' % url)
 		try:
 			cache = urllib2.urlopen(url, None, self.__timeout).read()
 			tmpList = re.findall(r'<lrc.*?</lrc>', cache)
-			for instance in self.__parse(tmpList):
+			urllist = self.__parse(tmpList)
+			logging.info('%d candidates found' % min(len(urllist), self.__max))
+			for instance in urllist:
 				try:
 					url = instance[2]
 					cache = urllib2.urlopen(url, None, self.__timeout).read()

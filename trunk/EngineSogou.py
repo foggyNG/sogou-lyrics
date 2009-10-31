@@ -24,10 +24,11 @@ class EngineSogou:
 			encoding = chardet.detect(token)['encoding']
 			artist_encode = urllib2.quote(token.decode(encoding).encode('gbk'))
 			url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
-			logging.info('search page <%s>' % url)
+			logging.debug('search page <%s>' % url)
 			cj = cookielib.CookieJar()
 			opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 			cache = opener.open(url, None, self.__timeout).readlines()
+			urllist = []
 			for line in cache:
 				encoding = chardet.detect(line)['encoding']
 				try:
@@ -38,7 +39,7 @@ class EngineSogou:
 				m = re.search('geci\.so\?[^\"]*', line)
 				if m != None:
 					url = 'http://mp3.sogou.com/%s' % m.group(0)
-					logging.info('lyrics page <%s>' % url)
+					logging.debug('lyrics page <%s>' % url)
 					cache = opener.open(url, None, self.__timeout).readlines()
 					for line in cache:
 						encoding = chardet.detect(line)['encoding']
@@ -49,18 +50,20 @@ class EngineSogou:
 						# grab lyrics file url, try all of them
 						m = re.search('downlrc\.jsp\?[^\"]*', line)
 						if m != None:
-							try:
-								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								cache = opener.open(url, None, self.__timeout).read()
-								encoding = chardet.detect(cache)['encoding']
-								ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
-								logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
-								retval.append(ins)
-								if ins.edit_distance_ == 0 or len(retval) >= self.__max:
-									break
-							except Exception as e:
-								logging.error(e)
+							urllist.append('http://mp3.sogou.com/%s' % m.group(0))
 					break
+			logging.info('%d candidates found' % min(len(urllist), self.__max))
+			for url in urllist:
+				try:
+					cache = opener.open(url, None, self.__timeout).read()
+					encoding = chardet.detect(cache)['encoding']
+					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
+					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
+					retval.append(ins)
+					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
+						break
+				except Exception as e:
+					logging.error(e)
 		except Exception as e:
 			logging.error(e)
 		logging.debug('leave')
