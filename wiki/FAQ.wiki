@@ -19,7 +19,7 @@
 
 卸载的话只要把那个svn下载下来的文件夹删掉就可以，如果你完全按照我给的安装方法安装的，那么这么删除
 {{{
-rm -r ~/.gnome2/rhythmbox/plugins/SogouLyrics
+rm -r ~/.gnome2/rhythmbox/plugins/RBLyrics
 }}}
 另外默认的歌词目录是~/.lyrics，也可以根据意愿自行删除。
 
