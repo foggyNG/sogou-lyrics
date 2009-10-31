@@ -225,7 +225,7 @@ on</property>
             </child>
             <child>
               <widget class="GtkCheckButton" id="ttplayer">
-                <property name="label" translatable="yes">ttplayer - ttplayer.qianqian.com</property>
+                <property name="label" translatable="yes">ttplayer - www.qianqian.com</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
