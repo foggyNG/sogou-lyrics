@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging
-
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging, gettext
+_ = gettext.gettext
 class LyricsChooser:
 	def __init__(self, glade_file):
 		logging.debug('enter')
