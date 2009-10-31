@@ -107,7 +107,7 @@ class RBLyrics(rb.Plugin):
 			module.textdomain(APP_NAME)
 		gettext.install(APP_NAME)
 		# logging
-		logging.basicConfig(level=logging.INFO, format= 'RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
+		logging.basicConfig(level=logging.DEBUG, format= 'RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
 		self.__prefs = Preference(self.find_file('prefs.glade'))
 		self.__display = DisplayOSD(self.__prefs)
 		if not os.path.exists(self.__prefs.get('folder')):
@@ -146,7 +146,7 @@ class RBLyrics(rb.Plugin):
 		uim.insert_action_group(self.__actiongroup, 0)
 		self.__ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		logging.info('RBLyrics activated')
+		logging.info('activated')
 		return
 
 	def deactivate(self, shell):
@@ -168,7 +168,7 @@ class RBLyrics(rb.Plugin):
 		del self.__chooser
 		del self.__display
 		del self.__prefs
-		logging.info('RBLyrics deactivated')
+		logging.info('deactivated')
 		return
 
 	def create_configure_dialog(self):
