@@ -1,9 +1,9 @@
 <ui>
-  <popup name="BrowserSourceViewPopup">
+  <!-- <popup name="BrowserSourceViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
-  </popup>
+  </popup> -->
 
   <popup name="PlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
@@ -11,17 +11,17 @@
     </placeholder>
   </popup>
 
-  <popup name="QueuePlaylistViewPopup">
+  <!-- <popup name="QueuePlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
-  </popup>
+  </popup> -->
 
-  <popup name="PodcastViewPopup">
+  <!-- <popup name="PodcastViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
-  </popup>
+  </popup> -->
   
   <!--<menubar name="MenuBar">
 	<menu name="ViewMenu" action="View">
