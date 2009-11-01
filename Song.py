@@ -137,7 +137,7 @@ class Song:
 			ar = self.lrcinfo_['ar']
 		if self.lrcinfo_.has_key('ti'):
 			ti = self.lrcinfo_['ti']
-		self.edit_distance_ = edit_distance(ar, self.songinfo_['ar']) + edit_distance(ti, self.songinfo_['ti'])
+		self.edit_distance_ = edit_distance(ar.lower(), self.songinfo_['ar'].lower()) + edit_distance(ti.lower(), self.songinfo_['ti'].lower())
 		logging.debug('edit distance = %d' % self.edit_distance_)
 		logging.debug('leave')
 		return
