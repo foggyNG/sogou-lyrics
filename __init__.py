@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, ClientCookie, urllib2, re, logging, gettext
+import os, urllib2, re, logging, gettext
 import rhythmdb, rb
 import gobject, gtk, gconf
 from Preference import Preference
