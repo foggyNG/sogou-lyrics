@@ -8,8 +8,10 @@ from utils import clean_token
 class EngineSogou:
 	
 	def __init__(self, timeout = 3, max = 5):
+		logging.debug('enter')
 		self.__timeout = timeout
 		self.__max = max
+		logging.debug('leave')
 		return
 		
 	def search(self, song):

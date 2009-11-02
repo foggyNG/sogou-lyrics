@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 import os, logging, re
-from datetime import datetime, timedelta
 from utils import edit_distance
 
 LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 
 def init_song_search(prefs, artist, title):
+	logging.debug('enter')
 	ret = Song()
 	ret.prefs_ = prefs
 	ret.songinfo_ = {'ar':artist, 'ti':title}
 	for i in LRC_PATH_TEMPLATE:
 		ret.path_.append(i % (artist, title))
+	logging.debug('leave')
 	return ret
 
 def init_song_result(song, raw):
+	logging.debug('enter')
 	ret = Song()
 	ret.prefs_ = song.prefs_
 	ret.songinfo_ = song.songinfo_
@@ -22,6 +24,7 @@ def init_song_result(song, raw):
 		ret.path_.append(i % (ret.songinfo_['ar'], ret.songinfo_['ti']))
 	ret.raw_ = raw
 	ret.parse_lyrics()
+	logging.debug('leave')
 	return ret
 
 def song_cmp(x, y):
@@ -29,6 +32,7 @@ def song_cmp(x, y):
 	
 class Song:
 	def __init__(self):
+		logging.debug('enter')
 		self.prefs_ = None
 		self.songinfo_ = {}
 		self.path_ = []
@@ -36,25 +40,25 @@ class Song:
 		self.lrc_ = {}
 		self.raw_ = ''
 		self.edit_distance_ = 0
-		self.__last_update = datetime.fromtimestamp(0)
+		logging.debug('leave')
 		return
 		
 	def save_lyrics(self):
+		logging.debug('enter')
 		path = os.path.join(self.prefs_.get('folder'), self.path_[0])
 		dir = os.path.dirname(path)
 		if not os.path.exists(dir):
 			os.makedirs(dir)
 		open(path, 'w').write(self.raw_)
+		logging.debug('leave')
 		return
 		
 	def load_lyrics(self):
+		logging.debug('enter')
 		ret = False
 		if self.lrc_ != {}:
 			ret = True
-		elif datetime.now() - self.__last_update < timedelta(seconds = 5):
-			ret = False
 		else:
-			self.__last_update = datetime.now()
 			for p in self.path_:
 				path = os.path.join(self.prefs_.get('folder'), p)
 				if os.path.isfile(path):
@@ -63,9 +67,11 @@ class Song:
 					self.parse_lyrics()
 					ret = True
 					break
+		logging.debug('leave')
 		return ret
 		
 	def open_lyrics(self):
+		logging.debug('enter')
 		ret = False
 		for p in self.path_:
 			path = os.path.join(self.prefs_.get('folder'), p)
@@ -74,6 +80,7 @@ class Song:
 				os.system('/usr/bin/xdg-open \"%s\"' % path)
 				ret = True
 				break
+		logging.debug('leave')
 		return ret
 		
 	def parse_lyrics(self):
@@ -138,6 +145,5 @@ class Song:
 		if self.lrcinfo_.has_key('ti'):
 			ti = self.lrcinfo_['ti']
 		self.edit_distance_ = edit_distance(ar.lower(), self.songinfo_['ar'].lower()) + edit_distance(ti.lower(), self.songinfo_['ti'].lower())
-		logging.debug('edit distance = %d' % self.edit_distance_)
 		logging.debug('leave')
 		return

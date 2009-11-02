@@ -91,9 +91,11 @@ class ttpClient:
 class EngineTT:
 	
 	def __init__(self, timeout = 3, max = 5, locale = 'utf-8'):
+		logging.debug('enter')
 		self.__timeout = timeout
 		self.__max = max
 		self.__locale = locale
+		logging.debug('leave')
 		return
 		
 	
