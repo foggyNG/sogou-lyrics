@@ -2,6 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 import re, random, urllib2, logging, chardet
+from xml.dom.minidom import parseString
 from utils import clean_token
 from Song import init_song_result
 
@@ -97,22 +98,6 @@ class EngineTT:
 		self.__locale = locale
 		logging.debug('leave')
 		return
-		
-	
-	def __parse(self,a):
-		b=[]
-		for i in a:
-			c=re.search('id=\"(.*?)\" artist=\"(.*?)\" title=\"(.*?)\"',i)
-			try:
-				_artist=c.group(2)
-				_title=c.group(3)
-				_id=c.group(1)
-			except:
-				pass
-			else:
-				url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(int(_id),ttpClient.CodeFunc(int(_id),(_artist+_title)), random.randint(0,0xFFFFFFFFFFFF))
-				b.append([_artist,_title,url])
-		return b
 	
 	def search(self, song):
 		logging.debug('enter')
@@ -127,12 +112,15 @@ class EngineTT:
 		logging.debug('search url <%s>' % url)
 		try:
 			cache = urllib2.urlopen(url, None, self.__timeout).read()
-			tmpList = re.findall(r'<lrc.*?</lrc>', cache)
-			urllist = self.__parse(tmpList)
-			logging.info('%d candidates found' % min(len(urllist), self.__max))
-			for instance in urllist:
+			dom = parseString(cache)
+			elements = dom.getElementsByTagName('lrc')
+			logging.info('%d candidates found' % min(len(elements), self.__max))
+			for element in elements:
 				try:
-					url = instance[2]
+					artist = element.getAttribute('artist')
+					title = element.getAttribute('title')
+					id = int(element.getAttribute('id'))
+					url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('utf-8')), random.randint(0,0xFFFFFFFFFFFF))
 					cache = urllib2.urlopen(url, None, self.__timeout).read()
 					encoding = chardet.detect(cache)['encoding']
 					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))

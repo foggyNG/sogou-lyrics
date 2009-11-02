@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import urllib2, logging, chardet
-from xml.dom.minidom import parse, parseString
+from xml.dom.minidom import parseString
 from hashlib import md5
 from Song import init_song_result
 from utils import clean_token
