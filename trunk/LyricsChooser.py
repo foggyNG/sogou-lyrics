@@ -4,13 +4,11 @@
 import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging, gettext
 _ = gettext.gettext
 class LyricsChooser:
-	def __init__(self, glade_file):
+	def __init__(self, glade_file, callback):
 		logging.debug('enter')
-		# get main dialog frome glade file
-		#gconf = gconf.client_get_default()
 		gladexml = gtk.glade.XML(glade_file)
 		self.__window = gladexml.get_widget('lyrics-chooser')
-		# get widgets from glade file
+		self.__callback = callback
 		widgets = {}
 		for key in ['chooser', 'preview', 'ok', 'close']:
 			widgets[key] = gladexml.get_widget(key)
@@ -31,6 +29,7 @@ class LyricsChooser:
 		return
 		
 	def __selection_changed(self, widget):
+		logging.debug('enter')
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
@@ -38,14 +37,20 @@ class LyricsChooser:
 			self.__viewer.get_buffer().set_text(self.__lyrics[index].raw_)
 		else:
 			self.__viewer.get_buffer().set_text('')
+		logging.debug('leave')
 		return
 		
 	def __response(self, widget, response):
+		logging.debug('enter')
+		song = None
 		if response == gtk.RESPONSE_OK:
 			selected = self.__chooser.get_selection().get_selected()
 			index = selected[0].get_value(selected[1], 0)
-			self.__lyrics[index].save_lyrics()
+			song = self.__lyrics[index]
+			song.save_lyrics()
 		self.__window.hide()
+		self.__callback(song)
+		logging.debug('leave')
 		return
 	
 	def set_instance(self, lyrics, song):
@@ -68,6 +73,8 @@ class LyricsChooser:
 		return
 		
 	def show(self):
+		logging.debug('enter')
 		self.__window.set_title('%s - %s' % (self.__song.songinfo_['ar'], self.__song.songinfo_['ti']))
 		self.__window.show_all()
+		logging.debug('enter')
 		return

@@ -20,11 +20,10 @@ class RBLyrics(rb.Plugin):
 	def __elapsed_changed_handler(self, player, playing):
 		if playing:
 			elapsed = player.get_playing_time()
-			if self.__song.load_lyrics():
-				try:
-					self.__display.show(self.__song.lrc_[elapsed])
-				except KeyError:
-					pass
+			try:
+				self.__display.show(self.__song.lrc_[elapsed])
+			except KeyError:
+				pass
 		return
 	
 	def __receive_lyrics(self, lyrics, song):
@@ -36,6 +35,7 @@ class RBLyrics(rb.Plugin):
 			logging.info('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
 			self.__display.show(_('(%s - %s) prepared') % (song.songinfo_['ar'], song.songinfo_['ti']))
 			lyrics[0].save_lyrics()
+			self.__song = lyrics[0]
 		else:
 			logging.info('%d candidates found for (%s - %s)' % (n_candidates, song.songinfo_['ar'], song.songinfo_['ti']))
 			self.__chooser.set_instance(lyrics, song)
@@ -84,7 +84,6 @@ class RBLyrics(rb.Plugin):
 	
 	def __open_lyrics(self, entry):
 		logging.debug('enter')
-		ret = False
 		artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
 		song = init_song_search(self.__prefs, artist, title)
@@ -95,9 +94,15 @@ class RBLyrics(rb.Plugin):
 			dlg.set_title(_('RBLyrics'))
 			dlg.run()
 			dlg.destroy()	
-		logging.debug('leave %s' % ret)
-		return ret
+		logging.debug('leave')
+		return
 	
+	def __chooser_response_handler(self, song):
+		logging.debug('enter')
+		self.__song.load_lyrics()
+		logging.debug('leave')
+		return
+		
 	def activate(self, shell):
 		# internationalization
 		APP_NAME = 'RBLyrics'
@@ -112,7 +117,7 @@ class RBLyrics(rb.Plugin):
 		self.__display = DisplayOSD(self.__prefs)
 		if not os.path.exists(self.__prefs.get('folder')):
 			os.mkdir(self.__prefs.get('folder'))
-		self.__chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'))
+		self.__chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'), self.__chooser_response_handler)
 		self.__song = None
 		self.__shell = shell
 		self.__player = shell.get_player()
