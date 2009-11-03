@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
-import os, logging, re
-from utils import edit_distance
+import os, re
+from utils import edit_distance, log
 
 LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 
 def init_song_search(prefs, artist, title):
-	logging.debug('enter')
+	log.debug('enter')
 	ret = Song()
 	ret.prefs_ = prefs
 	ret.songinfo_ = {'ar':artist, 'ti':title}
 	for i in LRC_PATH_TEMPLATE:
 		ret.path_.append(i % (artist, title))
-	logging.debug('leave')
+	log.debug('leave')
 	return ret
 
 def init_song_result(song, raw):
-	logging.debug('enter')
+	log.debug('enter')
 	ret = Song()
 	ret.prefs_ = song.prefs_
 	ret.songinfo_ = song.songinfo_
@@ -24,7 +24,7 @@ def init_song_result(song, raw):
 		ret.path_.append(i % (ret.songinfo_['ar'], ret.songinfo_['ti']))
 	ret.raw_ = raw
 	ret.parse_lyrics()
-	logging.debug('leave')
+	log.debug('leave')
 	return ret
 
 def song_cmp(x, y):
@@ -32,7 +32,7 @@ def song_cmp(x, y):
 	
 class Song:
 	def __init__(self):
-		logging.debug('enter')
+		log.debug('enter')
 		self.prefs_ = None
 		self.songinfo_ = {}
 		self.path_ = []
@@ -40,21 +40,21 @@ class Song:
 		self.lrc_ = {}
 		self.raw_ = ''
 		self.edit_distance_ = 0
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def save_lyrics(self):
-		logging.debug('enter')
+		log.debug('enter')
 		path = os.path.join(self.prefs_.get('folder'), self.path_[0])
 		dir = os.path.dirname(path)
 		if not os.path.exists(dir):
 			os.makedirs(dir)
 		open(path, 'w').write(self.raw_)
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def load_lyrics(self):
-		logging.debug('enter')
+		log.debug('enter')
 		ret = False
 		if self.lrc_ != {}:
 			ret = True
@@ -62,29 +62,29 @@ class Song:
 			for p in self.path_:
 				path = os.path.join(self.prefs_.get('folder'), p)
 				if os.path.isfile(path):
-					logging.info('load <%s>' % path)
+					log.info('load <%s>' % path)
 					self.raw_ = open(path).read()
 					self.parse_lyrics()
 					ret = True
 					break
-		logging.debug('leave')
+		log.debug('leave')
 		return ret
 		
 	def open_lyrics(self):
-		logging.debug('enter')
+		log.debug('enter')
 		ret = False
 		for p in self.path_:
 			path = os.path.join(self.prefs_.get('folder'), p)
 			if os.path.exists(path):
-				logging.info('open <%s>' % path)
+				log.info('open <%s>' % path)
 				os.system('/usr/bin/xdg-open \"%s\"' % path)
 				ret = True
 				break
-		logging.debug('leave')
+		log.debug('leave')
 		return ret
 		
 	def parse_lyrics(self):
-		logging.debug('enter')
+		log.debug('enter')
 		lines = self.raw_.split(os.linesep)
 		self.lrc_ = {}
 		cache = {}
@@ -116,7 +116,7 @@ class Song:
 					pos = pos + len(time[0])
 				lrc = line[pos:]
 				for time in tm:
-					#logging.debug(time)
+					#log.debug(time)
 					try:
 						minute = int(time[1])
 						second = int(time[2])
@@ -127,7 +127,7 @@ class Song:
 						key = (minute * 60 + second) * 1000 + centi * 10
 						cache[key] = lrc
 					except ValueError:
-						logging.error('invalid timestamp %s' % time)
+						log.error('invalid timestamp %s' % time)
 		tags = cache.keys()
 		tags.sort()
 		for key in tags:
@@ -145,5 +145,5 @@ class Song:
 		if self.lrcinfo_.has_key('ti'):
 			ti = self.lrcinfo_['ti']
 		self.edit_distance_ = edit_distance(ar.lower(), self.songinfo_['ar'].lower()) + edit_distance(ti.lower(), self.songinfo_['ti'].lower())
-		logging.debug('leave')
+		log.debug('leave')
 		return
