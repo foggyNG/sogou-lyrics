@@ -17,56 +17,56 @@ class EngineSogou:
 	def search(self, song):
 		logging.debug('enter')
 		retval = []
+		token = clean_token(song.songinfo_['ti'])
+		encoding = chardet.detect(token)['encoding']
+		title_encode = urllib2.quote(token.decode(encoding, 'ignore').encode('gbk', 'ignore'))
+		token = clean_token(song.songinfo_['ar'])
+		encoding = chardet.detect(token)['encoding']
+		artist_encode = urllib2.quote(token.decode(encoding, 'ignore').encode('gbk', 'ignore'))
+		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
+		logging.debug('search page <%s>' % url)
 		try:
-			# grab song search page
-			token = clean_token(song.songinfo_['ti'])
-			encoding = chardet.detect(token)['encoding']
-			title_encode = urllib2.quote(token.decode(encoding).encode('gbk'))
-			token = clean_token(song.songinfo_['ar'])
-			encoding = chardet.detect(token)['encoding']
-			artist_encode = urllib2.quote(token.decode(encoding).encode('gbk'))
-			url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
-			logging.debug('search page <%s>' % url)
 			cj = cookielib.CookieJar()
 			opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-			cache = opener.open(url, None, self.__timeout).readlines()
-			urllist = []
+			cache = opener.open(url, None, self.__timeout).read()
+			encoding = chardet.detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').splitlines()
+		except Exception as e:
+			logging.error(e)
+		else:
 			for line in cache:
-				encoding = chardet.detect(line)['encoding']
-				try:
-					line = line.decode(encoding)
-				except:
-					continue
 				# grab lyrics search page, only use the first
 				m = re.search('geci\.so\?[^\"]*', line)
 				if m != None:
 					url = 'http://mp3.sogou.com/%s' % m.group(0)
 					logging.debug('lyrics page <%s>' % url)
-					cache = opener.open(url, None, self.__timeout).readlines()
-					for line in cache:
-						encoding = chardet.detect(line)['encoding']
-						try:
-							line = line.decode(encoding)
-						except:
-							continue
+					try:
+						cache = opener.open(url, None, self.__timeout).read()
+						encoding = chardet.detect(cache)['encoding']
+						cache = cache.decode(encoding, 'ignore').splitlines()
+					except Exception as e:
+						logging.error(e)
+					else:
 						# grab lyrics file url, try all of them
-						m = re.search('downlrc\.jsp\?[^\"]*', line)
-						if m != None:
-							urllist.append('http://mp3.sogou.com/%s' % m.group(0))
+						for line in cache:
+							m = re.search('downlrc\.jsp\?[^\"]*', line)
+							if m != None:
+								url = 'http://mp3.sogou.com/%s' % m.group(0)
+								try:
+									cache = opener.open(url, None, self.__timeout).read()
+								except Exception as e:
+									logging.error(e)
+								else:
+									encoding = chardet.detect(cache)['encoding']
+									cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+									ins = init_song_result(song, cache)
+									logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
+									retval.append(ins)
+									if ins.edit_distance_ == 0 or len(retval) >= self.__max:
+										break
+						logging.info('%d candidates found' % len(retval))
 					break
-			logging.info('%d candidates found' % min(len(urllist), self.__max))
-			for url in urllist:
-				try:
-					cache = opener.open(url, None, self.__timeout).read()
-					encoding = chardet.detect(cache)['encoding']
-					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
-					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
-					retval.append(ins)
-					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
-						break
-				except Exception as e:
-					logging.error(e)
-		except Exception as e:
-			logging.error(e)
+			else:
+				logging.info('0 candidates found')
 		logging.debug('leave')
 		return retval
