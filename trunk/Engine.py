@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import logging, threading
+import threading
+from utils import log
 from EngineSogou import EngineSogou
 from EngineTT import EngineTT
 from EngineMini import EngineMini
@@ -20,12 +21,12 @@ def handler(engine, args):
 class Engine:
 	
 	def __init__(self, engine, song):
-		logging.debug('enter')
+		log.debug('enter')
 		self.__engine = engine
 		self.__song = song
 		self.__candidate = []
 		self.__lock = threading.Condition(threading.Lock())
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def __receive_lyrics(self, lyrics):
@@ -35,7 +36,7 @@ class Engine:
 		return
 		
 	def get_lyrics(self):
-		logging.debug('enter')
+		log.debug('enter')
 		pool = Pool(len(self.__engine))
 		for key in self.__engine:
 			engine = engine_map[key]
@@ -43,5 +44,5 @@ class Engine:
 		pool.close()
 		pool.join()
 		self.__candidate.sort(song_cmp)
-		logging.debug('leave (%d)' % len(self.__candidate))
+		log.debug('leave (%d)' % len(self.__candidate))
 		return self.__candidate

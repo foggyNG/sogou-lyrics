@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, logging, gettext
+import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, gettext
+from utils import log
 _ = gettext.gettext
+
 class LyricsChooser:
 	def __init__(self, glade_file, callback):
-		logging.debug('enter')
+		log.debug('enter')
 		gladexml = gtk.glade.XML(glade_file)
 		self.__window = gladexml.get_widget('lyrics-chooser')
 		self.__callback = callback
@@ -25,23 +27,23 @@ class LyricsChooser:
 		selection.connect('changed', self.__selection_changed)
 		self.__viewer = widgets['preview']
 		del selection, widgets, gladexml
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def __selection_changed(self, widget):
-		logging.debug('enter')
+		log.debug('enter')
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
-			logging.debug('select [index = %d]' % index)
+			log.debug('select [index = %d]' % index)
 			self.__viewer.get_buffer().set_text(self.__lyrics[index].raw_)
 		else:
 			self.__viewer.get_buffer().set_text('')
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def __response(self, widget, response):
-		logging.debug('enter')
+		log.debug('enter')
 		song = None
 		if response == gtk.RESPONSE_OK:
 			selected = self.__chooser.get_selection().get_selected()
@@ -50,11 +52,11 @@ class LyricsChooser:
 			song.save_lyrics()
 		self.__window.hide()
 		self.__callback(song)
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def set_instance(self, lyrics, song):
-		logging.debug('enter')
+		log.debug('enter')
 		self.__song = song
 		self.__token.clear()
 		self.__lyrics = lyrics
@@ -69,12 +71,12 @@ class LyricsChooser:
 			self.__token.append([count, '%s - %s' % (ar, ti)])
 			count = count + 1
 		self.__chooser.get_selection().select_iter(self.__token.get_iter_first())
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def show(self):
-		logging.debug('enter')
+		log.debug('enter')
 		self.__window.set_title('%s - %s' % (self.__song.songinfo_['ar'], self.__song.songinfo_['ti']))
 		self.__window.show_all()
-		logging.debug('enter')
+		log.debug('enter')
 		return

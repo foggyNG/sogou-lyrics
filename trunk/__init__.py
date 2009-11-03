@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, urllib2, re, logging, gettext
+import os, urllib2, re, gettext, logging, logging.handlers
 import rhythmdb, rb
 import gobject, gtk, gconf
 from Preference import Preference
@@ -9,6 +9,7 @@ from LyricsChooser import LyricsChooser
 from Song import *
 from Engine import Engine
 from DisplayOSD import DisplayOSD
+from utils import APP_NAME, log
 _ = gettext.gettext
 
 class RBLyrics(rb.Plugin):
@@ -27,29 +28,29 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	def __receive_lyrics(self, lyrics, song):
-		logging.debug('enter')
+		log.debug('enter')
 		n_candidates = len(lyrics)
 		if n_candidates == 0:
 			self.__display.show(_('(%s - %s) not found') % (song.songinfo_['ar'], song.songinfo_['ti']))
 		elif lyrics[0].edit_distance_ == 0:
-			logging.info('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
+			log.info('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
 			self.__display.show(_('(%s - %s) prepared') % (song.songinfo_['ar'], song.songinfo_['ti']))
 			lyrics[0].save_lyrics()
 			self.__song = lyrics[0]
 		else:
-			logging.info('%d candidates found for (%s - %s)' % (n_candidates, song.songinfo_['ar'], song.songinfo_['ti']))
+			log.info('%d candidates found for (%s - %s)' % (n_candidates, song.songinfo_['ar'], song.songinfo_['ti']))
 			self.__chooser.set_instance(lyrics, song)
 			self.__chooser.show()
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def __playing_song_changed_handler(self, player, entry):
-		logging.debug('enter')
+		log.debug('enter')
 		if entry:
 			# get playing song properties		
 			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
-			logging.info('(%s - %s)' % (artist, title))
+			log.info('(%s - %s)' % (artist, title))
 			#
 			self.__song = init_song_search(self.__prefs, artist, title)
 			if self.__song.load_lyrics():
@@ -60,59 +61,67 @@ class RBLyrics(rb.Plugin):
 				self.__receive_lyrics(lyrics, self.__song)
 			else:
 				self.__display.show(_('(%s - %s) not found') % (artist, title))
-		logging.debug('leave')
+		log.debug('leave')
 		return
 
 	def __open_lyrics_popup(self, action):
-		logging.debug('enter')
+		log.debug('enter')
 		source = self.__shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
 			entry = selected[0]
 			self.__open_lyrics(entry)
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def __open_lyrics_shortcut(self, action):
-		logging.debug('enter')
+		log.debug('enter')
 		entry = self.__player.get_playing_entry ()
 		if entry:
 			self.__open_lyrics(entry)
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def __open_lyrics(self, entry):
-		logging.debug('enter')
+		log.debug('enter')
 		artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
 		song = init_song_search(self.__prefs, artist, title)
 		if not song.open_lyrics():
-			logging.info('(%s - %s) not found' % (artist, title))
+			log.info('(%s - %s) not found' % (artist, title))
 			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
 			dlg.set_title(_('RBLyrics'))
 			dlg.run()
 			dlg.destroy()	
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def __chooser_response_handler(self, song):
-		logging.debug('enter')
+		log.debug('enter')
 		self.__song.load_lyrics()
-		logging.debug('leave')
+		log.debug('leave')
 		return
 		
 	def activate(self, shell):
 		# internationalization
-		APP_NAME = 'RBLyrics'
 		LOCALE_DIR = self.find_file('locale')
 		for module in (gettext, gtk.glade):
 			module.bindtextdomain(APP_NAME, LOCALE_DIR)
 			module.textdomain(APP_NAME)
 		gettext.install(APP_NAME)
 		# logging
-		logging.basicConfig(level=logging.DEBUG, format= 'RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s')
+		log.setLevel(logging.DEBUG)
+		filename = os.path.join(os.path.dirname(LOCALE_DIR), 'log')
+		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=10240, backupCount=0)
+		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
+		log.addHandler(file_handler)
+		console_handler = logging.StreamHandler()
+		console_handler.setLevel(logging.INFO)
+		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
+		log.addHandler(console_handler)
+		#
 		self.__prefs = Preference(self.find_file('prefs.glade'))
 		self.__display = DisplayOSD(self.__prefs)
 		if not os.path.exists(self.__prefs.get('folder')):
@@ -151,7 +160,7 @@ class RBLyrics(rb.Plugin):
 		uim.insert_action_group(self.__actiongroup, 0)
 		self.__ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		logging.info('activated')
+		log.info('activated')
 		return
 
 	def deactivate(self, shell):
@@ -173,7 +182,7 @@ class RBLyrics(rb.Plugin):
 		del self.__chooser
 		del self.__display
 		del self.__prefs
-		logging.info('deactivated')
+		log.info('deactivated')
 		return
 
 	def create_configure_dialog(self):

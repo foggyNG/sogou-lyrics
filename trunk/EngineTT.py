@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import re, random, urllib2, logging, chardet
+import re, random, urllib2, chardet
+from utils import log
 from xml.dom.minidom import parseString
 from utils import clean_token
 from Song import init_song_result
@@ -92,15 +93,15 @@ class ttpClient:
 class EngineTT:
 	
 	def __init__(self, timeout = 3, max = 5, locale = 'UTF-8'):
-		logging.debug('enter')
+		log.debug('enter')
 		self.__timeout = timeout
 		self.__max = max
 		self.__locale = locale
-		logging.debug('leave')
+		log.debug('leave')
 		return
 	
 	def search(self, song):
-		logging.debug('enter')
+		log.debug('enter')
 		retval = []
 		token = clean_token(song.songinfo_['ti'])
 		encoding = chardet.detect(token)['encoding']
@@ -109,11 +110,11 @@ class EngineTT:
 		encoding = chardet.detect(token)['encoding']
 		artist_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode(self.__locale, 'ignore').replace(u' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
-		logging.debug('search url <%s>' % url)
+		log.debug('search url <%s>' % url)
 		try:
 			cache = urllib2.urlopen(url, None, self.__timeout).read()
 		except Exception as e:
-			logging.error(e)
+			log.error(e)
 		else:
 			elements = parseString(cache).getElementsByTagName('lrc')
 			for element in elements:
@@ -124,16 +125,16 @@ class EngineTT:
 				try:
 					cache = urllib2.urlopen(url, None, self.__timeout).read()
 				except Exception as e:
-					logging.error(e)
+					log.error(e)
 				else:
 					encoding = chardet.detect(cache)['encoding']
 					cache = cache.decode(encoding, 'ignore').encode('utf-8', 'ignore')
 					ins = init_song_result(song, cache)
-					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
+					log.info('[score = %d] <%s>' % (ins.edit_distance_, url))
 					retval.append(ins)
 					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
 						break
-			logging.info('%d candidates found' % len(retval))
-		logging.debug('leave')
+			log.info('%d candidates found' % len(retval))
+		log.debug('leave')
 		return retval
 
