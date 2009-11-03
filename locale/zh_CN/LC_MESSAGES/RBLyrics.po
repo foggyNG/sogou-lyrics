@@ -32,6 +32,8 @@ msgid "ttplayer - www.qianqian.com"
 msgstr "千千静听 - www.qianqian.com"
 msgid "minilyrics - www.minilyrics.com"
 msgstr "迷你歌词 - www.minilyrics.com"
+msgid "lyricist - www.lyricist.cn"
+msgstr "乐辞歌词 - www.lyricist.cn"
 # lyrics chooser dialog
 msgid "Artist - Title"
 msgstr "艺术家 - 标题"

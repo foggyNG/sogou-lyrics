@@ -6,13 +6,15 @@ from utils import log
 from EngineSogou import EngineSogou
 from EngineTT import EngineTT
 from EngineMini import EngineMini
+from EngineLyricist import EngineLyricist
 from Song import song_cmp
 from multiprocessing import Pool
 
 engine_map = {
 	'ttplayer' : EngineTT,
 	'sogou' : EngineSogou,
-	'minilyrics': EngineMini
+	'minilyrics': EngineMini,
+	'lyricist': EngineLyricist
 }
 
 def handler(engine, args):
