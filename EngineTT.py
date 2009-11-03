@@ -83,7 +83,7 @@ class ttpClient:
     @staticmethod
     def EncodeArtTit(str):
 	rtn = ''
-	str = str.encode('UTF-16')[2:]
+	str = str.encode('UTF-16', 'ignore')[2:]
 	for i in range(len(str)):
 	    rtn += '%02x' % ord(str[i])
 
@@ -91,7 +91,7 @@ class ttpClient:
 	
 class EngineTT:
 	
-	def __init__(self, timeout = 3, max = 5, locale = 'utf-8'):
+	def __init__(self, timeout = 3, max = 5, locale = 'UTF-8'):
 		logging.debug('enter')
 		self.__timeout = timeout
 		self.__max = max
@@ -104,34 +104,36 @@ class EngineTT:
 		retval = []
 		token = clean_token(song.songinfo_['ti'])
 		encoding = chardet.detect(token)['encoding']
-		title_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.__locale).replace(u' ','').lower())
+		title_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode(self.__locale, 'ignore').replace(u' ','').lower())
 		token = clean_token(song.songinfo_['ar'])
 		encoding = chardet.detect(token)['encoding']
-		artist_token = ttpClient.EncodeArtTit(token.decode(encoding).encode(self.__locale).replace(u' ','').lower())
+		artist_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode(self.__locale, 'ignore').replace(u' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		logging.debug('search url <%s>' % url)
 		try:
 			cache = urllib2.urlopen(url, None, self.__timeout).read()
-			dom = parseString(cache)
-			elements = dom.getElementsByTagName('lrc')
-			logging.info('%d candidates found' % min(len(elements), self.__max))
+		except Exception as e:
+			logging.error(e)
+		else:
+			elements = parseString(cache).getElementsByTagName('lrc')
 			for element in elements:
+				artist = element.getAttribute('artist')
+				title = element.getAttribute('title')
+				id = int(element.getAttribute('id'))
+				url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
 				try:
-					artist = element.getAttribute('artist')
-					title = element.getAttribute('title')
-					id = int(element.getAttribute('id'))
-					url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('utf-8')), random.randint(0,0xFFFFFFFFFFFF))
 					cache = urllib2.urlopen(url, None, self.__timeout).read()
+				except Exception as e:
+					logging.error(e)
+				else:
 					encoding = chardet.detect(cache)['encoding']
-					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
+					cache = cache.decode(encoding, 'ignore').encode('utf-8', 'ignore')
+					ins = init_song_result(song, cache)
 					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
 					retval.append(ins)
 					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
 						break
-				except Exception as e:
-					logging.error(e)
-		except Exception as e:
-			logging.error(e)
+			logging.info('%d candidates found' % len(retval))
 		logging.debug('leave')
 		return retval
 

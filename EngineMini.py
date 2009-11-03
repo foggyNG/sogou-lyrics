@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- coding: UTF-8 -*-
 
 import urllib2, logging, chardet
 from xml.dom.minidom import parseString
@@ -21,10 +21,10 @@ class EngineMini:
 		retval = []
 		token = clean_token(song.songinfo_['ti'])
 		encoding = chardet.detect(token)['encoding']
-		title_token = token.decode(encoding).encode('utf-8')
+		title_token = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 		token = clean_token(song.songinfo_['ar'])
 		encoding = chardet.detect(token)['encoding']
-		artist_token = token.decode(encoding).encode('utf-8')		
+		artist_token = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')		
 		xml = "<?xml version=\"1.0\" encoding='utf-8'?>\r\n"
 		xml += "<search filetype=\"lyrics\" artist=\"%s\" title=\"%s\" " % (artist_token, title_token)
 		xml += "ClientCharEncoding=\"utf-8\"/>\r\n"
@@ -34,22 +34,24 @@ class EngineMini:
 		url = 'http://www.viewlyrics.com:1212/searchlyrics.htm'
 		try:
 			xml = urllib2.urlopen(url, request, self.__timeout).read()
-			dom = parseString(xml)
-			elements = dom.getElementsByTagName('fileinfo')
-			logging.info('%d candidates found' % min(len(elements), self.__max))
+		except Exception as e:
+			logging.error(e)
+		else:
+			elements = parseString(xml).getElementsByTagName('fileinfo')
 			for element in elements:
+				url = element.getAttribute('link')
 				try:
-					url = element.getAttribute('link')
 					cache = urllib2.urlopen(url, None, self.__timeout).read()
+				except Exception as e:
+					logging.error(e)
+				else:
 					encoding = chardet.detect(cache)['encoding']
-					ins = init_song_result(song, cache.decode(encoding).encode('utf-8'))
+					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+					ins = init_song_result(song, cache)
 					logging.info('[score = %d] <%s>' % (ins.edit_distance_, url))
 					retval.append(ins)
 					if ins.edit_distance_ == 0 or len(retval) >= self.__max:
 						break
-				except Exception as e:
-					logging.error(e)
-		except Exception as e:
-			logging.error(e)
+			logging.info('%d candidates found' % len(retval))
 		logging.debug('leave')
 		return retval
