@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, urllib2, re, gettext, logging, logging.handlers
+import os, urllib2, re, gettext, logging, logging.handlers, sys
 import rhythmdb, rb
 import gobject, gtk, gconf
 from Preference import Preference
@@ -121,6 +121,10 @@ class RBLyrics(rb.Plugin):
 		console_handler.setLevel(logging.INFO)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
+		# checkout python version
+		version = sys.version_info
+		if version[0] != 2 or version[1] < 6:
+			log.critical(sys.version)
 		#
 		self.__prefs = Preference(self.find_file('prefs.glade'))
 		self.__display = DisplayOSD(self.__prefs)
