@@ -114,7 +114,7 @@ class RBLyrics(rb.Plugin):
 		# logging
 		log.setLevel(logging.DEBUG)
 		filename = os.path.join(os.path.dirname(LOCALE_DIR), 'log')
-		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=20480, backupCount=0)
+		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)
 		console_handler = logging.StreamHandler()
