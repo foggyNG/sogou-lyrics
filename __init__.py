@@ -1,15 +1,29 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, urllib2, re, gettext, logging, logging.handlers, sys
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 2 of the License, or
+#       (at your option) any later version.
+#       
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#       
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+
 import rhythmdb, rb
-import gobject, gtk, gconf
+import os, gettext, logging, logging.handlers, sys, gtk
+
 from Preference import Preference
 from LyricsChooser import LyricsChooser
-from Song import *
 from Engine import Engine
 from DisplayOSD import DisplayOSD
-from utils import APP_NAME, log
+from utils import *
 _ = gettext.gettext
 
 class RBLyrics(rb.Plugin):
@@ -19,27 +33,26 @@ class RBLyrics(rb.Plugin):
 		return
 		
 	def __elapsed_changed_handler(self, player, playing):
-		if playing:
+		if playing and self.__lyrics != None:
 			elapsed = player.get_playing_time()
-			try:
-				self.__display.show(self.__song.lrc_[elapsed])
-			except KeyError:
-				pass
+			line = self.__lyrics.get_line(elapsed)
+			if line != None:
+				self.__display.show(line)
 		return
 	
-	def __receive_lyrics(self, lyrics, song):
+	def __receive_lyrics(self, songinfo, candidate):
 		log.debug('enter')
-		n_candidates = len(lyrics)
+		n_candidates = len(candidate)
 		if n_candidates == 0:
-			self.__display.show(_('(%s - %s) not found') % (song.songinfo_['ar'], song.songinfo_['ti']))
-		elif lyrics[0].edit_distance_ == 0:
-			log.info('(%s - %s) prepared' % (song.songinfo_['ar'], song.songinfo_['ti']))
-			self.__display.show(_('(%s - %s) prepared') % (song.songinfo_['ar'], song.songinfo_['ti']))
-			lyrics[0].save_lyrics()
-			self.__song = lyrics[0]
+			self.__display.show(_('%s not found') % songinfo)
+		elif candidate[0][0] == 0:
+			log.info('%s prepared' % songinfo)
+			self.__display.show(_('%s prepared') % songinfo)
+			self.__lyrics = candidate[0][1]
+			save_lyrics(self.__prefs.get('folder'), songinfo, self.__lyrics)
 		else:
-			log.info('%d candidates found for (%s - %s)' % (n_candidates, song.songinfo_['ar'], song.songinfo_['ti']))
-			self.__chooser.set_instance(lyrics, song)
+			log.info('%d candidates found for %s' % (n_candidates, songinfo))
+			self.__chooser.set_instance(songinfo, candidate)
 			self.__chooser.show()
 		log.debug('leave')
 		return
@@ -50,17 +63,17 @@ class RBLyrics(rb.Plugin):
 			# get playing song properties		
 			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
-			log.info('(%s - %s)' % (artist, title))
-			#
-			self.__song = init_song_search(self.__prefs, artist, title)
-			if self.__song.load_lyrics():
-				self.__display.show(_('(%s - %s) prepared') % (artist, title))
+			songinfo = SongInfo(artist, title)
+			log.info(songinfo)
+			self.__lyrics = load_lyrics(self.__prefs.get('folder'), songinfo)
+			if self.__lyrics != None:
+				self.__display.show(_('%s prepared') % songinfo)
 			elif self.__prefs.get('download'):
-				self.__display.show(_('(%s - %s) downloading') % (artist, title))
-				lyrics = Engine(self.__prefs.get('engine'), self.__song).get_lyrics()
-				self.__receive_lyrics(lyrics, self.__song)
+				self.__display.show(_('%s downloading') % songinfo)
+				candidate = Engine(self.__prefs.get('engine'), songinfo).get_lyrics()
+				self.__receive_lyrics(songinfo, candidate)
 			else:
-				self.__display.show(_('(%s - %s) not found') % (artist, title))
+				self.__display.show(_('%s not found') % songinfo)
 		log.debug('leave')
 		return
 
@@ -87,20 +100,36 @@ class RBLyrics(rb.Plugin):
 		log.debug('enter')
 		artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
-		song = init_song_search(self.__prefs, artist, title)
-		if not song.open_lyrics():
-			log.info('(%s - %s) not found' % (artist, title))
+		songinfo = SongInfo(artist, title)
+		if not open_lyrics(self.__prefs.get('folder'), songinfo):
+			log.info('%s not found' % songinfo)
 			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
-			dlg.set_title(_('RBLyrics'))
+			dlg.set_title(_(APP_NAME))
 			dlg.run()
-			dlg.destroy()	
+			dlg.destroy()
 		log.debug('leave')
 		return
 	
-	def __chooser_response_handler(self, song):
+	def __chooser_response_handler(self, songinfo, lyrics):
 		log.debug('enter')
-		self.__song.load_lyrics()
+		is_current = False
+		entry = self.__player.get_playing_entry()
+		if entry:
+			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
+			songinfo_t = SongInfo(artist, title)
+			if songinfo == songinfo_t:
+				is_current = True
+		#
+		if lyrics:
+			save_lyrics(self.__prefs.get('folder'), songinfo, lyrics)
+			if is_current:
+				self.__display.show(_('%s prepared') % songinfo)
+				self.__lyrics = lyrics
+		else:
+			if is_current:
+				self.__display.show(_('%s not found') % songinfo)
 		log.debug('leave')
 		return
 		
@@ -112,15 +141,10 @@ class RBLyrics(rb.Plugin):
 			module.textdomain(APP_NAME)
 		gettext.install(APP_NAME)
 		# logging
-		log.setLevel(logging.DEBUG)
 		filename = os.path.join(os.path.dirname(LOCALE_DIR), 'log')
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)
-		console_handler = logging.StreamHandler()
-		console_handler.setLevel(logging.INFO)
-		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
-		log.addHandler(console_handler)
 		# checkout python version
 		version = sys.version_info
 		if version[0] != 2 or version[1] < 6:
@@ -131,7 +155,7 @@ class RBLyrics(rb.Plugin):
 		if not os.path.exists(self.__prefs.get('folder')):
 			os.mkdir(self.__prefs.get('folder'))
 		self.__chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'), self.__chooser_response_handler)
-		self.__song = None
+		self.__lyrics = None
 		self.__shell = shell
 		self.__player = shell.get_player()
 		self.__db = shell.get_property('db')
@@ -182,7 +206,7 @@ class RBLyrics(rb.Plugin):
 		del self.__db
 		del self.__player
 		del self.__shell
-		del self.__song
+		del self.__lyrics
 		del self.__chooser
 		del self.__display
 		del self.__prefs

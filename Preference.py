@@ -1,7 +1,25 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 2 of the License, or
+#       (at your option) any later version.
+#       
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#       
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+
+import os, gtk, gconf
+from gtk.gdk import color_parse
+from gtk.glade import XML
+
 from utils import log
 from Engine import engine_map
 
@@ -21,7 +39,7 @@ class Preference:
 		log.debug('enter')
 		# get main dialog frome glade file
 		self.__gconf = gconf.client_get_default()
-		gladexml = gtk.glade.XML(glade_file)
+		gladexml = XML(glade_file)
 		self.__dialog = gladexml.get_widget('preference')
 		self.__dialog.connect('response', self.__dialog_response)
 		# get widgets from glade file
@@ -202,12 +220,12 @@ class Preference:
 		widget = self.__widget[key]
 		try:
 			value = self.__gconf.get_string(gconf_keys[key])
-			gtk.gdk.color_parse(value)
+			color_parse(value)
 		except:
 			value = '#FFFF00'
 		self.__setting[key] = value
 		log.info('%s : %s' % (key, value))
-		widget.set_color(gtk.gdk.color_parse(value))
+		widget.set_color(color_parse(value))
 		widget.connect('color-set', self.set_fgcolor)
 		# animation
 		key = 'animation'

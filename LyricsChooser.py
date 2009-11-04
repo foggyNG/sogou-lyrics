@@ -1,14 +1,31 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import os, gobject, gtk, gtk.glade, gtk.gdk, gconf, gettext
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 2 of the License, or
+#       (at your option) any later version.
+#       
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#       
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+
+import gobject, gtk, gettext
+from gtk.glade import XML
+
 from utils import log
 _ = gettext.gettext
 
 class LyricsChooser:
 	def __init__(self, glade_file, callback):
 		log.debug('enter')
-		gladexml = gtk.glade.XML(glade_file)
+		gladexml = XML(glade_file)
 		self.__window = gladexml.get_widget('lyrics-chooser')
 		self.__callback = callback
 		widgets = {}
@@ -36,7 +53,7 @@ class LyricsChooser:
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
 			log.debug('select [index = %d]' % index)
-			self.__viewer.get_buffer().set_text(self.__lyrics[index].raw_)
+			self.__viewer.get_buffer().set_text(self.__candidate[index][1].get_raw())
 		else:
 			self.__viewer.get_buffer().set_text('')
 		log.debug('leave')
@@ -44,31 +61,24 @@ class LyricsChooser:
 		
 	def __response(self, widget, response):
 		log.debug('enter')
-		song = None
+		lyrics = None
 		if response == gtk.RESPONSE_OK:
 			selected = self.__chooser.get_selection().get_selected()
 			index = selected[0].get_value(selected[1], 0)
-			song = self.__lyrics[index]
-			song.save_lyrics()
+			lyrics = self.__candidate[index][1]
 		self.__window.hide()
-		self.__callback(song)
+		self.__callback(self.__songinfo, lyrics)
 		log.debug('leave')
 		return
 	
-	def set_instance(self, lyrics, song):
+	def set_instance(self, songinfo, candidate):
 		log.debug('enter')
-		self.__song = song
+		self.__songinfo = songinfo
 		self.__token.clear()
-		self.__lyrics = lyrics
+		self.__candidate = candidate
 		count = 0
-		for c in lyrics:
-			ar = ''
-			if c.lrcinfo_.has_key('ar'):
-				ar = c.lrcinfo_['ar']
-			ti = ''
-			if c.lrcinfo_.has_key('ti'):
-				ti = c.lrcinfo_['ti']
-			self.__token.append([count, '%s - %s' % (ar, ti)])
+		for c in self.__candidate:
+			self.__token.append([count, '%s - %s' % (c[1].get('ar'), c[1].get('ti'))])
 			count = count + 1
 		self.__chooser.get_selection().select_iter(self.__token.get_iter_first())
 		log.debug('leave')
@@ -76,7 +86,7 @@ class LyricsChooser:
 		
 	def show(self):
 		log.debug('enter')
-		self.__window.set_title('%s - %s' % (self.__song.songinfo_['ar'], self.__song.songinfo_['ti']))
+		self.__window.set_title('%s - %s' % (self.__songinfo.get('ar'), self.__songinfo.get('ti')))
 		self.__window.show_all()
 		log.debug('enter')
 		return
