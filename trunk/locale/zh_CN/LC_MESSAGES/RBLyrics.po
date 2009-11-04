@@ -47,12 +47,12 @@ msgid "Open the lyrics of the selected song"
 msgstr "打开当前选择曲目歌词"
 
 # display osd
-msgid "(%s - %s) not found"
-msgstr "(%s - %s) 未找到"
-msgid "(%s - %s) prepared"
-msgstr "(%s - %s) 准备就绪"
-msgid "(%s - %s) downloading"
-msgstr "(%s - %s) 下载中"
+msgid "%s not found"
+msgstr "%s 未找到"
+msgid "%s prepared"
+msgstr "%s 准备就绪"
+msgid "%s downloading"
+msgstr "%s 下载中"
 
 # error dialog
 msgid "RBLyrics"
