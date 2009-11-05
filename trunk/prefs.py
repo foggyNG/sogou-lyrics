@@ -16,12 +16,15 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+## @package RBLyrics.prefs
+#  Preference.
+
 import os, gtk, gconf
 from gtk.gdk import color_parse
 from gtk.glade import XML
 
-from utils import log
-from Engine import engine_map
+from RBLyrics.utils import log
+from RBLyrics.engine import engine_map
 
 ## Gconf settings.
 #  Application settings are stored in Gconf.

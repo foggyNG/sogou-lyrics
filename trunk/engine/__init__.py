@@ -16,21 +16,24 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+## @package RBLyrics.engine
+#  Lyrics search engine.
+
 import threading
 from multiprocessing import Pool
 
-from utils import log
-from EngineSogou import EngineSogou
-from EngineTT import EngineTT
-from EngineMini import EngineMini
-from EngineLyricist import EngineLyricist
+from RBLyrics.utils import log
+from RBLyrics.engine.sogou import Sogou
+from RBLyrics.engine.ttplayer import TTPlayer
+from RBLyrics.engine.minilyrics import Minilyrics
+from RBLyrics.engine.lyricist import Lyricist
 
 ## Lyrics search engine map.
 engine_map = {
-	'ttplayer' : EngineTT,
-	'sogou' : EngineSogou,
-	'minilyrics': EngineMini,
-	'lyricist': EngineLyricist
+	'ttplayer' : TTPlayer,
+	'sogou' : Sogou,
+	'minilyrics': Minilyrics,
+	'lyricist': Lyricist
 }
 
 ## Search engine handler for multiprocessing.

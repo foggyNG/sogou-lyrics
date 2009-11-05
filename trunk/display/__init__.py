@@ -16,44 +16,29 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from gnomeosd import eventbridge
+## @package RBLyrics.display
+#  Displayer.
 
-from utils import log
+from RBLyrics.display.osd import OSD
+from RBLyrics.utils import log
 
-## Gnome OSD displayer.
-#
-#  Display message using Gnome OSD interface.
-class DisplayOSD:
+## Lyrics displayer manager.
+class Display:
 	
-	## @var _prefs
-	#  Preference.
-	
-	## @var _template
-	#  Message template.
-	
-	## @var _osd
-	#  OSD object.
+	## @var _interface
+	#  Display interface.
 	
 	## The constructor.
 	#  @param prefs Preference.
 	def __init__(self, prefs):
 		log.debug('enter')
-		self._prefs = prefs
-		self._template = "<message id='RBLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
-		self._osd = eventbridge.OSD()
+		self._interface = OSD(prefs)
 		log.debug('leave')
 		return
 	
 	## Display message.
 	#  @param message Message to show.
 	def show(self, message):
-		if self._prefs.get('display'):
-			xml = self._template % (
-				self._prefs.get('animation'),
-				self._prefs.get('vpos'),
-				self._prefs.get('halign'),
-				self._prefs.get('fgcolor'),
-				message)
-			self._osd.send(xml)
+		self._interface.show(message)
 		return
 		

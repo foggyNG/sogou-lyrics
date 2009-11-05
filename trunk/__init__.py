@@ -16,15 +16,18 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+## @package RBLyrics
+#  RBLyrics.
+
 import rhythmdb, rb
 import os, gettext, logging, logging.handlers, sys, gtk
-
-from Preference import Preference
-from LyricsChooser import LyricsChooser
-from Engine import Engine
-from DisplayOSD import DisplayOSD
-from utils import *
 _ = gettext.gettext
+
+from RBLyrics.prefs import Preference
+from RBLyrics.chooser import LyricsChooser
+from RBLyrics.engine import Engine
+from RBLyrics.display import Display
+from RBLyrics.utils import *
 
 ## RBLyrics plugin.
 class RBLyrics(rb.Plugin):
@@ -164,10 +167,10 @@ class RBLyrics(rb.Plugin):
 			log.critical(sys.version)
 		#
 		self._prefs = Preference(self.find_file('prefs.glade'))
-		self._display = DisplayOSD(self._prefs)
+		self._display = Display(self._prefs)
 		if not os.path.exists(self._prefs.get('folder')):
 			os.mkdir(self._prefs.get('folder'))
-		self._chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'), self._chooser_response_handler)
+		self._chooser = LyricsChooser(self.find_file('chooser.glade'), self._chooser_response_handler)
 		self._lyrics = None
 		self._shell = shell
 		self._player = shell.get_player()
@@ -190,7 +193,7 @@ class RBLyrics(rb.Plugin):
 		
 		# add icon
 		iconsource = gtk.IconSource()
-		iconsource.set_filename(self.find_file("open-lyrics.svg"))
+		iconsource.set_filename(self.find_file("RBLyrics.svg"))
 		iconset = gtk.IconSet()
 		iconset.add_source(iconsource)
 		iconfactory = gtk.IconFactory()
