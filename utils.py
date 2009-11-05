@@ -16,7 +16,10 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-import re, logging, os
+## @package RBLyrics.utils
+#  Utilities.
+
+import re, logging, os, sys
 
 ## Application name.
 APP_NAME = 'RBLyrics'

@@ -16,11 +16,14 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+## @package RBLyrics.chooser
+#  Lyrics chooser.
+
 import gobject, gtk, gettext
+_ = gettext.gettext
 from gtk.glade import XML
 
-from utils import log
-_ = gettext.gettext
+from RBLyrics.utils import log
 
 ## Lyrics chooser dialog.
 class LyricsChooser:

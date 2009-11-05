@@ -16,16 +16,20 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-import urllib2, chardet, sys
+## @package RBLyrics.engine.minilyrics
+#  Minilyrics search engine.
+
+import urllib2, sys
 from hashlib import md5
 from xml.dom.minidom import parseString
 
-from utils import log, clean_token, distance, LyricsInfo, SongInfo
+from RBLyrics.chardet import detect
+from RBLyrics.utils import log, clean_token, distance, LyricsInfo, SongInfo
 
-## Minilyrics engine.
+## TTPlayer engine.
 #
 #  Retrieve lyrics from www.viewlyrics.com.
-class EngineMini:
+class Minilyrics:
 	
 	## @var _timeout
 	#  HTTP request timeout.
@@ -50,10 +54,10 @@ class EngineMini:
 		log.debug('enter')
 		retval = []
 		token = clean_token(songinfo.get('ti'))
-		encoding = chardet.detect(token)['encoding']
+		encoding = detect(token)['encoding']
 		title_token = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 		token = clean_token(songinfo.get('ar'))
-		encoding = chardet.detect(token)['encoding']
+		encoding = detect(token)['encoding']
 		artist_token = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')		
 		xml = "<?xml version=\"1.0\" encoding='utf-8'?>\r\n"
 		xml += "<search filetype=\"lyrics\" artist=\"%s\" title=\"%s\" " % (artist_token, title_token)
@@ -75,7 +79,7 @@ class EngineMini:
 				except Exception as e:
 					log.error(e)
 				else:
-					encoding = chardet.detect(cache)['encoding']
+					encoding = detect(cache)['encoding']
 					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 					lyrics = LyricsInfo(cache)
 					dist = distance(songinfo, lyrics)
@@ -86,21 +90,3 @@ class EngineMini:
 			log.info('%d candidates found' % len(retval))
 		log.debug('leave')
 		return retval
-
-if __name__ == '__main__':
-	if len(sys.argv) < 3:
-		print 'Usage: %s <artist> <title> [max] [timeout]' % (sys.argv[0])
-	else:
-		artist = sys.argv[1]
-		title = sys.argv[2]
-		max = 5
-		timeout = 3
-		try:
-			max = int(sys.argv[3])
-			timeout = int(sys.argv[4])
-		except:
-			pass
-		song = SongInfo(artist, title)
-		candidate = EngineMini(timeout, max).search(song)
-		for c in candidate:
-			log.info('edit distance = %d, artist = \'%s\', title = \'%s\'\n%s' % (c[0], c[1].get('ar'), c[1].get('ti'), c[1].get_raw()))
