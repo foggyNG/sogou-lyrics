@@ -20,15 +20,30 @@ import re, cookielib, urllib2, chardet, sys
 
 from utils import log, clean_token, distance, LyricsInfo, SongInfo
 
+## Sogou mp3 engine.
+#
+#  Retrieve lyrics from mp3.sogou.com.
 class EngineSogou:
 	
+	## @var _timeout
+	#  HTTP request timeout.
+	
+	## @var _max
+	#  Max number of lyrics expected.
+	
+	## The constructor.
+	#  @param timeout HTTP request timeout.
+	#  @param max Max number of lyrics expected.
 	def __init__(self, timeout = 3, max = 5):
 		log.debug('enter')
-		self.__timeout = timeout
-		self.__max = max
+		self._timeout = timeout
+		self._max = max
 		log.debug('leave')
 		return
-		
+	
+	## Retrieve lyrics.
+	#  @param songinfo Song information.
+	#  @return Lyrics candidate list.
 	def search(self, songinfo):
 		log.debug('enter')
 		retval = []
@@ -43,7 +58,7 @@ class EngineSogou:
 		try:
 			cj = cookielib.CookieJar()
 			opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-			cache = opener.open(url, None, self.__timeout).read()
+			cache = opener.open(url, None, self._timeout).read()
 			encoding = chardet.detect(cache)['encoding']
 			cache = cache.decode(encoding, 'ignore').splitlines()
 		except Exception as e:
@@ -56,7 +71,7 @@ class EngineSogou:
 					url = 'http://mp3.sogou.com/%s' % m.group(0)
 					log.debug('lyrics page <%s>' % url)
 					try:
-						cache = opener.open(url, None, self.__timeout).read()
+						cache = opener.open(url, None, self._timeout).read()
 						encoding = chardet.detect(cache)['encoding']
 						cache = cache.decode(encoding, 'ignore').splitlines()
 					except Exception as e:
@@ -68,7 +83,7 @@ class EngineSogou:
 							if m != None:
 								url = 'http://mp3.sogou.com/%s' % m.group(0)
 								try:
-									cache = opener.open(url, None, self.__timeout).read()
+									cache = opener.open(url, None, self._timeout).read()
 								except Exception as e:
 									log.error(e)
 								else:
@@ -78,7 +93,7 @@ class EngineSogou:
 									dist = distance(songinfo, lyrics)
 									log.info('[score = %d] <%s>' % (dist, url))
 									retval.append([dist, lyrics])
-									if dist == 0 or len(retval) >= self.__max:
+									if dist == 0 or len(retval) >= self._max:
 										break
 						log.info('%d candidates found' % len(retval))
 					break

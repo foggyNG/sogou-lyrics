@@ -21,21 +21,20 @@ from xml.dom.minidom import parseString
 
 from utils import log, clean_token, distance, LyricsInfo, SongInfo
 
+## TTPlayer lyrics server crack functionality.
+#
+#  Provide ttplayer specific function, such as encoding artist and title,
+#  generate a Id code for server authorizition.
+#  (see http://ttplyrics.googlecode.com/svn/trunk/crack) 
 class ttpClient:
-    '''
-    privide ttplayer specific function, such as encoding artist and title,
-    generate a Id code for server authorizition.
-    (see http://ttplyrics.googlecode.com/svn/trunk/crack) 
-    '''
+
+	## Generate a Id Code.
+	#  These code may be ugly coz it is translated
+	#  from C code which is translated from asm code
+	#  grabed by ollydbg from ttp_lrcs.dll.
+	#  (see http://ttplyrics.googlecode.com/svn/trunk/crack)
     @staticmethod
     def CodeFunc(Id, data):
-	'''
-	Generate a Id Code
-	These code may be ugly coz it is translated
-	from C code which is translated from asm code
-	grabed by ollydbg from ttp_lrcs.dll.
-	(see http://ttplyrics.googlecode.com/svn/trunk/crack) 
-	'''
 	length = len(data)
 
 	tmp2=0
@@ -103,30 +102,44 @@ class ttpClient:
 	    rtn += '%02x' % ord(str[i])
 
 	return rtn
-	
+
+## QianQian player engine.
+#
+#  Retrieve lyrics from www.ttplayer.com.
 class EngineTT:
 	
-	def __init__(self, timeout = 3, max = 5, locale = 'UTF-8'):
+	## @var _timeout
+	#  HTTP request timeout.
+	
+	## @var _max
+	#  Max number of lyrics expected.
+	
+	## The constructor.
+	#  @param timeout HTTP request timeout.
+	#  @param max Max number of lyrics expected.
+	def __init__(self, timeout = 3, max = 5):
 		log.debug('enter')
-		self.__timeout = timeout
-		self.__max = max
-		self.__locale = locale
+		self._timeout = timeout
+		self._max = max
 		log.debug('leave')
 		return
 	
+	## Retrieve lyrics.
+	#  @param songinfo Song information.
+	#  @return Lyrics candidate list.
 	def search(self, songinfo):
 		log.debug('enter')
 		retval = []
 		token = clean_token(songinfo.get('ti'))
 		encoding = chardet.detect(token)['encoding']
-		title_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode(self.__locale, 'ignore').replace(' ','').lower())
+		title_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode('UTF-8', 'ignore').replace(' ','').lower())
 		token = clean_token(songinfo.get('ar'))
 		encoding = chardet.detect(token)['encoding']
-		artist_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode(self.__locale, 'ignore').replace(' ','').lower())
+		artist_token = ttpClient.EncodeArtTit(token.decode(encoding, 'ignore').encode('UTF-8', 'ignore').replace(' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		try:
-			cache = urllib2.urlopen(url, None, self.__timeout).read()
+			cache = urllib2.urlopen(url, None, self._timeout).read()
 		except Exception as e:
 			log.error(e)
 		else:
@@ -137,7 +150,7 @@ class EngineTT:
 				id = int(element.getAttribute('id'))
 				url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
 				try:
-					cache = urllib2.urlopen(url, None, self.__timeout).read()
+					cache = urllib2.urlopen(url, None, self._timeout).read()
 				except Exception as e:
 					log.error(e)
 				else:
@@ -147,7 +160,7 @@ class EngineTT:
 					dist = distance(songinfo, lyrics)
 					log.info('[score = %d] <%s>' % (dist, url))
 					retval.append([dist, lyrics])
-					if dist == 0 or len(retval) >= self.__max:
+					if dist == 0 or len(retval) >= self._max:
 						break
 			log.info('%d candidates found' % len(retval))
 		log.debug('leave')

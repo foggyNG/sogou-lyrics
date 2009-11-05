@@ -22,15 +22,30 @@ from xml.dom.minidom import parseString
 
 from utils import log, clean_token, distance, LyricsInfo, SongInfo
 
+## Minilyrics engine.
+#
+#  Retrieve lyrics from www.viewlyrics.com.
 class EngineMini:
 	
+	## @var _timeout
+	#  HTTP request timeout.
+	
+	## @var _max
+	#  Max number of lyrics expected.
+	
+	## The constructor.
+	#  @param timeout HTTP request timeout.
+	#  @param max Max number of lyrics expected.
 	def __init__(self, timeout = 3, max = 5):
 		log.debug('enter')
-		self.__timeout = timeout
-		self.__max = max
+		self._timeout = timeout
+		self._max = max
 		log.debug('leave')
 		return
-		
+	
+	## Retrieve lyrics.
+	#  @param songinfo Song information.
+	#  @return Lyrics candidate list.
 	def search(self, songinfo):
 		log.debug('enter')
 		retval = []
@@ -48,7 +63,7 @@ class EngineMini:
 		request = '\x02\x00\x04\x00\x00\x00%s%s' % (m.digest(), xml)
 		url = 'http://www.viewlyrics.com:1212/searchlyrics.htm'
 		try:
-			xml = urllib2.urlopen(url, request, self.__timeout).read()
+			xml = urllib2.urlopen(url, request, self._timeout).read()
 		except Exception as e:
 			log.error(e)
 		else:
@@ -56,7 +71,7 @@ class EngineMini:
 			for element in elements:
 				url = element.getAttribute('link')
 				try:
-					cache = urllib2.urlopen(url, None, self.__timeout).read()
+					cache = urllib2.urlopen(url, None, self._timeout).read()
 				except Exception as e:
 					log.error(e)
 				else:
@@ -66,7 +81,7 @@ class EngineMini:
 					dist = distance(songinfo, lyrics)
 					log.info('[score = %d] <%s>' % (dist, url))
 					retval.append([dist, lyrics])
-					if dist == 0 or len(retval) >= self.__max:
+					if dist == 0 or len(retval) >= self._max:
 						break
 			log.info('%d candidates found' % len(retval))
 		log.debug('leave')

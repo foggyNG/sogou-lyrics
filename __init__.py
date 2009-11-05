@@ -26,82 +26,93 @@ from DisplayOSD import DisplayOSD
 from utils import *
 _ = gettext.gettext
 
+## RBLyrics plugin.
 class RBLyrics(rb.Plugin):
 
+	## The constructor.
 	def __init__(self):
 		rb.Plugin.__init__(self)
 		return
-		
-	def __elapsed_changed_handler(self, player, playing):
-		if playing and self.__lyrics != None:
+	
+	## Elapsed changed handler.
+	def _elapsed_changed_handler(self, player, playing):
+		if playing and self._lyrics != None:
 			elapsed = player.get_playing_time()
-			line = self.__lyrics.get_line(elapsed)
+			line = self._lyrics.get_line(elapsed)
 			if line != None:
-				self.__display.show(line)
+				self._display.show(line)
 		return
 	
-	def __receive_lyrics(self, songinfo, candidate):
+	## Receive lyrics from search engine.
+	#  @param songinfo Song information.
+	#  @param candidate Lyrics candidates.
+	def _receive_lyrics(self, songinfo, candidate):
 		log.debug('enter')
 		n_candidates = len(candidate)
 		if n_candidates == 0:
-			self.__display.show(_('%s not found') % songinfo)
+			self._display.show(_('%s not found') % songinfo)
 		elif candidate[0][0] == 0:
 			log.info('%s prepared' % songinfo)
-			self.__display.show(_('%s prepared') % songinfo)
-			self.__lyrics = candidate[0][1]
-			save_lyrics(self.__prefs.get('folder'), songinfo, self.__lyrics)
+			self._display.show(_('%s prepared') % songinfo)
+			self._lyrics = candidate[0][1]
+			save_lyrics(self._prefs.get('folder'), songinfo, self._lyrics)
 		else:
 			log.info('%d candidates found for %s' % (n_candidates, songinfo))
-			self.__chooser.set_instance(songinfo, candidate)
-			self.__chooser.show()
+			self._chooser.set_instance(songinfo, candidate)
+			self._chooser.show()
 		log.debug('leave')
 		return
 	
-	def __playing_song_changed_handler(self, player, entry):
+	## Playing song changed handler.
+	def _playing_song_changed_handler(self, player, entry):
 		log.debug('enter')
 		if entry:
 			# get playing song properties		
-			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
+			artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo = SongInfo(artist, title)
 			log.info(songinfo)
-			self.__lyrics = load_lyrics(self.__prefs.get('folder'), songinfo)
-			if self.__lyrics != None:
-				self.__display.show(_('%s prepared') % songinfo)
-			elif self.__prefs.get('download'):
-				self.__display.show(_('%s downloading') % songinfo)
-				candidate = Engine(self.__prefs.get('engine'), songinfo).get_lyrics()
-				self.__receive_lyrics(songinfo, candidate)
+			self._lyrics = load_lyrics(self._prefs.get('folder'), songinfo)
+			if self._lyrics != None:
+				self._display.show(_('%s prepared') % songinfo)
+			elif self._prefs.get('download'):
+				self._display.show(_('%s downloading') % songinfo)
+				candidate = Engine(self._prefs.get('engine'), songinfo).get_lyrics()
+				self._receive_lyrics(songinfo, candidate)
 			else:
-				self.__display.show(_('%s not found') % songinfo)
+				self._display.show(_('%s not found') % songinfo)
 		log.debug('leave')
 		return
-
-	def __open_lyrics_popup(self, action):
+	
+	## Open lyrics handler for popup menu.
+	def _open_lyrics_popup(self, action):
 		log.debug('enter')
-		source = self.__shell.get_property("selected_source")
+		source = self._shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
 			entry = selected[0]
-			self.__open_lyrics(entry)
+			self._open_lyrics(entry)
 		log.debug('leave')
 		return
 	
-	def __open_lyrics_shortcut(self, action):
+	## Open lyrics handler for shortcut menu.
+	def _open_lyrics_shortcut(self, action):
 		log.debug('enter')
-		entry = self.__player.get_playing_entry ()
+		entry = self._player.get_playing_entry ()
 		if entry:
-			self.__open_lyrics(entry)
+			self._open_lyrics(entry)
 		log.debug('leave')
 		return
 	
-	def __open_lyrics(self, entry):
+	## Open lyrics file.
+	#  @param entry Song entry to be opened.
+	def _open_lyrics(self, entry):
 		log.debug('enter')
-		artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
-		title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
+		artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
+		title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
 		songinfo = SongInfo(artist, title)
-		if not open_lyrics(self.__prefs.get('folder'), songinfo):
+		if not open_lyrics(self._prefs.get('folder'), songinfo):
 			log.info('%s not found' % songinfo)
 			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
@@ -111,28 +122,30 @@ class RBLyrics(rb.Plugin):
 		log.debug('leave')
 		return
 	
-	def __chooser_response_handler(self, songinfo, lyrics):
+	## Lyrics choose response hander.
+	def _chooser_response_handler(self, songinfo, lyrics):
 		log.debug('enter')
 		is_current = False
-		entry = self.__player.get_playing_entry()
+		entry = self._player.get_playing_entry()
 		if entry:
-			artist = self.__db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = self.__db.entry_get(entry, rhythmdb.PROP_TITLE)
+			artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo_t = SongInfo(artist, title)
 			if songinfo == songinfo_t:
 				is_current = True
 		#
 		if lyrics:
-			save_lyrics(self.__prefs.get('folder'), songinfo, lyrics)
+			save_lyrics(self._prefs.get('folder'), songinfo, lyrics)
 			if is_current:
-				self.__display.show(_('%s prepared') % songinfo)
-				self.__lyrics = lyrics
+				self._display.show(_('%s prepared') % songinfo)
+				self._lyrics = lyrics
 		else:
 			if is_current:
-				self.__display.show(_('%s not found') % songinfo)
+				self._display.show(_('%s not found') % songinfo)
 		log.debug('leave')
 		return
-		
+	
+	## Plugin activation.
 	def activate(self, shell):
 		# internationalization
 		LOCALE_DIR = self.find_file('locale')
@@ -150,30 +163,30 @@ class RBLyrics(rb.Plugin):
 		if version[0] != 2 or version[1] < 6:
 			log.critical(sys.version)
 		#
-		self.__prefs = Preference(self.find_file('prefs.glade'))
-		self.__display = DisplayOSD(self.__prefs)
-		if not os.path.exists(self.__prefs.get('folder')):
-			os.mkdir(self.__prefs.get('folder'))
-		self.__chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'), self.__chooser_response_handler)
-		self.__lyrics = None
-		self.__shell = shell
-		self.__player = shell.get_player()
-		self.__db = shell.get_property('db')
-		self.__handler = [
-			self.__player.connect('playing-song-changed', self.__playing_song_changed_handler),
-			self.__player.connect('elapsed-changed', self.__elapsed_changed_handler)]
+		self._prefs = Preference(self.find_file('prefs.glade'))
+		self._display = DisplayOSD(self._prefs)
+		if not os.path.exists(self._prefs.get('folder')):
+			os.mkdir(self._prefs.get('folder'))
+		self._chooser = LyricsChooser(self.find_file('lyrics-chooser.glade'), self._chooser_response_handler)
+		self._lyrics = None
+		self._shell = shell
+		self._player = shell.get_player()
+		self._db = shell.get_property('db')
+		self._handler = [
+			self._player.connect('playing-song-changed', self._playing_song_changed_handler),
+			self._player.connect('elapsed-changed', self._elapsed_changed_handler)]
 		#
-		self.__action = [
+		self._action = [
 			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),
 			gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), 'RBLyrics')]
 			#gtk.Action('OpenLyricsMenuBar', _('Open Playing Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics')]
-		self.__action[0].connect('activate', self.__open_lyrics_shortcut)
-		self.__action[1].connect('activate', self.__open_lyrics_popup)
-		#self.action[2].connect('activate', self.__open_lyrics_shortcut)
-		self.__actiongroup = gtk.ActionGroup('RBLyricsActions')
-		self.__actiongroup.add_action(self.__action[0])
-		self.__actiongroup.add_action(self.__action[1])
-		#self.__actiongroup.add_action_with_accel (self.action[2], "<control>L")
+		self._action[0].connect('activate', self._open_lyrics_shortcut)
+		self._action[1].connect('activate', self._open_lyrics_popup)
+		#self.action[2].connect('activate', self._open_lyrics_shortcut)
+		self._actiongroup = gtk.ActionGroup('RBLyricsActions')
+		self._actiongroup.add_action(self._action[0])
+		self._actiongroup.add_action(self._action[1])
+		#self._actiongroup.add_action_with_accel (self.action[2], "<control>L")
 		
 		# add icon
 		iconsource = gtk.IconSource()
@@ -185,36 +198,38 @@ class RBLyrics(rb.Plugin):
 		iconfactory.add_default()
 		#
 		uim = shell.get_ui_manager()
-		uim.insert_action_group(self.__actiongroup, 0)
-		self.__ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
+		uim.insert_action_group(self._actiongroup, 0)
+		self._ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
 		log.info('activated')
 		return
-
+	
+	## Plugin deactivation.
 	def deactivate(self, shell):
-		for handler in self.__handler:
-			self.__player.disconnect(handler)
+		for handler in self._handler:
+			self._player.disconnect(handler)
 		uim = shell.get_ui_manager()
-		uim.remove_ui(self.__ui_id)
-		uim.remove_action_group(self.__actiongroup)
+		uim.remove_ui(self._ui_id)
+		uim.remove_action_group(self._actiongroup)
 		uim.ensure_update()
-		for action in self.__action:
+		for action in self._action:
 			del action
-		del self.__actiongroup
-		del self.__action
-		del self.__handler
-		del self.__db
-		del self.__player
-		del self.__shell
-		del self.__lyrics
-		del self.__chooser
-		del self.__display
-		del self.__prefs
+		del self._actiongroup
+		del self._action
+		del self._handler
+		del self._db
+		del self._player
+		del self._shell
+		del self._lyrics
+		del self._chooser
+		del self._display
+		del self._prefs
 		log.info('deactivated')
 		return
-
+	
+	## Configure dialog interface.
 	def create_configure_dialog(self):
-		dialog = self.__prefs.get_dialog()
+		dialog = self._prefs.get_dialog()
 		dialog.present()
 		return dialog
 

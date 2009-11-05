@@ -25,6 +25,7 @@ from EngineTT import EngineTT
 from EngineMini import EngineMini
 from EngineLyricist import EngineLyricist
 
+## Lyrics search engine map.
 engine_map = {
 	'ttplayer' : EngineTT,
 	'sogou' : EngineSogou,
@@ -32,37 +33,59 @@ engine_map = {
 	'lyricist': EngineLyricist
 }
 
+## Search engine handler for multiprocessing.
 def handler(engine, args):
 	return engine.search(args)
 
+## Lyrics candidate comparison handler.
 def candidate_cmp(x, y):
 	return x[0] - y[0]
-	
+
+## Lyrics search engine manager.
 class Engine:
 	
+	## @var _engine
+	#  Lyrics engine keys.
+	
+	## @var _songinfo
+	#  Song information.
+	
+	## @var _candidate
+	#  Lyrics candidates.
+	
+	## @var _lock
+	#  Thread lock for appending _candidate list.
+	
+	## The constructor.
+	#  @param engine Engine list.
+	#  @param songinfo Song information.
 	def __init__(self, engine, songinfo):
 		log.debug('enter')
-		self.__engine = engine
-		self.__songinfo = songinfo
-		self.__candidate = []
-		self.__lock = threading.Condition(threading.Lock())
+		self._engine = engine
+		self._songinfo = songinfo
+		self._candidate = []
+		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
 		return
 	
-	def __receive_lyrics(self, lyrics):
-		self.__lock.acquire()
-		self.__candidate += lyrics
-		self.__lock.release()
+	## Lyrics receive handler.
+	#  @param lyrics Lyrics received.
+	def _receive_lyrics(self, lyrics):
+		self._lock.acquire()
+		self._candidate += lyrics
+		self._lock.release()
 		return
 		
+	## Retrieve lyrics.
+	#  @return Lyrics candidate list.
 	def get_lyrics(self):
 		log.debug('enter')
-		pool = Pool(len(self.__engine))
-		for key in self.__engine:
+		pool = Pool(len(self._engine))
+		for key in self._engine:
 			engine = engine_map[key]
-			pool.apply_async(handler, [engine(), self.__songinfo], {}, self.__receive_lyrics)
+			pool.apply_async(handler, [engine(), self._songinfo], {}, self._receive_lyrics)
 		pool.close()
 		pool.join()
-		self.__candidate.sort(candidate_cmp)
-		log.debug('leave (%d)' % len(self.__candidate))
-		return self.__candidate
+		self._candidate.sort(candidate_cmp)
+		log.debug('leave (%d)' % len(self._candidate))
+		return self._candidate
