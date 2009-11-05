@@ -20,23 +20,40 @@ from gnomeosd import eventbridge
 
 from utils import log
 
+## Gnome OSD displayer.
+#
+#  Display message using Gnome OSD interface.
 class DisplayOSD:
+	
+	## @var _prefs
+	#  Preference.
+	
+	## @var _template
+	#  Message template.
+	
+	## @var _osd
+	#  OSD object.
+	
+	## The constructor.
+	#  @param prefs Preference.
 	def __init__(self, prefs):
 		log.debug('enter')
-		self.__prefs = prefs
-		self.__template = "<message id='RBLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
-		self.__osd = eventbridge.OSD()
+		self._prefs = prefs
+		self._template = "<message id='RBLyrics' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' foreground='%s'>%s</span></message>"
+		self._osd = eventbridge.OSD()
 		log.debug('leave')
 		return
-		
+	
+	## Display message.
+	#  @param message Message to show.
 	def show(self, message):
-		if self.__prefs.get('display'):
-			xml = self.__template % (
-				self.__prefs.get('animation'),
-				self.__prefs.get('vpos'),
-				self.__prefs.get('halign'),
-				self.__prefs.get('fgcolor'),
+		if self._prefs.get('display'):
+			xml = self._template % (
+				self._prefs.get('animation'),
+				self._prefs.get('vpos'),
+				self._prefs.get('halign'),
+				self._prefs.get('fgcolor'),
 				message)
-			self.__osd.send(xml)
+			self._osd.send(xml)
 		return
 		

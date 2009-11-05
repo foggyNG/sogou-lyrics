@@ -22,71 +22,82 @@ from gtk.glade import XML
 from utils import log
 _ = gettext.gettext
 
+## Lyrics chooser dialog.
 class LyricsChooser:
+	
+	## The constructor.
+	#  @param glade_file UI glade file.
+	#  @param callback Response callback.
 	def __init__(self, glade_file, callback):
 		log.debug('enter')
 		gladexml = XML(glade_file)
-		self.__window = gladexml.get_widget('lyrics-chooser')
-		self.__callback = callback
+		self._window = gladexml.get_widget('lyrics-chooser')
+		self._callback = callback
 		widgets = {}
 		for key in ['chooser', 'preview', 'ok', 'close']:
 			widgets[key] = gladexml.get_widget(key)
-		widgets['ok'].connect('clicked', self.__response, gtk.RESPONSE_OK)
-		widgets['close'].connect('clicked', self.__response, gtk.RESPONSE_CLOSE)
+		widgets['ok'].connect('clicked', self._response, gtk.RESPONSE_OK)
+		widgets['close'].connect('clicked', self._response, gtk.RESPONSE_CLOSE)
 		#
-		self.__token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
-		self.__lyrics = None
-		self.__song = None
-		self.__chooser = widgets['chooser']
-		self.__chooser.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
-		self.__chooser.set_model(self.__token)
-		selection = self.__chooser.get_selection()
-		selection.connect('changed', self.__selection_changed)
-		self.__viewer = widgets['preview']
+		self._token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
+		self._lyrics = None
+		self._song = None
+		self._chooser = widgets['chooser']
+		self._chooser.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
+		self._chooser.set_model(self._token)
+		selection = self._chooser.get_selection()
+		selection.connect('changed', self._selection_changed)
+		self._viewer = widgets['preview']
 		del selection, widgets, gladexml
 		log.debug('leave')
 		return
-		
-	def __selection_changed(self, widget):
+	
+	## Selection changed handler.
+	def _selection_changed(self, widget):
 		log.debug('enter')
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 0)
 			log.debug('select [index = %d]' % index)
-			self.__viewer.get_buffer().set_text(self.__candidate[index][1].get_raw())
+			self._viewer.get_buffer().set_text(self._candidate[index][1].get_raw())
 		else:
-			self.__viewer.get_buffer().set_text('')
-		log.debug('leave')
-		return
-		
-	def __response(self, widget, response):
-		log.debug('enter')
-		lyrics = None
-		if response == gtk.RESPONSE_OK:
-			selected = self.__chooser.get_selection().get_selected()
-			index = selected[0].get_value(selected[1], 0)
-			lyrics = self.__candidate[index][1]
-		self.__window.hide()
-		self.__callback(self.__songinfo, lyrics)
+			self._viewer.get_buffer().set_text('')
 		log.debug('leave')
 		return
 	
-	def set_instance(self, songinfo, candidate):
+	## Dialog response handler.
+	def _response(self, widget, response):
 		log.debug('enter')
-		self.__songinfo = songinfo
-		self.__token.clear()
-		self.__candidate = candidate
-		count = 0
-		for c in self.__candidate:
-			self.__token.append([count, '%s - %s' % (c[1].get('ar'), c[1].get('ti'))])
-			count = count + 1
-		self.__chooser.get_selection().select_iter(self.__token.get_iter_first())
+		lyrics = None
+		if response == gtk.RESPONSE_OK:
+			selected = self._chooser.get_selection().get_selected()
+			index = selected[0].get_value(selected[1], 0)
+			lyrics = self._candidate[index][1]
+		self._window.hide()
+		self._callback(self._songinfo, lyrics)
 		log.debug('leave')
 		return
-		
+	
+	## Set choosing instance.
+	#  @param songinfo Song information to be chosen.
+	#  @param candidate Lyrics candidates to be chosen.
+	def set_instance(self, songinfo, candidate):
+		log.debug('enter')
+		self._songinfo = songinfo
+		self._token.clear()
+		self._candidate = candidate
+		count = 0
+		for c in self._candidate:
+			self._token.append([count, '%s - %s' % (c[1].get('ar'), c[1].get('ti'))])
+			count = count + 1
+		self._chooser.get_selection().select_iter(self._token.get_iter_first())
+		log.debug('leave')
+		return
+	
+	## Show dialog.
 	def show(self):
 		log.debug('enter')
-		self.__window.set_title('%s - %s' % (self.__songinfo.get('ar'), self.__songinfo.get('ti')))
-		self.__window.show_all()
+		self._window.set_title('%s - %s' % (self._songinfo.get('ar'), self._songinfo.get('ti')))
+		self._window.show_all()
 		log.debug('enter')
 		return
