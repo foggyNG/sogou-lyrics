@@ -19,11 +19,12 @@
 ## @package RBLyrics.engine.lyricist
 #  Lyricist search engine.
 
-import urllib2, re, sys
+import urllib2, re, logging
 from xml.dom.minidom import parseString
+from optparse import OptionParser
 
-from RBLyrics.chardet import detect
-from RBLyrics.utils import log, clean_token, distance, LyricsInfo, SongInfo
+from chardet import detect
+log = logging.getLogger('RBLyrics')
 
 ## Lyricist engine.
 #
@@ -53,17 +54,14 @@ class Lyricist:
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 	
 	## Retrieve lyrics.
-	#  @param songinfo Song information.
-	#  @return Lyrics candidate list.
-	def search(self, songinfo):
+	#  @param artist Song artist.
+	#  @param title Song title.
+	#  @return Lyrics candidates.
+	def search(self, artist, title):
 		log.debug('enter')
 		retval = []
-		token = self._clean_token(clean_token(songinfo.get('ti')))
-		encoding = detect(token)['encoding']
-		title_token = urllib2.quote(token.decode(encoding, 'ignore').encode('UTF-8', 'ignore'))
-		token = self._clean_token(clean_token(songinfo.get('ar')))
-		encoding = detect(token)['encoding']
-		artist_token = urllib2.quote(token.decode(encoding, 'ignore').encode('UTF-8', 'ignore'))
+		artist_token = urllib2.quote(self._clean_token(artist))
+		title_token = urllib2.quote(self._clean_token(title))
 		url = 'http://www.winampcn.com/lrceng/get.aspx?song=%s&artist=%s&lsong=%s&prec=1&Datetime=20060601' % (title_token, artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		try:
@@ -81,12 +79,35 @@ class Lyricist:
 				else:
 					encoding = detect(cache)['encoding']
 					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-					lyrics = LyricsInfo(cache)
-					dist = distance(songinfo, lyrics)
-					log.info('[score = %d] <%s>' % (dist, url))
-					retval.append([dist, lyrics])
-					if dist == 0 or len(retval) >= self._max:
+					log.info('lyrics <%s>' % url)
+					retval.append(cache)
+					if len(retval) >= self._max:
 						break
 			log.info('%d candidates found' % len(retval))
 		log.debug('leave')
 		return retval
+
+if __name__ == '__main__':
+	log.setLevel(logging.DEBUG)
+	handler = logging.StreamHandler()
+	handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
+	log.addHandler(handler)
+	parser = OptionParser()
+	parser.add_option('-a', '--artist', dest = 'artist', type = 'string', help = 'song artist')
+	parser.add_option('-i', '--title', dest = 'title', type = 'string', help = 'song title')
+	parser.add_option('-t', '--timeout', dest = 'timeout', type = 'int', help = 'url request timeout')
+	parser.add_option('-m', '--max', dest = 'max', type = 'int', help = 'max number of expected')
+	parser.set_defaults(timeout = 3, max = 5)
+	(options, args) = parser.parse_args()
+	if len(args) != 0:
+		parser.error("incorrect number of arguments")
+	elif options.artist is None:
+		parser.error('artist is required')
+	elif options.title is None:
+		parser.error('title is required')
+	else:
+		engine = Lyricist(options.timeout, options.max)
+		candidate = engine.search(options.artist, options.title)
+		for c in candidate:
+			log.info('candidate:\n%s' % c)
+			

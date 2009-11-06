@@ -19,8 +19,10 @@
 ## @package RBLyrics.display
 #  Displayer.
 
+import logging
+
 from RBLyrics.display.osd import OSD
-from RBLyrics.utils import log
+log = logging.getLogger('RBLyrics')
 
 ## Lyrics displayer manager.
 class Display:

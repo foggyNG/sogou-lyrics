@@ -157,6 +157,11 @@ class RBLyrics(rb.Plugin):
 			module.textdomain(APP_NAME)
 		gettext.install(APP_NAME)
 		# logging
+		log.setLevel(logging.DEBUG)
+		console_handler = logging.StreamHandler()
+		console_handler.setLevel(logging.INFO)
+		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
+		log.addHandler(console_handler)
 		filename = os.path.join(os.path.dirname(LOCALE_DIR), 'log')
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))

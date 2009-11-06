@@ -32,11 +32,6 @@ LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 
 ## Logging system.
 log = logging.getLogger(APP_NAME)
-log.setLevel(logging.DEBUG)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
-log.addHandler(console_handler)
 
 ## Song information.
 class SongInfo:
