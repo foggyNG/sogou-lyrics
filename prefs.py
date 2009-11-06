@@ -34,7 +34,7 @@ gconf_keys = {
 'halign' : '/apps/rhythmbox/plugins/RBLyrics/halign',
 'vpos' : '/apps/rhythmbox/plugins/RBLyrics/vpos',
 'fgcolor' : '/apps/rhythmbox/plugins/RBLyrics/fgcolor',
-'animation' : '/apps/rhythmbox/plugins/RBLyrics/animation',
+'font' : '/apps/rhythmbox/plugins/RBLyrics/font',
 'folder' : '/apps/rhythmbox/plugins/RBLyrics/folder',
 'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine'
 }
@@ -63,11 +63,11 @@ class Preference:
 		# get main dialog frome glade file
 		self._gconf = gconf.client_get_default()
 		gladexml = XML(glade_file)
-		self._dialog = gladexml.get_widget('preference')
+		self._dialog = gladexml.get_widget('prefs')
 		self._dialog.connect('response', self._dialog_response)
 		# get widgets from glade file
 		self._widget = {}
-		for key in ['display','download','halign','vpos','fgcolor','animation','folder'] + engine_map.keys():
+		for key in ['display','download','halign','vpos','fgcolor','font','folder'] + engine_map.keys():
 			self._widget[key] = gladexml.get_widget(key)
 		filter = gtk.FileFilter()
 		filter.add_mime_type('inode/directory')
@@ -128,10 +128,10 @@ class Preference:
 		log.info('%s : %s' % (key, value))
 		return
 	
-	## Set 'animation' setting.
-	def _set_animation(self, widget):
-		key = 'animation'
-		value = widget.get_active_text()
+	## Set 'font' setting.
+	def _set_font(self, widget):
+		key = 'font'
+		value = widget.get_font_name()
 		self._setting[key] = value
 		self._gconf.set_string(gconf_keys[key], value)
 		log.info('%s : %s' % (key, value))
@@ -253,6 +253,20 @@ class Preference:
 		log.info('%s : %s' % (key, value))
 		widget.set_active(index)
 		widget.connect('changed', self._set_vpos)
+		# font
+		key = 'font'
+		value = None
+		widget = self._widget[key]
+		try:
+			value = self._gconf.get_string(gconf_keys[key])
+			if value is None:
+				value = 'Sans Italic 20'
+		except:
+			value = 'Sans Italic 20'
+		self._setting[key] = value
+		log.info('%s : %s' % (key, value))
+		widget.set_font_name(value)
+		widget.connect('font-set', self._set_font)
 		# fgcolor
 		key = 'fgcolor'
 		value = None
@@ -266,33 +280,6 @@ class Preference:
 		log.info('%s : %s' % (key, value))
 		widget.set_color(color_parse(value))
 		widget.connect('color-set', self._set_fgcolor)
-		# animation
-		key = 'animation'
-		value = None
-		widget = self._widget[key]
-		model = widget.get_model()
-		index = 0
-		try:
-			value = self._gconf.get_string(gconf_keys[key])
-			iter = model.get_iter_first()
-			found = False
-			while iter:
-				if model.get_value(iter,0) == value:
-					found = True
-					break
-				else:
-					index += 1
-					iter = model.iter_next(iter)
-			if not found :
-				index = 0
-				value = model.get_value(model.get_iter_first(), 0)
-		except:
-			index = 0
-			value = model.get_value(model.get_iter_first(), 0)
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_active(index)
-		widget.connect('changed', self._set_animation)
 		# folder
 		key = 'folder'
 		value = None
