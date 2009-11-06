@@ -42,7 +42,7 @@ class OSD:
 	def __init__(self, prefs):
 		log.debug('enter')
 		self._prefs = prefs
-		self._template = "<message id='RBLyrics' avoid_panels='on' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span size='20000' fgcolor='%s'>%s</span></message>"
+		self._template = "<message id='RBLyrics' avoid_panels='on' animations='off' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span font='%s' fgcolor='%s'>%s</span></message>"
 		self._osd = eventbridge.OSD()
 		log.debug('leave')
 		return
@@ -52,9 +52,9 @@ class OSD:
 	def show(self, message):
 		if self._prefs.get('display'):
 			xml = self._template % (
-				self._prefs.get('animation'),
 				self._prefs.get('vpos'),
 				self._prefs.get('halign'),
+				self._prefs.get('font'),
 				self._prefs.get('fgcolor'),
 				message)
 			self._osd.send(xml)

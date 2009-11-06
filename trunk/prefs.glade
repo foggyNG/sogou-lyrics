@@ -2,285 +2,299 @@
 <glade-interface>
   <!-- interface-requires gtk+ 2.16 -->
   <!-- interface-naming-policy toplevel-contextual -->
-  <widget class="GtkDialog" id="preference">
+  <widget class="GtkDialog" id="prefs">
+    <property name="border_width">5</property>
     <property name="title" translatable="yes">Preferences</property>
     <property name="resizable">False</property>
     <property name="type_hint">dialog</property>
+    <property name="has_separator">False</property>
     <child internal-child="vbox">
-      <widget class="GtkVBox" id="main-vbox">
+      <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
         <child>
-          <widget class="GtkTable" id="main-table">
+          <widget class="GtkNotebook" id="notebook1">
             <property name="visible">True</property>
-            <property name="border_width">5</property>
-            <property name="n_rows">16</property>
-            <property name="n_columns">2</property>
-            <property name="column_spacing">8</property>
-            <property name="row_spacing">3</property>
+            <property name="can_focus">True</property>
             <child>
-              <widget class="GtkLabel" id="main-common-label">
+              <widget class="GtkTable" id="table1">
                 <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="ypad">5</property>
-                <property name="label" translatable="yes">&lt;b&gt;Common Settings&lt;/b&gt;</property>
-                <property name="use_markup">True</property>
+                <property name="n_rows">3</property>
+                <property name="n_columns">2</property>
+                <child>
+                  <widget class="GtkCheckButton" id="display">
+                    <property name="label" translatable="yes">Display lyrics</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="right_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="download">
+                    <property name="label" translatable="yes">Download lyrics</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="xpad">5</property>
+                    <property name="label" translatable="yes">Lyrics folder</property>
+                    <property name="single_line_mode">True</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkFileChooserButton" id="folder">
+                    <property name="visible">True</property>
+                    <property name="action">select-folder</property>
+                    <property name="title" translatable="yes">Select lyrics folder</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
+                  </packing>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="common-tab">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Common</property>
               </widget>
               <packing>
-                <property name="right_attach">2</property>
-                <property name="bottom_attach">2</property>
+                <property name="tab_fill">False</property>
+                <property name="type">tab</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkCheckButton" id="display">
-                <property name="label" translatable="yes">Display lyrics</property>
+              <widget class="GtkVBox" id="vbox1">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <widget class="GtkCheckButton" id="sogou">
+                    <property name="label" translatable="yes">sogou - mp3.sogou.com</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="ttplayer">
+                    <property name="label" translatable="yes">ttplayer - www.qianqian.com</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="minilyrics">
+                    <property name="label" translatable="yes">minilyrics - www.minilyrics.com</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="lyricist">
+                    <property name="label" translatable="yes">lyricist - www.lyricist.cn</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
               </widget>
               <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">2</property>
-                <property name="bottom_attach">3</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkCheckButton" id="download">
-                <property name="label" translatable="yes">Download lyrics</property>
+              <widget class="GtkLabel" id="engine-tab">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
+                <property name="label" translatable="yes">Engine</property>
               </widget>
               <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">3</property>
-                <property name="bottom_attach">4</property>
+                <property name="position">1</property>
+                <property name="tab_fill">False</property>
+                <property name="type">tab</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="main-display-label">
+              <widget class="GtkTable" id="table2">
                 <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="ypad">5</property>
-                <property name="label" translatable="yes">&lt;b&gt;Display Settings&lt;/b&gt;</property>
-                <property name="use_markup">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">5</property>
-                <property name="bottom_attach">7</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-display-halign-label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Horizontal alignment</property>
-              </widget>
-              <packing>
-                <property name="top_attach">7</property>
-                <property name="bottom_attach">8</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="halign">
-                <property name="visible">True</property>
-                <property name="items">center
+                <property name="n_rows">4</property>
+                <property name="n_columns">2</property>
+                <child>
+                  <widget class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="xpad">5</property>
+                    <property name="label" translatable="yes">Horizontal</property>
+                    <property name="single_line_mode">True</property>
+                  </widget>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label3">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="xpad">5</property>
+                    <property name="ypad">5</property>
+                    <property name="label" translatable="yes">Vertical</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label4">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="xpad">5</property>
+                    <property name="label" translatable="yes">Font</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label5">
+                    <property name="visible">True</property>
+                    <property name="xalign">0</property>
+                    <property name="xpad">5</property>
+                    <property name="label" translatable="yes">Foreground</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkComboBox" id="halign">
+                    <property name="visible">True</property>
+                    <property name="items">center
 left
 right</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">7</property>
-                <property name="bottom_attach">8</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-display-vpos-label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Vertical position</property>
-              </widget>
-              <packing>
-                <property name="top_attach">8</property>
-                <property name="bottom_attach">9</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="vpos">
-                <property name="visible">True</property>
-                <property name="items">top
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkComboBox" id="vpos">
+                    <property name="visible">True</property>
+                    <property name="items">top
 center
 bottom</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkFontButton" id="font">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="title" translatable="yes">Choose font</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">2</property>
+                    <property name="bottom_attach">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkColorButton" id="fgcolor">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="title" translatable="yes">Choose foreground color</property>
+                    <property name="color">#000000000000</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
+                  </packing>
+                </child>
               </widget>
               <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">8</property>
-                <property name="bottom_attach">9</property>
+                <property name="position">2</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="main-display-animation-label">
+              <widget class="GtkLabel" id="display-tab">
                 <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Animation</property>
+                <property name="label" translatable="yes">Display</property>
               </widget>
               <packing>
-                <property name="top_attach">9</property>
-                <property name="bottom_attach">10</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="animation">
-                <property name="visible">True</property>
-                <property name="items">off
-on</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">9</property>
-                <property name="bottom_attach">10</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-display-fgcolor-label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Foreground color</property>
-              </widget>
-              <packing>
-                <property name="top_attach">10</property>
-                <property name="bottom_attach">11</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkColorButton" id="fgcolor">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="title" translatable="yes">Choose foreground color</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">10</property>
-                <property name="bottom_attach">11</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-common-dir">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Lyrics folder</property>
-              </widget>
-              <packing>
-                <property name="top_attach">4</property>
-                <property name="bottom_attach">5</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkFileChooserButton" id="folder">
-                <property name="visible">True</property>
-                <property name="action">select-folder</property>
-                <property name="title" translatable="yes">Select lyrics folder</property>
-              </widget>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">4</property>
-                <property name="bottom_attach">5</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="main-engine-label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="ypad">5</property>
-                <property name="label" translatable="yes">&lt;b&gt;Search Engine&lt;/b&gt;</property>
-                <property name="use_markup">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">11</property>
-                <property name="bottom_attach">12</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkCheckButton" id="sogou">
-                <property name="label" translatable="yes">sogou - mp3.sogou.com</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">12</property>
-                <property name="bottom_attach">13</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkCheckButton" id="ttplayer">
-                <property name="label" translatable="yes">ttplayer - www.qianqian.com</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">13</property>
-                <property name="bottom_attach">14</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkCheckButton" id="minilyrics">
-                <property name="label" translatable="yes">minilyrics - www.minilyrics.com</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">14</property>
-                <property name="bottom_attach">15</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkCheckButton" id="lyricist">
-                <property name="label" translatable="yes">lyricist - www.lyricist.cn</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
-                <property name="draw_indicator">True</property>
-              </widget>
-              <packing>
-                <property name="right_attach">2</property>
-                <property name="top_attach">15</property>
-                <property name="bottom_attach">16</property>
+                <property name="position">2</property>
+                <property name="tab_fill">False</property>
+                <property name="type">tab</property>
               </packing>
             </child>
           </widget>
           <packing>
-            <property name="position">0</property>
+            <property name="position">1</property>
           </packing>
         </child>
         <child internal-child="action_area">
-          <widget class="GtkHButtonBox" id="main-action-bbox">
+          <widget class="GtkHButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
             <property name="layout_style">end</property>
             <child>
-              <widget class="GtkButton" id="close_button">
-                <property name="label">gtk-close</property>
-                <property name="response_id">-7</property>
+              <widget class="GtkButton" id="close">
+                <property name="label" translatable="yes">gtk-close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">False</property>
+                <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
               </widget>
               <packing>
@@ -293,7 +307,7 @@ on</property>
           <packing>
             <property name="expand">False</property>
             <property name="pack_type">end</property>
-            <property name="position">1</property>
+            <property name="position">0</property>
           </packing>
         </child>
       </widget>
