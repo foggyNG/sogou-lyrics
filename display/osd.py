@@ -43,7 +43,7 @@ class OSD:
 	def __init__(self, prefs):
 		log.debug('enter')
 		self._prefs = prefs
-		self._template = "<message id='RBLyrics' avoid_panels='on' animations='off' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span font='%s' fgcolor='%s'>%s</span></message>"
+		self._template = "<message id='RBLyrics' avoid_panels='on' hide_on_hover='on' animations='off' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span font='%s' fgcolor='%s'>%s</span></message>"
 		self._osd = eventbridge.OSD()
 		log.debug('leave')
 		return
