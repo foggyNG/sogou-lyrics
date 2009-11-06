@@ -19,11 +19,11 @@
 ## @package RBLyrics.chooser
 #  Lyrics chooser.
 
-import gobject, gtk, gettext
+import gobject, gtk, gettext, logging
 _ = gettext.gettext
 from gtk.glade import XML
 
-from RBLyrics.utils import log
+log = logging.getLogger('RBLyrics')
 
 ## Lyrics chooser dialog.
 class LyricsChooser:

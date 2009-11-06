@@ -19,12 +19,12 @@
 ## @package RBLyrics.prefs
 #  Preference.
 
-import os, gtk, gconf
+import os, gtk, gconf, logging
 from gtk.gdk import color_parse
 from gtk.glade import XML
 
-from RBLyrics.utils import log
 from RBLyrics.engine import engine_map
+log = logging.getLogger('RBLyrics')
 
 ## Gconf settings.
 #  Application settings are stored in Gconf.

@@ -19,10 +19,11 @@
 ## @package RBLyrics.engine.sogou
 #  Sogou search engine.
 
-import re, cookielib, urllib2, sys
+import re, cookielib, urllib2, logging
+from optparse import OptionParser
 
-from RBLyrics.chardet import detect
-from RBLyrics.utils import log, clean_token, distance, LyricsInfo, SongInfo
+from chardet import detect
+log = logging.getLogger('RBLyrics')
 
 ## Sogou mp3 engine.
 #
@@ -46,18 +47,15 @@ class Sogou:
 		return
 	
 	## Retrieve lyrics.
-	#  @param songinfo Song information.
-	#  @return Lyrics candidate list.
-	def search(self, songinfo):
+	#  @param artist Song artist.
+	#  @param title Song title.
+	#  @return Lyrics candidates.
+	def search(self, artist, title):
 		log.debug('enter')
 		retval = []
-		token = clean_token(songinfo.get('ti'))
-		encoding = detect(token)['encoding']
-		title_encode = urllib2.quote(token.decode(encoding, 'ignore').encode('GBK', 'ignore'))
-		token = clean_token(songinfo.get('ar'))
-		encoding = detect(token)['encoding']
-		artist_encode = urllib2.quote(token.decode(encoding, 'ignore').encode('GBK', 'ignore'))
-		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_encode, title_encode)
+		artist_token = urllib2.quote(artist.encode('GBK', 'ignore'))
+		title_token = urllib2.quote(title.encode('GBK', 'ignore'))
+		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
 		log.debug('search page <%s>' % url)
 		try:
 			cj = cookielib.CookieJar()
@@ -93,11 +91,9 @@ class Sogou:
 								else:
 									encoding = detect(cache)['encoding']
 									cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-									lyrics = LyricsInfo(cache)
-									dist = distance(songinfo, lyrics)
-									log.info('[score = %d] <%s>' % (dist, url))
-									retval.append([dist, lyrics])
-									if dist == 0 or len(retval) >= self._max:
+									log.info('lyrics <%s>' % url)
+									retval.append(cache)
+									if len(retval) >= self._max:
 										break
 						log.info('%d candidates found' % len(retval))
 					break
@@ -105,3 +101,29 @@ class Sogou:
 				log.info('0 candidates found')
 		log.debug('leave')
 		return retval
+
+if __name__ == '__main__':
+	log.setLevel(logging.DEBUG)
+	handler = logging.StreamHandler()
+	handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
+	log.addHandler(handler)
+	parser = OptionParser()
+	parser.add_option('-a', '--artist', dest = 'artist', type = 'string', help = 'song artist')
+	parser.add_option('-i', '--title', dest = 'title', type = 'string', help = 'song title')
+	parser.add_option('-t', '--timeout', dest = 'timeout', type = 'int', help = 'url request timeout')
+	parser.add_option('-m', '--max', dest = 'max', type = 'int', help = 'max number of expected')
+	parser.set_defaults(timeout = 3, max = 5)
+	(options, args) = parser.parse_args()
+	if len(args) != 0:
+		parser.error("incorrect number of arguments")
+	elif options.artist is None:
+		parser.error('artist is required')
+	elif options.title is None:
+		parser.error('title is required')
+	else:
+		engine = Sogou(options.timeout, options.max)
+		candidate = engine.search(options.artist, options.title)
+		for c in candidate:
+			log.info('candidate:\n%s' % c)
+			
+		

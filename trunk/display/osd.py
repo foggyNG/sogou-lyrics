@@ -19,9 +19,10 @@
 ## @package RBLyrics.display.osd
 #  Gnome OSD displayer.
 
-from gnomeosd import eventbridge
+import logging
 
-from RBLyrics.utils import log
+from gnomeosd import eventbridge
+log = logging.getLogger('RBLyrics')
 
 ## Gnome OSD displayer.
 #

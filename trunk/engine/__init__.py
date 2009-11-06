@@ -22,11 +22,12 @@
 import threading
 from multiprocessing import Pool
 
-from RBLyrics.utils import log
+from RBLyrics.chardet import detect
 from RBLyrics.engine.sogou import Sogou
 from RBLyrics.engine.ttplayer import TTPlayer
 from RBLyrics.engine.minilyrics import Minilyrics
 from RBLyrics.engine.lyricist import Lyricist
+from RBLyrics.utils import log, clean_token, distance, LyricsInfo
 
 ## Lyrics search engine map.
 engine_map = {
@@ -37,8 +38,8 @@ engine_map = {
 }
 
 ## Search engine handler for multiprocessing.
-def handler(engine, args):
-	return engine.search(args)
+def handler(engine, artist, title):
+	return engine.search(artist, title)
 
 ## Lyrics candidate comparison handler.
 def candidate_cmp(x, y):
@@ -75,7 +76,10 @@ class Engine:
 	#  @param lyrics Lyrics received.
 	def _receive_lyrics(self, lyrics):
 		self._lock.acquire()
-		self._candidate += lyrics
+		for raw in lyrics:
+			l = LyricsInfo(raw)
+			d = distance(self._songinfo, l)
+			self._candidate.append([d, l])
 		self._lock.release()
 		return
 		
@@ -86,7 +90,13 @@ class Engine:
 		pool = Pool(len(self._engine))
 		for key in self._engine:
 			engine = engine_map[key]
-			pool.apply_async(handler, [engine(), self._songinfo], {}, self._receive_lyrics)
+			token = clean_token(self._songinfo.get('ar'))
+			encoding = detect(token)['encoding']
+			artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+			token = clean_token(self._songinfo.get('ti'))
+			encoding = detect(token)['encoding']
+			title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+			pool.apply_async(handler, [engine(), artist, title], {}, self._receive_lyrics)
 		pool.close()
 		pool.join()
 		self._candidate.sort(candidate_cmp)
