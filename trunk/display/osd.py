@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
-
+#
+#       
+#       Copyright 2009 wonder <gogo.wonder@gmail.com>
+#       
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
 #       the Free Software Foundation; either version 2 of the License, or
@@ -15,6 +18,7 @@
 #       along with this program; if not, write to the Free Software
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
+
 
 ## @package RBLyrics.display.osd
 #  Gnome OSD displayer.
