@@ -48,10 +48,10 @@ class Sogou:
 		log.debug('leave')
 		return
 	
-	def _receive_lyrics(self, url):
+	def _receive_lyrics(self, opener, url):
 		log.debug('enter')
 		try:
-			cache = urllib2.urlopen(url, None, self._timeout).read()
+			cache = opener.open(url, None, self._timeout).read()
 		except Exception as e:
 			log.error(e)
 		else:
@@ -103,7 +103,7 @@ class Sogou:
 							m = re.search('downlrc\.jsp\?[^\"]*', line)
 							if m != None:
 								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								threads.append(threading.Thread(target=self._receive_lyrics, args=(url,)))
+								threads.append(threading.Thread(target=self._receive_lyrics, args=(opener, url,)))
 								if len(threads) >= self._max:
 									break
 						for t in threads:
