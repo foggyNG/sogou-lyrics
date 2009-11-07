@@ -19,7 +19,7 @@
 ## @package RBLyrics.engine.lyricist
 #  Lyricist search engine.
 
-import urllib2, re, logging
+import urllib2, re, logging, threading
 from xml.dom.minidom import parseString
 from optparse import OptionParser
 
@@ -44,6 +44,8 @@ class Lyricist:
 		log.debug('enter')
 		self._timeout = timeout
 		self._max = max
+		self._candidate = []
+		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
 		return
 	
@@ -53,6 +55,24 @@ class Lyricist:
 	def _clean_token(self, token):
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 	
+	## Lyrics receive handler.
+	#  @param lyrics Lyrics received.
+	def _receive_lyrics(self, url):
+		log.debug('enter')
+		try:
+			cache = urllib2.urlopen(url, None, self._timeout).read()
+		except Exception as e:
+			log.error(e)
+		else:
+			encoding = detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+			log.info('lyrics <%s>' % url)
+			self._lock.acquire()
+			self._candidate.append(cache)
+			self._lock.release()
+		log.debug('leave')
+		return
+		
 	## Retrieve lyrics.
 	#  @param artist Song artist.
 	#  @param title Song title.
@@ -70,22 +90,19 @@ class Lyricist:
 			log.error(e)
 		else:
 			elements = parseString(xml).getElementsByTagName('LyricUrl')
+			threads = []
 			for element in elements:
 				url = element.firstChild.data
-				try:
-					cache = urllib2.urlopen(url, None, self._timeout).read()
-				except Exception as e:
-					log.error(e)
-				else:
-					encoding = detect(cache)['encoding']
-					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-					log.info('lyrics <%s>' % url)
-					retval.append(cache)
-					if len(retval) >= self._max:
-						break
-			log.info('%d candidates found' % len(retval))
+				threads.append(threading.Thread(target=self._receive_lyrics, args=(url,)))
+				if len(threads) >= self._max:
+					break
+			for t in threads:
+				t.start()
+			for t in threads:
+				t.join()
+			log.info('%d candidates found' % len(self._candidate))
 		log.debug('leave')
-		return retval
+		return self._candidate
 
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)

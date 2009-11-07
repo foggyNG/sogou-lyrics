@@ -19,7 +19,7 @@
 ## @package RBLyrics.engine.sogou
 #  Sogou search engine.
 
-import re, cookielib, urllib2, logging
+import re, cookielib, urllib2, logging, threading
 from optparse import OptionParser
 
 from chardet import detect
@@ -43,9 +43,27 @@ class Sogou:
 		log.debug('enter')
 		self._timeout = timeout
 		self._max = max
+		self._candidate = []
+		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
 		return
 	
+	def _receive_lyrics(self, url):
+		log.debug('enter')
+		try:
+			cache = urllib2.urlopen(url, None, self._timeout).read()
+		except Exception as e:
+			log.error(e)
+		else:
+			encoding = detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+			log.info('lyrics <%s>' % url)
+			self._lock.acquire()
+			self._candidate.append(cache)
+			self._lock.release()
+		log.debug('leave')
+		return
+		
 	## Retrieve lyrics.
 	#  @param artist Song artist.
 	#  @param title Song title.
@@ -80,27 +98,24 @@ class Sogou:
 						log.error(e)
 					else:
 						# grab lyrics file url, try all of them
+						threads = []
 						for line in cache:
 							m = re.search('downlrc\.jsp\?[^\"]*', line)
 							if m != None:
 								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								try:
-									cache = opener.open(url, None, self._timeout).read()
-								except Exception as e:
-									log.error(e)
-								else:
-									encoding = detect(cache)['encoding']
-									cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-									log.info('lyrics <%s>' % url)
-									retval.append(cache)
-									if len(retval) >= self._max:
-										break
-						log.info('%d candidates found' % len(retval))
+								threads.append(threading.Thread(target=self._receive_lyrics, args=(url,)))
+								if len(threads) >= self._max:
+									break
+						for t in threads:
+							t.start()
+						for t in threads:
+							t.join()
+						log.info('%d candidates found' % len(self._candidate))
 					break
 			else:
 				log.info('0 candidates found')
 		log.debug('leave')
-		return retval
+		return self._candidate
 
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)
