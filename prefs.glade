@@ -20,7 +20,7 @@
             <child>
               <widget class="GtkTable" id="table1">
                 <property name="visible">True</property>
-                <property name="n_rows">3</property>
+                <property name="n_rows">4</property>
                 <property name="n_columns">2</property>
                 <child>
                   <widget class="GtkCheckButton" id="display">
@@ -57,8 +57,8 @@
                     <property name="single_line_mode">True</property>
                   </widget>
                   <packing>
-                    <property name="top_attach">2</property>
-                    <property name="bottom_attach">3</property>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
                   </packing>
                 </child>
                 <child>
@@ -69,6 +69,20 @@
                   </widget>
                   <packing>
                     <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">3</property>
+                    <property name="bottom_attach">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="choose">
+                    <property name="label" translatable="yes">Show lyrics chooser</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
                     <property name="right_attach">2</property>
                     <property name="top_attach">2</property>
                     <property name="bottom_attach">3</property>
@@ -212,8 +226,8 @@
                 <child>
                   <widget class="GtkComboBox" id="halign">
                     <property name="visible">True</property>
-                    <property name="items">center
-left
+                    <property name="items" translatable="yes">left
+center
 right</property>
                   </widget>
                   <packing>
@@ -224,7 +238,7 @@ right</property>
                 <child>
                   <widget class="GtkComboBox" id="vpos">
                     <property name="visible">True</property>
-                    <property name="items">top
+                    <property name="items" translatable="yes">top
 center
 bottom</property>
                   </widget>

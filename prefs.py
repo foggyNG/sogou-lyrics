@@ -36,7 +36,20 @@ gconf_keys = {
 'fgcolor' : '/apps/rhythmbox/plugins/RBLyrics/fgcolor',
 'font' : '/apps/rhythmbox/plugins/RBLyrics/font',
 'folder' : '/apps/rhythmbox/plugins/RBLyrics/folder',
-'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine'
+'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine',
+'choose' : '/apps/rhythmbox/plugins/RBLyrics/choose'
+}
+
+halign_map = {
+0 : 'left',
+1 : 'center',
+2 : 'right'
+}
+
+vpos_map = {
+0 : 'top',
+1 : 'center',
+2 : 'bottom'
 }
 
 ## Application preference.
@@ -67,7 +80,7 @@ class Preference:
 		self._dialog.connect('response', self._dialog_response)
 		# get widgets from glade file
 		self._widget = {}
-		for key in ['display','download','halign','vpos','fgcolor','font','folder'] + engine_map.keys():
+		for key in ['display','download','halign','vpos','fgcolor','font','folder', 'choose'] + engine_map.keys():
 			self._widget[key] = gladexml.get_widget(key)
 		filter = gtk.FileFilter()
 		filter.add_mime_type('inode/directory')
@@ -101,22 +114,31 @@ class Preference:
 		log.info('%s : %s' % (key, value))
 		return
 	
+	## Set 'choose' setting.
+	def _set_choose(self, widget):
+		key = 'choose'
+		value = widget.get_active()
+		self._setting[key] = value
+		self._gconf.set_bool(gconf_keys[key], value)
+		log.info('%s : %s' % (key, value))
+		return
+	
 	## Set 'halign' setting.
 	def _set_halign(self, widget):
 		key = 'halign'
-		value = widget.get_active_text()
-		self._setting[key] = value
-		self._gconf.set_string(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
+		value = widget.get_active()
+		self._setting[key] = halign_map[value]
+		self._gconf.set_int(gconf_keys[key], value)
+		log.info('%s : %s' % (key, halign_map[value]))
 		return
 	
 	## Set 'vpos' setting.
 	def _set_vpos(self, widget):
 		key = 'vpos'
-		value = widget.get_active_text()
-		self._setting[key] = value
-		self._gconf.set_string(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
+		value = widget.get_active()
+		self._setting[key] = vpos_map[value]
+		self._gconf.set_int(gconf_keys[key], value)
+		log.info('%s : %s' % (key, vpos_map[value]))
 		return
 	
 	## Set 'fgcolor' setting.
@@ -177,10 +199,9 @@ class Preference:
 		log.debug('enter')
 		# display
 		key = 'display'
-		value = None
 		widget = self._widget[key]
 		try:
-			value = self._gconf.get_bool(gconf_keys[key])
+			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
 		except:
 			value = True
 		self._setting[key] = value
@@ -189,90 +210,64 @@ class Preference:
 		widget.connect('toggled', self._set_display)
 		# download
 		key = 'download'
-		value = None
 		widget = self._widget[key]
 		try:
-			value = self._gconf.get_bool(gconf_keys[key])
+			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
 		except:
 			value = True
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_active(value)
 		widget.connect('toggled', self._set_download)
-		# halign
-		key = 'halign'
-		value = None
+		# choose
+		key = 'choose'
 		widget = self._widget[key]
-		model = widget.get_model()
-		index = 0
 		try:
-			value = self._gconf.get_string(gconf_keys[key])
-			iter = model.get_iter_first()
-			found = False
-			while iter:
-				if model.get_value(iter,0) == value:
-					found = True
-					break
-				else:
-					index += 1
-					iter = model.iter_next(iter)
-			if not found :
-				index = 0
-				value = model.get_value(model.get_iter_first(), 0)
+			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
 		except:
-			index = 0
-			value = model.get_value(model.get_iter_first(), 0)
+			value = True
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
-		widget.set_active(index)
+		widget.set_active(value)
+		widget.connect('toggled', self._set_choose)
+		# halign
+		key = 'halign'
+		widget = self._widget[key]
+		try:
+			value = self._gconf.get_without_default(gconf_keys[key]).get_int()
+		except:
+			value = 1
+		self._setting[key] = halign_map[value]
+		log.info('%s : %s' % (key, halign_map[value]))
+		widget.set_active(value)
 		widget.connect('changed', self._set_halign)
 		# vpos
 		key = 'vpos'
-		value = None
 		widget = self._widget[key]
-		model = widget.get_model()
-		index = 0
 		try:
-			value = self._gconf.get_string(gconf_keys[key])
-			iter = model.get_iter_first()
-			found = False
-			while iter:
-				if model.get_value(iter,0) == value:
-					found = True
-					break
-				else:
-					index += 1
-					iter = model.iter_next(iter)
-			if not found :
-				index = 0
-				value = model.get_value(model.get_iter_first(), 0)
+			value = self._gconf.get_without_default(gconf_keys[key]).get_int()
 		except:
-			index = 0
-			value = model.get_value(model.get_iter_first(), 0)
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_active(index)
+			value = 0
+		self._setting[key] = vpos_map[value]
+		log.info('%s : %s' % (key, vpos_map[value]))
+		widget.set_active(value)
 		widget.connect('changed', self._set_vpos)
 		# font
 		key = 'font'
-		value = None
 		widget = self._widget[key]
 		try:
-			value = self._gconf.get_string(gconf_keys[key])
-			if value is None:
-				value = 'Sans Italic 20'
+			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
 		except:
-			value = 'Sans Italic 20'
+			value = '20'
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_font_name(value)
 		widget.connect('font-set', self._set_font)
 		# fgcolor
 		key = 'fgcolor'
-		value = None
 		widget = self._widget[key]
 		try:
-			value = self._gconf.get_string(gconf_keys[key])
+			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
 			color_parse(value)
 		except:
 			value = '#FFFF00'
@@ -282,27 +277,24 @@ class Preference:
 		widget.connect('color-set', self._set_fgcolor)
 		# folder
 		key = 'folder'
-		value = None
 		widget = self._widget[key]
 		try:
-			value = self._gconf.get_string(gconf_keys[key])
-			if not value:
-				value = os.path.expanduser('~/.lyrics')
+			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
 		except:
 			value = os.path.expanduser('~/.lyrics')
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_filename(value)
 		widget.connect('file-set', self._set_folder)
-		# pygtk bug
+		## @todo pygtk bug
 		# widget.connect('selection-changed', self.set_folder)
 		# engine
 		key = 'engine'
-		value = None
 		try:
-			value = self._gconf.get_list(gconf_keys[key], gconf.VALUE_STRING)
-			if value is None:
-				value = engine_map.keys()
+			value = []
+			temp = self._gconf.get_without_default(gconf_keys[key]).get_list()
+			for t in temp:
+				value.append(t.get_string())
 		except:
 			value = engine_map.keys()
 		self._setting[key] = []
