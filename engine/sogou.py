@@ -36,6 +36,12 @@ class Sogou:
 	## @var _max
 	#  Max number of lyrics expected.
 	
+	## @var _candidate
+	#  Lyrics candidates.
+	
+	## @var _lock
+	#  Thread lock for appending _candidate list.
+	
 	## The constructor.
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
@@ -48,6 +54,9 @@ class Sogou:
 		log.debug('leave')
 		return
 	
+	## Lyrics receive handler.
+	#  @param opener Cookie opener.
+	#  @param url Lyrics url.
 	def _receive_lyrics(self, opener, url):
 		log.debug('enter')
 		try:

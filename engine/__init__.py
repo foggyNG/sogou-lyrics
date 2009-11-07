@@ -68,7 +68,9 @@ class Engine:
 		return
 	
 	## Lyrics receive handler.
-	#  @param lyrics Lyrics received.
+	#  @param engine Lyrics search engine.
+	#  @param artist Song artist.
+	#  @param title Song title.
 	def _receive_lyrics(self, engine, artist, title):
 		lyrics = engine.search(artist, title)
 		self._lock.acquire()
