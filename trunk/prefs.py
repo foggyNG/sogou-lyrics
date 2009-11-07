@@ -195,6 +195,7 @@ class Preference:
 	
 	
 	## Load preference from Gconf.
+	# @bug pygtk bug
 	def _load_prefs (self):
 		log.debug('enter')
 		# display
@@ -286,7 +287,7 @@ class Preference:
 		log.info('%s : %s' % (key, value))
 		widget.set_filename(value)
 		widget.connect('file-set', self._set_folder)
-		## @todo pygtk bug
+		# @bug pygtk bug
 		# widget.connect('selection-changed', self.set_folder)
 		# engine
 		key = 'engine'

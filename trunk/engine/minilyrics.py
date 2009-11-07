@@ -38,6 +38,12 @@ class Minilyrics:
 	## @var _max
 	#  Max number of lyrics expected.
 	
+	## @var _candidate
+	#  Lyrics candidates.
+	
+	## @var _lock
+	#  Thread lock for appending _candidate list.
+	
 	## The constructor.
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
@@ -50,6 +56,8 @@ class Minilyrics:
 		log.debug('leave')
 		return
 	
+	## Lyrics receive handler.
+	#  @param url Lyrics url.
 	def _receive_lyrics(self, url):
 		log.debug('enter')
 		try:

@@ -37,6 +37,12 @@ class Lyricist:
 	## @var _max
 	#  Max number of lyrics expected.
 	
+	## @var _candidate
+	#  Lyrics candidates.
+	
+	## @var _lock
+	#  Thread lock for appending _candidate list.
+	
 	## The constructor.
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
@@ -56,7 +62,7 @@ class Lyricist:
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 	
 	## Lyrics receive handler.
-	#  @param lyrics Lyrics received.
+	#  @param url Lyrics url.
 	def _receive_lyrics(self, url):
 		log.debug('enter')
 		try:
