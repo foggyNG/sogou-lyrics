@@ -59,6 +59,8 @@ class RBLyrics(rb.Plugin):
 			self._display.show(_('%s prepared') % songinfo)
 			self._lyrics = candidate[0][1]
 			save_lyrics(self._prefs.get('folder'), songinfo, self._lyrics)
+		elif not self._prefs.get('choose'):
+			self._display.show(_('%s not found') % songinfo)
 		else:
 			log.info('%d candidates found for %s' % (n_candidates, songinfo))
 			self._chooser.set_instance(songinfo, candidate)
