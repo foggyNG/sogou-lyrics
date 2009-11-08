@@ -95,10 +95,10 @@ class Minilyrics:
 		url = 'http://www.viewlyrics.com:1212/searchlyrics.htm'
 		try:
 			xml = urllib2.urlopen(url, request, self._timeout).read()
+			elements = parseString(xml).getElementsByTagName('fileinfo')
 		except Exception as e:
 			log.error(e)
 		else:
-			elements = parseString(xml).getElementsByTagName('fileinfo')
 			threads = []
 			for element in elements:
 				url = element.getAttribute('link')
