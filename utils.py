@@ -119,7 +119,10 @@ class LyricsInfo:
 				tm = re_time.findall(line)
 				for time in tm:
 					pos = pos + len(time[0])
-				lrc = line[pos:]
+				lrc = line[pos:].strip()
+				if len(lrc) == 0:
+					# ignore blank line
+					continue
 				for time in tm:
 					#log.debug(time)
 					try:
@@ -139,6 +142,7 @@ class LyricsInfo:
 			second = int(round((key + offset) / 1000.0))
 			if second in self._content:
 				self._content[second] += cache[key]
+				self._content[second].replace(os.linesep, ' ')
 			else:
 				self._content[second] = cache[key]
 		log.debug('leave')
