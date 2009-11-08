@@ -170,11 +170,11 @@ class TTPlayer:
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		try:
-			cache = urllib2.urlopen(url, None, self._timeout).read()
+			xml = urllib2.urlopen(url, None, self._timeout).read()
+			elements = parseString(xml).getElementsByTagName('lrc')
 		except Exception as e:
 			log.error(e)
 		else:
-			elements = parseString(cache).getElementsByTagName('lrc')
 			threads = []
 			for element in elements:
 				artist = element.getAttribute('artist')

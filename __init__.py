@@ -58,14 +58,12 @@ class RBLyrics(rb.Plugin):
 		if n_candidates == 0:
 			self._display.show(_('%s not found') % songinfo)
 		elif candidate[0][0] == 0:
-			log.info('%s prepared' % songinfo)
 			self._display.show(_('%s prepared') % songinfo)
 			self._lyrics = candidate[0][1]
 			save_lyrics(self._prefs.get('folder'), songinfo, self._lyrics)
 		elif not self._prefs.get('choose'):
 			self._display.show(_('%s not found') % songinfo)
 		else:
-			log.info('%d candidates found for %s' % (n_candidates, songinfo))
 			self._chooser.set_instance(songinfo, candidate)
 			self._chooser.show()
 		log.debug('leave')
@@ -76,8 +74,8 @@ class RBLyrics(rb.Plugin):
 		log.debug('enter')
 		if entry:
 			# get playing song properties		
-			artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
+			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo = SongInfo(artist, title)
 			log.info(songinfo)
 			self._lyrics = load_lyrics(self._prefs.get('folder'), songinfo)
@@ -107,7 +105,7 @@ class RBLyrics(rb.Plugin):
 	## Open lyrics handler for shortcut menu.
 	def _open_lyrics_shortcut(self, action):
 		log.debug('enter')
-		entry = self._player.get_playing_entry ()
+		entry = self._shell.props.shell_player.get_playing_entry ()
 		if entry:
 			self._open_lyrics(entry)
 		log.debug('leave')
@@ -117,8 +115,8 @@ class RBLyrics(rb.Plugin):
 	#  @param entry Song entry to be opened.
 	def _open_lyrics(self, entry):
 		log.debug('enter')
-		artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
-		title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
+		artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+		title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 		songinfo = SongInfo(artist, title)
 		if not open_lyrics(self._prefs.get('folder'), songinfo):
 			log.info('%s not found' % songinfo)
@@ -134,10 +132,10 @@ class RBLyrics(rb.Plugin):
 	def _chooser_response_handler(self, songinfo, lyrics):
 		log.debug('enter')
 		is_current = False
-		entry = self._player.get_playing_entry()
+		entry = self._shell.props.shell_player.get_playing_entry()
 		if entry:
-			artist = self._db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = self._db.entry_get(entry, rhythmdb.PROP_TITLE)
+			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo_t = SongInfo(artist, title)
 			if songinfo == songinfo_t:
 				is_current = True
@@ -183,11 +181,9 @@ class RBLyrics(rb.Plugin):
 		self._chooser = LyricsChooser(self.find_file('chooser.glade'), self._chooser_response_handler)
 		self._lyrics = None
 		self._shell = shell
-		self._player = shell.get_player()
-		self._db = shell.get_property('db')
 		self._handler = [
-			self._player.connect('playing-song-changed', self._playing_song_changed_handler),
-			self._player.connect('elapsed-changed', self._elapsed_changed_handler)]
+			self._shell.props.shell_player.connect('playing-song-changed', self._playing_song_changed_handler),
+			self._shell.props.shell_player.connect('elapsed-changed', self._elapsed_changed_handler)]
 		#
 		self._action = [
 			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),
@@ -210,7 +206,7 @@ class RBLyrics(rb.Plugin):
 		iconfactory.add(APP_NAME, iconset)
 		iconfactory.add_default()
 		#
-		uim = shell.get_ui_manager()
+		uim = shell.props.ui_manager
 		uim.insert_action_group(self._actiongroup, 0)
 		self._ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
@@ -220,8 +216,8 @@ class RBLyrics(rb.Plugin):
 	## Plugin deactivation.
 	def deactivate(self, shell):
 		for handler in self._handler:
-			self._player.disconnect(handler)
-		uim = shell.get_ui_manager()
+			self._shell.props.shell_player.disconnect(handler)
+		uim = shell.props.ui_manager
 		uim.remove_ui(self._ui_id)
 		uim.remove_action_group(self._actiongroup)
 		uim.ensure_update()
@@ -230,8 +226,6 @@ class RBLyrics(rb.Plugin):
 		del self._actiongroup
 		del self._action
 		del self._handler
-		del self._db
-		del self._player
 		del self._shell
 		del self._lyrics
 		del self._chooser

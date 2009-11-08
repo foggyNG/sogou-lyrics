@@ -95,10 +95,10 @@ class Lyricist:
 		log.debug('search url <%s>' % url)
 		try:
 			xml = urllib2.urlopen(url, None, self._timeout).read()
+			elements = parseString(xml).getElementsByTagName('LyricUrl')
 		except Exception as e:
 			log.error(e)
 		else:
-			elements = parseString(xml).getElementsByTagName('LyricUrl')
 			threads = []
 			for element in elements:
 				url = element.firstChild.data

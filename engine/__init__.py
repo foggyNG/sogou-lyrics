@@ -103,5 +103,6 @@ class Engine:
 		for t in threads:
 			t.join()
 		self._candidate.sort(candidate_cmp)
-		log.debug('leave (%d)' % len(self._candidate))
+		log.info('%d candidates found for %s' % (len(self._candidate), self._songinfo))
+		log.debug('leave')
 		return self._candidate

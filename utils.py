@@ -22,7 +22,7 @@
 ## @package RBLyrics.utils
 #  Utilities.
 
-import re, logging, os, sys
+import re, logging, os, sys, urllib
 
 ## Application name.
 APP_NAME = 'RBLyrics'
@@ -218,6 +218,7 @@ def save_lyrics(root, songinfo, lyrics):
 	if not os.path.exists(dir):
 		os.makedirs(dir)
 	open(path, 'w').write(lyrics.get_raw())
+	log.info('save <file://%s>' % urllib.pathname2url(path))
 	log.debug('leave')
 	return
 
@@ -231,7 +232,7 @@ def load_lyrics(root, songinfo):
 	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
-			log.info('load <%s>' % path)
+			log.info('load <file://%s>' % urllib.pathname2url(path))
 			lyrics = LyricsInfo(open(path, 'r').read())
 			break
 	log.debug('leave')
@@ -247,7 +248,7 @@ def open_lyrics(root, songinfo):
 	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
-			log.info('open <%s>' % path)
+			log.info('open <file://%s>' % urllib.pathname2url(path))
 			os.system('/usr/bin/xdg-open \"%s\"' % path)
 			ret = True
 			break
