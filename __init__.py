@@ -165,7 +165,10 @@ class RBLyrics(rb.Plugin):
 		console_handler.setLevel(logging.INFO)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
-		filename = os.path.join(os.path.dirname(LOCALE_DIR), 'log')
+		cachedir = os.path.join(rb.user_cache_dir(), APP_NAME)
+		if not os.path.exists(cachedir):
+			os.makedirs(cachedir)
+		filename = os.path.join(cachedir, 'log')
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)

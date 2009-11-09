@@ -22,7 +22,7 @@
 ## @package RBLyrics.prefs
 #  Preference.
 
-import os, gtk, gconf, logging
+import os, gtk, gconf, logging, urllib, rb
 from gtk.gdk import color_parse
 from gtk.glade import XML
 
@@ -95,8 +95,13 @@ class Preference:
 		return
 	
 	## Response handler for the dialog.
-	def _dialog_response(self, dialog, response):
-		dialog.hide()
+	def _dialog_response(self, dialog, responseid):
+		if responseid == -7:
+			dialog.hide()
+		elif responseid == 0:
+			path = rb.find_user_cache_file('RBLyrics/log')
+			log.info('open <file://%s>' % urllib.pathname2url(path))
+			os.system('/usr/bin/xdg-open \"%s\"' % path)
 		return
 	
 	## Set 'display' setting.
