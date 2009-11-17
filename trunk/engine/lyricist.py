@@ -25,8 +25,8 @@
 import urllib2, re, logging, threading
 from xml.dom.minidom import parseString
 from optparse import OptionParser
-
 from chardet import detect
+
 log = logging.getLogger('RBLyrics')
 
 ## Lyricist engine.

@@ -25,8 +25,8 @@
 import random, urllib2, logging, threading
 from xml.dom.minidom import parseString
 from optparse import OptionParser
-
 from chardet import detect
+
 log = logging.getLogger('RBLyrics')
 
 ## TTPlayer lyrics server crack functionality.

@@ -26,7 +26,7 @@ import os, gtk, gconf, logging, urllib, rb
 from gtk.gdk import color_parse
 from gtk.glade import XML
 
-from RBLyrics.engine import engine_map
+from engine import engine_map
 log = logging.getLogger('RBLyrics')
 
 ## Gconf settings.

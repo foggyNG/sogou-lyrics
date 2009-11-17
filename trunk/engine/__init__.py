@@ -23,13 +23,13 @@
 #  Lyrics search engine.
 
 import threading
-
 from chardet import detect
-from RBLyrics.engine.sogou import Sogou
-from RBLyrics.engine.ttplayer import TTPlayer
-from RBLyrics.engine.minilyrics import Minilyrics
-from RBLyrics.engine.lyricist import Lyricist
-from RBLyrics.utils import log, clean_token, distance, LyricsInfo
+
+from sogou import Sogou
+from ttplayer import TTPlayer
+from minilyrics import Minilyrics
+from lyricist import Lyricist
+from utils import log, clean_token, distance, LyricsInfo
 
 ## Lyrics search engine map.
 engine_map = {

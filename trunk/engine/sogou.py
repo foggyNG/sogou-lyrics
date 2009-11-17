@@ -24,8 +24,8 @@
 
 import re, cookielib, urllib2, logging, threading
 from optparse import OptionParser
-
 from chardet import detect
+
 log = logging.getLogger('RBLyrics')
 
 ## Sogou mp3 engine.
