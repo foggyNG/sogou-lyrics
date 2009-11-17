@@ -24,7 +24,7 @@
 
 import logging
 
-from RBLyrics.display.osd import OSD
+from osd import OSD
 log = logging.getLogger('RBLyrics')
 
 ## Lyrics displayer manager.

@@ -26,8 +26,8 @@ import urllib2, logging, threading
 from hashlib import md5
 from xml.dom.minidom import parseString
 from optparse import OptionParser
-
 from chardet import detect
+
 log = logging.getLogger('RBLyrics')
 
 ## TTPlayer engine.

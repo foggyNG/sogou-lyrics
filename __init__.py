@@ -26,11 +26,11 @@ import rhythmdb, rb
 import os, gettext, logging, logging.handlers, sys, gtk
 _ = gettext.gettext
 
-from RBLyrics.prefs import Preference
-from RBLyrics.chooser import LyricsChooser
-from RBLyrics.engine import Engine
-from RBLyrics.display import Display
-from RBLyrics.utils import *
+from prefs import Preference
+from chooser import LyricsChooser
+from engine import Engine
+from display import Display
+from utils import *
 
 ## RBLyrics plugin.
 class RBLyrics(rb.Plugin):

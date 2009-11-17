@@ -24,8 +24,8 @@
 #  Gnome OSD displayer.
 
 import logging
-
 from gnomeosd import eventbridge
+
 log = logging.getLogger('RBLyrics')
 
 ## Gnome OSD displayer.
