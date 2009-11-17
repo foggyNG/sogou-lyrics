@@ -24,7 +24,7 @@
 
 import threading
 
-from RBLyrics.chardet import detect
+from chardet import detect
 from RBLyrics.engine.sogou import Sogou
 from RBLyrics.engine.ttplayer import TTPlayer
 from RBLyrics.engine.minilyrics import Minilyrics
