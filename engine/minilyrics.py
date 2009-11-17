@@ -135,5 +135,5 @@ if __name__ == '__main__':
 		engine = Minilyrics(options.timeout, options.max)
 		candidate = engine.search(options.artist, options.title)
 		for c in candidate:
-			log.info('candidate:\n%s' % c)
+			log.info('candidate:\n%s' % c.decode('UTF-8', 'ignore'))
 			

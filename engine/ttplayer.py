@@ -212,7 +212,7 @@ if __name__ == '__main__':
 		parser.error('title is required')
 	else:
 		engine = TTPlayer(options.timeout, options.max)
-		candidate = engine.search(options.artist, options.title)
+		candidate = engine.search(options.artist.decode('UTF-8', 'ignore'), options.title.decode('UTF-8', 'ignore'))
 		for c in candidate:
-			log.info('candidate:\n%s' % c)
+			log.info('candidate:\n%s' % c.decode('UTF-8', 'ignore'))
 			
