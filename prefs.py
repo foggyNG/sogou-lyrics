@@ -80,7 +80,6 @@ class Preference:
 		self._gconf = gconf.client_get_default()
 		gladexml = XML(glade_file)
 		self._dialog = gladexml.get_widget('prefs')
-		self._dialog.connect('response', self._dialog_response)
 		# get widgets from glade file
 		self._widget = {}
 		for key in ['display','download','halign','vpos','fgcolor','font','folder', 'choose'] + engine_map.keys():
@@ -91,21 +90,23 @@ class Preference:
 		# load settings
 		self._setting = {}
 		self._load_prefs()
+		gladexml.signal_autoconnect(self)
 		log.debug('leave')
 		return
 	
 	## Response handler for the dialog.
-	def _dialog_response(self, dialog, responseid):
-		if responseid == -7:
-			dialog.hide()
-		elif responseid == 0:
-			path = rb.find_user_cache_file('RBLyrics/log')
-			log.info('open <file://%s>' % urllib.pathname2url(path))
-			os.system('/usr/bin/xdg-open \"%s\"' % path)
+	def _on_close_released(self, widget):
+		self._dialog.hide()
 		return
 	
+	def _on_log_released(self, widget):
+		path = rb.find_user_cache_file('RBLyrics/log')
+		log.info('open <file://%s>' % urllib.pathname2url(path))
+		os.system('/usr/bin/xdg-open \"%s\"' % path)
+		return
+		
 	## Set 'display' setting.
-	def _set_display(self, widget):
+	def _on_display_toggled(self, widget):
 		key = 'display'
 		value = widget.get_active()
 		self._setting[key] = value
@@ -114,7 +115,7 @@ class Preference:
 		return
 	
 	## Set 'download' setting.
-	def _set_download(self, widget):
+	def _on_download_toggled(self, widget):
 		key = 'download'
 		value = widget.get_active()
 		self._setting[key] = value
@@ -123,7 +124,7 @@ class Preference:
 		return
 	
 	## Set 'choose' setting.
-	def _set_choose(self, widget):
+	def _on_choose_toggled(self, widget):
 		key = 'choose'
 		value = widget.get_active()
 		self._setting[key] = value
@@ -132,7 +133,7 @@ class Preference:
 		return
 	
 	## Set 'halign' setting.
-	def _set_halign(self, widget):
+	def _on_halign_changed(self, widget):
 		key = 'halign'
 		value = widget.get_active()
 		self._setting[key] = halign_map[value]
@@ -141,7 +142,7 @@ class Preference:
 		return
 	
 	## Set 'vpos' setting.
-	def _set_vpos(self, widget):
+	def _on_vpos_changed(self, widget):
 		key = 'vpos'
 		value = widget.get_active()
 		self._setting[key] = vpos_map[value]
@@ -150,7 +151,7 @@ class Preference:
 		return
 	
 	## Set 'fgcolor' setting.
-	def _set_fgcolor(self, widget):
+	def _on_fgcolor_color_set(self, widget):
 		key = 'fgcolor'
 		value = widget.get_color().to_string()
 		self._setting[key] = value
@@ -159,7 +160,7 @@ class Preference:
 		return
 	
 	## Set 'font' setting.
-	def _set_font(self, widget):
+	def _on_font_font_set(self, widget):
 		key = 'font'
 		value = widget.get_font_name()
 		self._setting[key] = value
@@ -168,7 +169,7 @@ class Preference:
 		return
 	
 	## Set 'folder' setting.
-	def _set_folder(self, widget):
+	def _on_folder_file_set(self, widget):
 		key = 'folder'
 		value = widget.get_filename()
 		self._setting[key] = value
@@ -177,7 +178,7 @@ class Preference:
 		return
 	
 	## Set 'engine' setting.
-	def _set_engine(self, widget):
+	def _on_engine_changed(self, widget):
 		key = 'engine'
 		widget_key = widget.get_name()
 		value = self._setting[key]
@@ -216,7 +217,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_active(value)
-		widget.connect('toggled', self._set_display)
 		# download
 		key = 'download'
 		widget = self._widget[key]
@@ -227,7 +227,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_active(value)
-		widget.connect('toggled', self._set_download)
 		# choose
 		key = 'choose'
 		widget = self._widget[key]
@@ -238,7 +237,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_active(value)
-		widget.connect('toggled', self._set_choose)
 		# halign
 		key = 'halign'
 		widget = self._widget[key]
@@ -249,7 +247,6 @@ class Preference:
 		self._setting[key] = halign_map[value]
 		log.info('%s : %s' % (key, halign_map[value]))
 		widget.set_active(value)
-		widget.connect('changed', self._set_halign)
 		# vpos
 		key = 'vpos'
 		widget = self._widget[key]
@@ -260,7 +257,6 @@ class Preference:
 		self._setting[key] = vpos_map[value]
 		log.info('%s : %s' % (key, vpos_map[value]))
 		widget.set_active(value)
-		widget.connect('changed', self._set_vpos)
 		# font
 		key = 'font'
 		widget = self._widget[key]
@@ -271,7 +267,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_font_name(value)
-		widget.connect('font-set', self._set_font)
 		# fgcolor
 		key = 'fgcolor'
 		widget = self._widget[key]
@@ -283,7 +278,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_color(color_parse(value))
-		widget.connect('color-set', self._set_fgcolor)
 		# folder
 		key = 'folder'
 		widget = self._widget[key]
@@ -294,9 +288,6 @@ class Preference:
 		self._setting[key] = value
 		log.info('%s : %s' % (key, value))
 		widget.set_filename(value)
-		widget.connect('file-set', self._set_folder)
-		# @bug pygtk bug
-		# widget.connect('selection-changed', self.set_folder)
 		# engine
 		key = 'engine'
 		try:
@@ -313,6 +304,5 @@ class Preference:
 		log.info('%s : %s' % (key, self._setting[key]))
 		for engine in engine_map.keys():
 			self._widget[engine].set_active(engine in value)
-			self._widget[engine].connect('toggled', self._set_engine)
 		log.debug('leave')
 		return
