@@ -70,6 +70,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="released" handler="_on_ok_released"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -84,6 +85,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="released" handler="_on_close_released"/>
               </widget>
               <packing>
                 <property name="expand">False</property>

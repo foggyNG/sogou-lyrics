@@ -170,7 +170,7 @@ class RBLyrics(rb.Plugin):
 			os.makedirs(cachedir)
 		filename = os.path.join(cachedir, 'log')
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
-		file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
+		file_handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)
 		# checkout python version
 		version = sys.version_info

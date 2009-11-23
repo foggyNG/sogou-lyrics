@@ -37,14 +37,12 @@ class LyricsChooser:
 	def __init__(self, glade_file, callback):
 		log.debug('enter')
 		gladexml = XML(glade_file)
+		gladexml.signal_autoconnect(self)
 		self._window = gladexml.get_widget('lyrics-chooser')
 		self._callback = callback
 		widgets = {}
 		for key in ['chooser', 'preview', 'ok', 'close']:
 			widgets[key] = gladexml.get_widget(key)
-		widgets['ok'].connect('clicked', self._response, gtk.RESPONSE_OK)
-		widgets['close'].connect('clicked', self._response, gtk.RESPONSE_CLOSE)
-		#
 		self._token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
 		self._lyrics = None
 		self._song = None
@@ -72,15 +70,21 @@ class LyricsChooser:
 		return
 	
 	## Dialog response handler.
-	def _response(self, widget, response):
+	def _on_ok_released(self, widget):
 		log.debug('enter')
-		lyrics = None
-		if response == gtk.RESPONSE_OK:
-			selected = self._chooser.get_selection().get_selected()
-			index = selected[0].get_value(selected[1], 0)
-			lyrics = self._candidate[index][1]
+		selected = self._chooser.get_selection().get_selected()
+		index = selected[0].get_value(selected[1], 0)
+		lyrics = self._candidate[index][1]
 		self._window.hide()
 		self._callback(self._songinfo, lyrics)
+		log.debug('leave')
+		return
+	
+	## Dialog response handler.
+	def _on_close_released(self, widget):
+		log.debug('enter')
+		self._window.hide()
+		self._callback(self._songinfo, None)
 		log.debug('leave')
 		return
 	
