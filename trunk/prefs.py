@@ -22,173 +22,214 @@
 ## @package RBLyrics.prefs
 #  Preference.
 
-import os, gtk, gconf, logging, urllib, rb
-from gtk.gdk import color_parse
-from gtk.glade import XML
+import os, gtk, gconf, logging, urllib, rb, gettext, pango
+_ = gettext.gettext
 
 from engine import engine_map
 log = logging.getLogger('RBLyrics')
 
-## Gconf settings.
-#  Application settings are stored in Gconf.
-gconf_keys = {
-'display' : '/apps/rhythmbox/plugins/RBLyrics/display',
-'download' : '/apps/rhythmbox/plugins/RBLyrics/download',
-'halign' : '/apps/rhythmbox/plugins/RBLyrics/halign',
-'vpos' : '/apps/rhythmbox/plugins/RBLyrics/vpos',
-'fgcolor' : '/apps/rhythmbox/plugins/RBLyrics/fgcolor',
-'font' : '/apps/rhythmbox/plugins/RBLyrics/font',
-'folder' : '/apps/rhythmbox/plugins/RBLyrics/folder',
-'engine' : '/apps/rhythmbox/plugins/RBLyrics/engine',
-'choose' : '/apps/rhythmbox/plugins/RBLyrics/choose'
-}
-
-halign_map = {
-0 : 'left',
-1 : 'center',
-2 : 'right'
-}
-
-vpos_map = {
-0 : 'top',
-1 : 'center',
-2 : 'bottom'
-}
+class Config:
+	
+	def __init__(self, name, key, default):
+		self._name = name
+		self._key = key
+		self._default = default
+		try:
+			self._value = gconf.client_get_default().get_without_default(self._key).get_string()
+		except :
+			self._value = default
+		log.info(self)
+		return
+	
+	def set_value(self, value):
+		self._value = value
+		gconf.client_get_default().set_string(self._key, value)
+		return
+	
+	def default(self):
+		return self._default
+		
+	def value(self):
+		return self._value
+		
+	def name(self):
+		return self._name
+		
+	def __str__(self):
+		return '<Config %s = %s>' % (self._name, self._value)
 
 ## Application preference.
 #
 #  Parse and retrieve application preferece, display preference dialog.
 class Preference:
 	
-	## @var _gconf
-	#  Gconf handler.
-	
 	## @var _dialog
 	#  Preference dialog object.
-	
-	## @var _widget
-	#  Widgets in preference dialog.
 	
 	## @var _setting
 	#  Preference settings.
 	
 	## The constructor.
 	#  @param glade_file Input glade file for preference dialog.
-	def __init__(self, glade_file):
+	def __init__(self):
 		log.debug('enter')
-		# get main dialog frome glade file
-		self._gconf = gconf.client_get_default()
-		gladexml = XML(glade_file)
-		self._dialog = gladexml.get_widget('prefs')
-		# get widgets from glade file
-		self._widget = {}
-		for key in ['display','download','halign','vpos','fgcolor','font','folder', 'choose'] + engine_map.keys():
-			self._widget[key] = gladexml.get_widget(key)
-		filter = gtk.FileFilter()
-		filter.add_mime_type('inode/directory')
-		self._widget['folder'].set_filter(filter)
-		# load settings
 		self._setting = {}
-		self._load_prefs()
-		gladexml.signal_autoconnect(self)
+		self._setting['engine.sogou'] = Config('engine.sogou', '/apps/rhythmbox/plugins/RBLyrics/engine.sogou', 'True')
+		self._setting['engine.lyricist'] = Config('engine.lyricist', '/apps/rhythmbox/plugins/RBLyrics/engine.lyricist', 'True')
+		self._setting['engine.minilyrics'] = Config('engine.minilyrics', '/apps/rhythmbox/plugins/RBLyrics/engine.minilyrics', 'True')
+		self._setting['engine.ttplayer'] = Config('engine.ttplayer', '/apps/rhythmbox/plugins/RBLyrics/engine.ttplayer', 'True')
+		self._setting['display.horizontal'] = Config('display.horizontal', '/apps/rhythmbox/plugins/RBLyrics/display.horizontal', 'center')
+		self._setting['display.vertical'] = Config('display.vertical', '/apps/rhythmbox/plugins/RBLyrics/display.vertical', 'top')
+		self._setting['main.display'] = Config('main.display', '/apps/rhythmbox/plugins/RBLyrics/main.display', 'True')
+		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True')
+		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'))
+		self._setting['display.font'] = Config('display.font', '/apps/rhythmbox/plugins/RBLyrics/display.font', '20')
+		self._setting['display.color'] = Config('display.color', '/apps/rhythmbox/plugins/RBLyrics/display.color', '#FFFF00')
+		self._setting['display.hide_on_hover'] = Config('display.hide_on_hover', '/apps/rhythmbox/plugins/RBLyrics/display.hide_on_hover', 'True')
+		self._setting['display.animations'] = Config('display.animations', '/apps/rhythmbox/plugins/RBLyrics/display.animations', 'False')
+		self._setting['display.avoid_panels'] = Config('display.avoid_panels', '/apps/rhythmbox/plugins/RBLyrics/display.avoid_panels', 'True')
+		# init dialog widgets
+		self._dialog = gtk.Dialog(title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
+		self._dialog.connect('delete-event', self._on_delete_event)
+		self._dialog.set_default_size(400, 350)
+		self._model = gtk.ListStore(str, str, int, str)
+		names = self._setting.keys()
+		names.sort()
+		for n in names:
+			c = self._setting[n]
+			if c.value() != c.default():
+				weight = pango.WEIGHT_BOLD
+			else:
+				weight = pango.WEIGHT_NORMAL
+			self._model.append([c.name(), c.value(), weight, _(c.name())])
+		#
+		treeview = gtk.TreeView(self._model)
+		cell = gtk.CellRendererText()
+		vc = gtk.TreeViewColumn(_('Name'), cell, text = 3, weight = 2)
+		vc.set_sort_column_id(0)
+		treeview.append_column(vc)
+		vc = gtk.TreeViewColumn(_('Value'), cell, text = 1, weight = 2)
+		treeview.append_column(vc)
+		treeview.connect('row-activated', self._on_row_activated)
+		scroll = gtk.ScrolledWindow()
+		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scroll.add_with_viewport(treeview)
+		self._dialog.get_content_area().add(scroll)
+		self._dialog.get_content_area().show_all()
+		btnlog = gtk.Button(_('Log'))
+		icon = gtk.Image()
+		icon.set_from_stock(gtk.STOCK_INFO, gtk.ICON_SIZE_BUTTON)
+		btnlog.set_image(icon)
+		btnlog.connect('released', self._on_btnlog_released)
+		self._dialog.get_action_area().pack_end(btnlog, False, False)
+		btnclose = gtk.Button(_('Close'))
+		icon = gtk.Image()
+		icon.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_BUTTON)
+		btnclose.set_image(icon)
+		btnclose.connect('released', self._on_btnclose_released)
+		self._dialog.get_action_area().pack_end(btnclose, False, False)
+		self._dialog.get_action_area().show_all()
+		self._colordlg = None
+		self._fontdlg = None
+		self._filedlg = None
+		self._horidlg = None
+		self._vertdlg = None
 		log.debug('leave')
 		return
 	
-	## Response handler for the dialog.
-	def _on_close_released(self, widget):
+	def _on_delete_event(self, widget, event):
 		self._dialog.hide()
+		return True
+		
+	def _on_row_activated(self, treeview, path, column):
+		log.debug('enter <%s>' % path)
+		iter = self._model.get_iter(path)
+		name = self._model.get_value(iter, 0)
+		c = self._setting[name]
+		if c.name() in ['engine.sogou', 'engine.minilyrics', 'engine.lyricist', 'engine.ttplayer', 
+		'main.display', 'main.download', 'display.hide_on_hover', 'display.animations', 'display.avoid_panels']:
+			c.set_value(str(c.value() != 'True'))
+		elif c.name() == 'display.color':
+			if self._colordlg == None:
+				self._colordlg = gtk.ColorSelectionDialog(_('Choose foreground color'))
+			response = self._colordlg.run()
+			self._colordlg.hide()
+			if response == gtk.RESPONSE_OK:
+				c.set_value(self._colordlg.get_color_selection().get_current_color().to_string())
+		elif c.name() == 'display.font':
+			if self._fontdlg == None:
+				self._fontdlg = gtk.FontSelectionDialog(_('Choose font'))
+			response = self._fontdlg.run()
+			self._fontdlg.hide()
+			if response == gtk.RESPONSE_OK:
+				c.set_value(self._fontdlg.get_font_name())
+		elif c.name() == 'main.directory':
+			if self._filedlg == None:
+				self._filedlg = gtk.FileChooserDialog(title = _('Select lyrics folder'), action = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				filter = gtk.FileFilter()
+				filter.add_mime_type('inode/directory')
+				self._filedlg.set_filter(filter)
+			response = self._filedlg.run()
+			self._filedlg.hide()
+			if response == gtk.RESPONSE_OK:
+				c.set_value(self._filedlg.get_filename())
+		elif c.name() == 'display.horizontal':
+			if self._horidlg == None:
+				self._horidlg = gtk.Dialog(title = _('Horizontal'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				self._horicmb = gtk.combo_box_new_text()
+				choice = ['left', 'center', 'right']
+				for i in choice:
+					self._horicmb.append_text(i)
+				self._horicmb.set_active(choice.index(c.value()))
+				container = gtk.HBox()
+				self._horidlg.get_content_area().pack_start(container, False, False, 10)
+				container.pack_start(gtk.Label(_('Horizontal')), False, False, 10)
+				container.pack_start(self._horicmb, False, False, 10)
+				self._horidlg.show_all()
+			response = self._horidlg.run()
+			self._horidlg.hide()
+			if response == gtk.RESPONSE_OK:
+				c.set_value(self._horicmb.get_active_text())
+		elif c.name() == 'display.vertical':
+			if self._vertdlg == None:
+				self._vertdlg = gtk.Dialog(title = _('Vertical'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				self._vertcmb = gtk.combo_box_new_text()
+				choice = ['top', 'center', 'bottom']
+				for i in choice:
+					self._vertcmb.append_text(i)
+				self._vertcmb.set_active(choice.index(c.value()))
+				container = gtk.HBox()
+				self._vertdlg.get_content_area().pack_start(container, False, False, 10)
+				container.pack_start(gtk.Label(_('Vertical')), False, False, 10)
+				container.pack_start(self._vertcmb, False, False, 10)
+				self._vertdlg.show_all()
+			response = self._vertdlg.run()
+			self._vertdlg.hide()
+			if response == gtk.RESPONSE_OK:
+				c.set_value(self._vertcmd.get_active_text())
+		# update view
+		self._model.set_value(iter, 1, c.value())
+		if c.value() != c.default():
+			weight = pango.WEIGHT_BOLD
+		else:
+			weight = pango.WEIGHT_NORMAL
+		self._model.set_value(iter, 2, weight)
+		log.info(c)
+		log.debug('leave')
 		return
-	
-	def _on_log_released(self, widget):
+		
+	def _on_btnlog_released(self, widget):
+		log.debug('enter')
 		path = rb.find_user_cache_file('RBLyrics/log')
 		log.info('open <file://%s>' % urllib.pathname2url(path))
 		os.system('/usr/bin/xdg-open \"%s\"' % path)
-		return
-		
-	## Set 'display' setting.
-	def _on_display_toggled(self, widget):
-		key = 'display'
-		value = widget.get_active()
-		self._setting[key] = value
-		self._gconf.set_bool(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
+		log.debug('leave')
 		return
 	
-	## Set 'download' setting.
-	def _on_download_toggled(self, widget):
-		key = 'download'
-		value = widget.get_active()
-		self._setting[key] = value
-		self._gconf.set_bool(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
-		return
-	
-	## Set 'choose' setting.
-	def _on_choose_toggled(self, widget):
-		key = 'choose'
-		value = widget.get_active()
-		self._setting[key] = value
-		self._gconf.set_bool(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
-		return
-	
-	## Set 'halign' setting.
-	def _on_halign_changed(self, widget):
-		key = 'halign'
-		value = widget.get_active()
-		self._setting[key] = halign_map[value]
-		self._gconf.set_int(gconf_keys[key], value)
-		log.info('%s : %s' % (key, halign_map[value]))
-		return
-	
-	## Set 'vpos' setting.
-	def _on_vpos_changed(self, widget):
-		key = 'vpos'
-		value = widget.get_active()
-		self._setting[key] = vpos_map[value]
-		self._gconf.set_int(gconf_keys[key], value)
-		log.info('%s : %s' % (key, vpos_map[value]))
-		return
-	
-	## Set 'fgcolor' setting.
-	def _on_fgcolor_color_set(self, widget):
-		key = 'fgcolor'
-		value = widget.get_color().to_string()
-		self._setting[key] = value
-		self._gconf.set_string(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
-		return
-	
-	## Set 'font' setting.
-	def _on_font_font_set(self, widget):
-		key = 'font'
-		value = widget.get_font_name()
-		self._setting[key] = value
-		self._gconf.set_string(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
-		return
-	
-	## Set 'folder' setting.
-	def _on_folder_file_set(self, widget):
-		key = 'folder'
-		value = widget.get_filename()
-		self._setting[key] = value
-		self._gconf.set_string(gconf_keys[key], value)
-		log.info('%s : %s' % (key, value))
-		return
-	
-	## Set 'engine' setting.
-	def _on_engine_changed(self, widget):
-		key = 'engine'
-		widget_key = widget.get_name()
-		value = self._setting[key]
-		if widget.get_active() and not widget_key in value:
-			value.append(widget_key)
-		elif not widget.get_active() and widget_key in value:
-			value.remove(widget_key)
-		self._setting[key] = value
-		self._gconf.set_list(gconf_keys[key], gconf.VALUE_STRING, value)
-		log.info('%s : %s' % (key, value))
+	def _on_btnclose_released(self, widget):
+		log.debug('enter')
+		self._dialog.hide()
+		log.debug('leave')
 		return
 	
 	## Get preference dialog.
@@ -200,109 +241,17 @@ class Preference:
 	#  @param key Key of the setting.
 	#  @return Value to the key.
 	def get(self, key):
-		return self._setting[key]
+		return self._setting[key].value()
 	
-	
-	## Load preference from Gconf.
-	# @bug pygtk bug
-	def _load_prefs (self):
-		log.debug('enter')
-		# display
-		key = 'display'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
-		except:
-			value = True
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_active(value)
-		# download
-		key = 'download'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
-		except:
-			value = True
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_active(value)
-		# choose
-		key = 'choose'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_bool()
-		except:
-			value = True
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_active(value)
-		# halign
-		key = 'halign'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_int()
-		except:
-			value = 1
-		self._setting[key] = halign_map[value]
-		log.info('%s : %s' % (key, halign_map[value]))
-		widget.set_active(value)
-		# vpos
-		key = 'vpos'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_int()
-		except:
-			value = 0
-		self._setting[key] = vpos_map[value]
-		log.info('%s : %s' % (key, vpos_map[value]))
-		widget.set_active(value)
-		# font
-		key = 'font'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
-		except:
-			value = '20'
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_font_name(value)
-		# fgcolor
-		key = 'fgcolor'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
-			color_parse(value)
-		except:
-			value = '#FFFF00'
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_color(color_parse(value))
-		# folder
-		key = 'folder'
-		widget = self._widget[key]
-		try:
-			value = self._gconf.get_without_default(gconf_keys[key]).get_string()
-		except:
-			value = os.path.expanduser('~/.lyrics')
-		self._setting[key] = value
-		log.info('%s : %s' % (key, value))
-		widget.set_filename(value)
-		# engine
-		key = 'engine'
-		try:
-			value = []
-			temp = self._gconf.get_without_default(gconf_keys[key]).get_list()
-			for t in temp:
-				value.append(t.get_string())
-		except:
-			value = engine_map.keys()
-		self._setting[key] = []
-		for k in value:
-			if k in engine_map.keys():
-				self._setting[key].append(k)
-		log.info('%s : %s' % (key, self._setting[key]))
-		for engine in engine_map.keys():
-			self._widget[engine].set_active(engine in value)
-		log.debug('leave')
-		return
+	def get_engine(self):
+		engine = []
+		if self._setting['engine.sogou'].value() == 'True':
+			engine.append('sogou')
+		if self._setting['engine.lyricist'].value() == 'True':
+			engine.append('lyricist')
+		if self._setting['engine.minilyrics'].value() == 'True':
+			engine.append('minilyrics')
+		if self._setting['engine.ttplayer'].value() == 'True':
+			engine.append('ttplayer')
+		return engine
+
