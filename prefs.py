@@ -206,7 +206,7 @@ class Preference:
 			response = self._vertdlg.run()
 			self._vertdlg.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._vertcmd.get_active_text())
+				c.set_value(self._vertcmb.get_active_text())
 		# update view
 		self._model.set_value(iter, 1, c.value())
 		if c.value() != c.default():
