@@ -70,7 +70,6 @@ class Preference:
 	#  Preference settings.
 	
 	## The constructor.
-	#  @param glade_file Input glade file for preference dialog.
 	def __init__(self):
 		log.debug('enter')
 		self._setting = {}
@@ -116,12 +115,21 @@ class Preference:
 		scroll.add_with_viewport(treeview)
 		self._dialog.get_content_area().add(scroll)
 		self._dialog.get_content_area().show_all()
+		#
 		btnlog = gtk.Button(_('Log'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_INFO, gtk.ICON_SIZE_BUTTON)
 		btnlog.set_image(icon)
 		btnlog.connect('released', self._on_btnlog_released)
 		self._dialog.get_action_area().pack_end(btnlog, False, False)
+		#
+		btnrestore = gtk.Button(_('Restore'))
+		icon = gtk.Image()
+		icon.set_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
+		btnrestore.set_image(icon)
+		btnrestore.connect('released', self._on_btnrestore_released)
+		self._dialog.get_action_area().pack_end(btnrestore, False, False)
+		#
 		btnclose = gtk.Button(_('Close'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_BUTTON)
@@ -140,6 +148,20 @@ class Preference:
 	def _on_delete_event(self, widget, event):
 		self._dialog.hide()
 		return True
+	
+	def _on_btnrestore_released(self, widget):
+		log.debug('enter')
+		iter = self._model.get_iter_first()
+		while iter != None:
+			name = self._model.get_value(iter, 0)
+			c = self._setting[name]
+			c.set_value(c.default())
+			self._model.set_value(iter, 1, c.value())
+			self._model.set_value(iter, 2, pango.WEIGHT_NORMAL)
+			log.info(c)
+			iter = self._model.iter_next(iter)
+		log.debug('leave')
+		return
 		
 	def _on_row_activated(self, treeview, path, column):
 		log.debug('enter <%s>' % path)
