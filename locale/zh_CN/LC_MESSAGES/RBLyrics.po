@@ -8,6 +8,8 @@ msgid "Value"
 msgstr "值"
 msgid "Log"
 msgstr "日志"
+msgid "Restore"
+msgstr "重置"
 msgid "Close"
 msgstr "关闭"
 
