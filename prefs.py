@@ -152,6 +152,7 @@ class Preference:
 		elif c.name() == 'display.color':
 			if self._colordlg == None:
 				self._colordlg = gtk.ColorSelectionDialog(_('Choose foreground color'))
+				self._colordlg.get_color_selection().set_current_color(gtk.gdk.color_parse(c.value()))
 			response = self._colordlg.run()
 			self._colordlg.hide()
 			if response == gtk.RESPONSE_OK:
@@ -159,6 +160,7 @@ class Preference:
 		elif c.name() == 'display.font':
 			if self._fontdlg == None:
 				self._fontdlg = gtk.FontSelectionDialog(_('Choose font'))
+				self._fontdlg.set_font_name(c.value())
 			response = self._fontdlg.run()
 			self._fontdlg.hide()
 			if response == gtk.RESPONSE_OK:
@@ -169,6 +171,7 @@ class Preference:
 				filter = gtk.FileFilter()
 				filter.add_mime_type('inode/directory')
 				self._filedlg.set_filter(filter)
+				self._filedlg.set_current_folder(c.value())
 			response = self._filedlg.run()
 			self._filedlg.hide()
 			if response == gtk.RESPONSE_OK:
