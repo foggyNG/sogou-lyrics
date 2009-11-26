@@ -146,7 +146,7 @@ class Preference:
 		return
 	
 	def _on_delete_event(self, widget, event):
-		self._dialog.hide()
+		widget.hide()
 		return True
 	
 	def _on_btnrestore_released(self, widget):

@@ -23,7 +23,7 @@
 #  RBLyrics.
 
 import rhythmdb, rb
-import os, gettext, logging, logging.handlers, sys, gtk
+import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
 _ = gettext.gettext
 
 from prefs import Preference
@@ -63,7 +63,6 @@ class RBLyrics(rb.Plugin):
 			save_lyrics(self._prefs.get('main.directory'), songinfo, self._lyrics)
 		else:
 			self._chooser.set_instance(songinfo, candidate)
-			self._chooser.show()
 		log.debug('leave')
 		return
 	
@@ -179,7 +178,7 @@ class RBLyrics(rb.Plugin):
 		self._display = Display(self._prefs)
 		if not os.path.exists(self._prefs.get('main.directory')):
 			os.mkdir(self._prefs.get('main.directory'))
-		self._chooser = LyricsChooser(self.find_file('chooser.glade'), self._chooser_response_handler)
+		self._chooser = LyricsChooser(self._chooser_response_handler)
 		self._lyrics = None
 		self._shell = shell
 		self._handler = [

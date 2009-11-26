@@ -54,9 +54,10 @@ msgid "Select lyrics folder"
 msgstr "选择歌词目录"
 
 # lyrics chooser dialog
-msgid "Artist - Title"
-msgstr "艺术家 - 标题"
-
+msgid "Artist"
+msgstr "艺术家"
+msgid "Title"
+msgstr "标题"
 # ui
 msgid "Lyrics"
 msgstr "歌词"
