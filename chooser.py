@@ -24,7 +24,6 @@
 
 import gobject, gtk, gettext, logging
 _ = gettext.gettext
-from gtk.glade import XML
 
 log = logging.getLogger('RBLyrics')
 
@@ -32,27 +31,41 @@ log = logging.getLogger('RBLyrics')
 class LyricsChooser:
 	
 	## The constructor.
-	#  @param glade_file UI glade file.
 	#  @param callback Response callback.
-	def __init__(self, glade_file, callback):
+	def __init__(self, callback):
 		log.debug('enter')
-		gladexml = XML(glade_file)
-		gladexml.signal_autoconnect(self)
-		self._window = gladexml.get_widget('lyrics-chooser')
+		self._dialog = gtk.Dialog(flags = gtk.DIALOG_NO_SEPARATOR, buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+		self._dialog.set_default_size(640, 480)
 		self._callback = callback
-		widgets = {}
-		for key in ['chooser', 'preview', 'ok', 'close']:
-			widgets[key] = gladexml.get_widget(key)
-		self._token = gtk.ListStore(gobject.TYPE_INT, gobject.TYPE_STRING)
 		self._lyrics = None
 		self._song = None
-		self._chooser = widgets['chooser']
-		self._chooser.append_column(gtk.TreeViewColumn(_('Artist - Title'), gtk.CellRendererText(), text=1))
-		self._chooser.set_model(self._token)
-		selection = self._chooser.get_selection()
-		selection.connect('changed', self._selection_changed)
-		self._viewer = widgets['preview']
-		del selection, widgets, gladexml
+		#
+		self._model = gtk.ListStore(int, str, str, int)
+		treeview = gtk.TreeView(self._model)
+		treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
+		treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
+		treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))
+		self._selection = treeview.get_selection()
+		self._selection.connect('changed', self._selection_changed)
+		self._viewer = gtk.TextView()
+		self._viewer.set_editable(False)
+		self._viewer.set_cursor_visible(False)
+		#
+		panel = gtk.HPaned()
+		scroll = gtk.ScrolledWindow()
+		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scroll.add_with_viewport(treeview)
+		panel.pack1(scroll, False, False)
+		scroll = gtk.ScrolledWindow()
+		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		scroll.add_with_viewport(self._viewer)
+		panel.pack2(scroll, False, False)
+		panel.set_position(180)
+		self._dialog.get_content_area().add(panel)
+		self._dialog.get_content_area().show_all()
+		#
+		self._dialog.connect('delete-event', self._on_delete_event)
+		self._dialog.connect('response', self._on_response)
 		log.debug('leave')
 		return
 	
@@ -61,7 +74,7 @@ class LyricsChooser:
 		log.debug('enter')
 		selected = widget.get_selected()
 		if selected[1]:
-			index = selected[0].get_value(selected[1], 0)
+			index = selected[0].get_value(selected[1], 3)
 			log.debug('select [index = %d]' % index)
 			self._viewer.get_buffer().set_text(self._candidate[index][1].get_raw())
 		else:
@@ -70,23 +83,24 @@ class LyricsChooser:
 		return
 	
 	## Dialog response handler.
-	def _on_ok_released(self, widget):
-		log.debug('enter')
-		selected = self._chooser.get_selection().get_selected()
-		index = selected[0].get_value(selected[1], 0)
-		lyrics = self._candidate[index][1]
-		self._window.hide()
-		self._callback(self._songinfo, lyrics)
+	def _on_response(self, dialog, response_id):
+		log.debug('enter <%d>' % response_id)
+		if response_id == gtk.RESPONSE_OK:
+			selected = self._selection.get_selected()
+			index = selected[0].get_value(selected[1], 3)
+			lyrics = self._candidate[index][1]
+			dialog.hide()
+			self._callback(self._songinfo, lyrics)
+		else:
+			dialog.hide()
+			self._callback(self._songinfo, None)
 		log.debug('leave')
 		return
 	
-	## Dialog response handler.
-	def _on_close_released(self, widget):
-		log.debug('enter')
-		self._window.hide()
+	def _on_delete_event(self, widget, event):
+		widget.hide()
 		self._callback(self._songinfo, None)
-		log.debug('leave')
-		return
+		return True
 	
 	## Set choosing instance.
 	#  @param songinfo Song information to be chosen.
@@ -94,20 +108,15 @@ class LyricsChooser:
 	def set_instance(self, songinfo, candidate):
 		log.debug('enter')
 		self._songinfo = songinfo
-		self._token.clear()
+		self._dialog.set_title('%s - %s' % (self._songinfo.get('ar'), self._songinfo.get('ti')))
+		self._model.clear()
 		self._candidate = candidate
 		count = 0
 		for c in self._candidate:
-			self._token.append([count, '%s - %s' % (c[1].get('ar'), c[1].get('ti'))])
+			self._model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
 			count = count + 1
-		self._chooser.get_selection().select_iter(self._token.get_iter_first())
+		self._selection.select_iter(self._model.get_iter_first())
+		self._dialog.show()
 		log.debug('leave')
 		return
-	
-	## Show dialog.
-	def show(self):
-		log.debug('enter')
-		self._window.set_title('%s - %s' % (self._songinfo.get('ar'), self._songinfo.get('ti')))
-		self._window.show_all()
-		log.debug('enter')
-		return
+
