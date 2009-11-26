@@ -60,9 +60,7 @@ class RBLyrics(rb.Plugin):
 		elif candidate[0][0] == 0:
 			self._display.show(_('%s prepared') % songinfo)
 			self._lyrics = candidate[0][1]
-			save_lyrics(self._prefs.get('folder'), songinfo, self._lyrics)
-		elif not self._prefs.get('choose'):
-			self._display.show(_('%s not found') % songinfo)
+			save_lyrics(self._prefs.get('main.directory'), songinfo, self._lyrics)
 		else:
 			self._chooser.set_instance(songinfo, candidate)
 			self._chooser.show()
@@ -78,12 +76,12 @@ class RBLyrics(rb.Plugin):
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo = SongInfo(artist, title)
 			log.info(songinfo)
-			self._lyrics = load_lyrics(self._prefs.get('folder'), songinfo)
+			self._lyrics = load_lyrics(self._prefs.get('main.directory'), songinfo)
 			if self._lyrics != None:
 				self._display.show(_('%s prepared') % songinfo)
-			elif self._prefs.get('download'):
+			elif self._prefs.get('main.download'):
 				self._display.show(_('%s downloading') % songinfo)
-				candidate = Engine(self._prefs.get('engine'), songinfo).get_lyrics()
+				candidate = Engine(self._prefs.get_engine(), songinfo).get_lyrics()
 				self._receive_lyrics(songinfo, candidate)
 			else:
 				self._display.show(_('%s not found') % songinfo)
@@ -118,7 +116,7 @@ class RBLyrics(rb.Plugin):
 		artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 		songinfo = SongInfo(artist, title)
-		if not open_lyrics(self._prefs.get('folder'), songinfo):
+		if not open_lyrics(self._prefs.get('main.directory'), songinfo):
 			log.info('%s not found' % songinfo)
 			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
@@ -141,7 +139,7 @@ class RBLyrics(rb.Plugin):
 				is_current = True
 		#
 		if lyrics:
-			save_lyrics(self._prefs.get('folder'), songinfo, lyrics)
+			save_lyrics(self._prefs.get('main.directory'), songinfo, lyrics)
 			if is_current:
 				self._display.show(_('%s prepared') % songinfo)
 				self._lyrics = lyrics
@@ -177,10 +175,10 @@ class RBLyrics(rb.Plugin):
 		if version[0] != 2 or version[1] < 6:
 			log.critical(sys.version)
 		#
-		self._prefs = Preference(self.find_file('prefs.glade'))
+		self._prefs = Preference()
 		self._display = Display(self._prefs)
-		if not os.path.exists(self._prefs.get('folder')):
-			os.mkdir(self._prefs.get('folder'))
+		if not os.path.exists(self._prefs.get('main.directory')):
+			os.mkdir(self._prefs.get('main.directory'))
 		self._chooser = LyricsChooser(self.find_file('chooser.glade'), self._chooser_response_handler)
 		self._lyrics = None
 		self._shell = shell

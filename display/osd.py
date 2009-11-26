@@ -47,7 +47,7 @@ class OSD:
 	def __init__(self, prefs):
 		log.debug('enter')
 		self._prefs = prefs
-		self._template = "<message id='RBLyrics' avoid_panels='on' hide_on_hover='on' animations='off' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span font='%s' fgcolor='%s'>%s</span></message>"
+		self._template = "<message id='RBLyrics' avoid_panels='%s' hide_on_hover='%s' animations='%s' osd_fake_translucent_bg='off' drop_shadow='off' osd_vposition='%s' osd_halignment='%s'  hide_timeout='20000'><span font='%s' fgcolor='%s'>%s</span></message>"
 		self._osd = eventbridge.OSD()
 		log.debug('leave')
 		return
@@ -55,12 +55,15 @@ class OSD:
 	## Display message.
 	#  @param message Message to show.
 	def show(self, message):
-		if self._prefs.get('display'):
+		if self._prefs.get('main.display'):
 			xml = self._template % (
-				self._prefs.get('vpos'),
-				self._prefs.get('halign'),
-				self._prefs.get('font'),
-				self._prefs.get('fgcolor'),
+				self._prefs.get('display.avoid_panels'),
+				self._prefs.get('display.hide_on_hover'),
+				self._prefs.get('display.animations'),
+				self._prefs.get('display.vertical'),
+				self._prefs.get('display.horizontal'),
+				self._prefs.get('display.font'),
+				self._prefs.get('display.color'),
 				message)
 			self._osd.send(xml)
 		return
