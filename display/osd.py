@@ -55,7 +55,7 @@ class OSD:
 	## Display message.
 	#  @param message Message to show.
 	def show(self, message):
-		if self._prefs.get('main.display'):
+		if self._prefs.get('main.display') == 'True':
 			xml = self._template % (
 				self._prefs.get('display.avoid_panels'),
 				self._prefs.get('display.hide_on_hover'),

@@ -79,7 +79,7 @@ class RBLyrics(rb.Plugin):
 			self._lyrics = load_lyrics(self._prefs.get('main.directory'), songinfo)
 			if self._lyrics != None:
 				self._display.show(_('%s prepared') % songinfo)
-			elif self._prefs.get('main.download'):
+			elif self._prefs.get('main.download') == 'True':
 				self._display.show(_('%s downloading') % songinfo)
 				candidate = Engine(self._prefs.get_engine(), songinfo).get_lyrics()
 				self._receive_lyrics(songinfo, candidate)
