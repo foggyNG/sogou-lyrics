@@ -22,19 +22,19 @@
 ## @package RBLyrics.utils
 #  Utilities.
 
-import re, logging, os, sys, urllib
-
-## Application name.
-APP_NAME = 'RBLyrics'
+import re, logging, os, sys, urllib, gettext
+_ = gettext.gettext
 
 ## Pattern for token strip.
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 
 ## Pattern for generate lyrics path.
-LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
+LRC_PATH_TEMPLATE = {
+	'artist/title.lrc':'%s/%s.lrc',
+	'artist - title.lrc':'%s - %s.lrc'}
 
 ## Logging system.
-log = logging.getLogger(APP_NAME)
+log = logging.getLogger('RBLyrics')
 
 ## Song information.
 class SongInfo:
@@ -215,9 +215,9 @@ def distance(songinfo, lyrics):
 #  @param root Lyrics root directory.
 #  @param songinfo Song information of the lyrics.
 #  @param lyrics Lyrics information.
-def save_lyrics(root, songinfo, lyrics):
+def save_lyrics(root, pattern, songinfo, lyrics):
 	log.debug('enter')
-	path = os.path.join(root, LRC_PATH_TEMPLATE[0] % (songinfo.get('ar'), songinfo.get('ti')))
+	path = os.path.join(root, pattern % (songinfo.get('ar'), songinfo.get('ti')))
 	dir = os.path.dirname(path)
 	if not os.path.exists(dir):
 		os.makedirs(dir)
@@ -233,7 +233,7 @@ def save_lyrics(root, songinfo, lyrics):
 def load_lyrics(root, songinfo):
 	log.debug('enter')
 	lyrics = None
-	for p in LRC_PATH_TEMPLATE:
+	for p in LRC_PATH_TEMPLATE.values():
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
 			log.info('load <file://%s>' % urllib.pathname2url(path))
@@ -249,7 +249,7 @@ def load_lyrics(root, songinfo):
 def open_lyrics(root, songinfo):
 	log.debug('enter')
 	ret = False
-	for p in LRC_PATH_TEMPLATE:
+	for p in LRC_PATH_TEMPLATE.values():
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
 			log.info('open <file://%s>' % urllib.pathname2url(path))
