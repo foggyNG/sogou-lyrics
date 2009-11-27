@@ -60,7 +60,7 @@ class RBLyrics(rb.Plugin):
 		elif candidate[0][0] == 0:
 			self._display.show(_('%s prepared') % songinfo)
 			self._lyrics = candidate[0][1]
-			save_lyrics(self._prefs.get('main.directory'), songinfo, self._lyrics)
+			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), songinfo, self._lyrics)
 		else:
 			self._chooser.set_instance(songinfo, candidate)
 		log.debug('leave')
@@ -119,7 +119,7 @@ class RBLyrics(rb.Plugin):
 			log.info('%s not found' % songinfo)
 			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
 			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
-			dlg.set_title(_(APP_NAME))
+			dlg.set_title(_('RBLyrics'))
 			dlg.run()
 			dlg.destroy()
 		log.debug('leave')
@@ -138,7 +138,7 @@ class RBLyrics(rb.Plugin):
 				is_current = True
 		#
 		if lyrics:
-			save_lyrics(self._prefs.get('main.directory'), songinfo, lyrics)
+			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), songinfo, lyrics)
 			if is_current:
 				self._display.show(_('%s prepared') % songinfo)
 				self._lyrics = lyrics
@@ -153,16 +153,16 @@ class RBLyrics(rb.Plugin):
 		# internationalization
 		LOCALE_DIR = self.find_file('locale')
 		for module in (gettext, gtk.glade):
-			module.bindtextdomain(APP_NAME, LOCALE_DIR)
-			module.textdomain(APP_NAME)
-		gettext.install(APP_NAME)
+			module.bindtextdomain('RBLyrics', LOCALE_DIR)
+			module.textdomain('RBLyrics')
+		gettext.install('RBLyrics')
 		# logging
 		log.setLevel(logging.DEBUG)
 		console_handler = logging.StreamHandler()
 		console_handler.setLevel(logging.INFO)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
-		cachedir = os.path.join(rb.user_cache_dir(), APP_NAME)
+		cachedir = os.path.join(rb.user_cache_dir(), 'RBLyrics')
 		if not os.path.exists(cachedir):
 			os.makedirs(cachedir)
 		filename = os.path.join(cachedir, 'log')
@@ -203,7 +203,7 @@ class RBLyrics(rb.Plugin):
 		iconset = gtk.IconSet()
 		iconset.add_source(iconsource)
 		iconfactory = gtk.IconFactory()
-		iconfactory.add(APP_NAME, iconset)
+		iconfactory.add('RBLyrics', iconset)
 		iconfactory.add_default()
 		#
 		uim = shell.props.ui_manager

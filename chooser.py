@@ -23,8 +23,8 @@
 #  Lyrics chooser.
 
 import gobject, gtk, gettext, logging
-_ = gettext.gettext
 
+_ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
 ## Lyrics chooser dialog.

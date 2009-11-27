@@ -23,9 +23,9 @@
 #  Preference.
 
 import os, gtk, gconf, logging, urllib, rb, gettext, pango
-_ = gettext.gettext
-
 from engine import engine_map
+from utils import LRC_PATH_TEMPLATE
+_ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
 class Config:
@@ -87,6 +87,7 @@ class Preference:
 		self._setting['display.hide_on_hover'] = Config('display.hide_on_hover', '/apps/rhythmbox/plugins/RBLyrics/display.hide_on_hover', 'True')
 		self._setting['display.animations'] = Config('display.animations', '/apps/rhythmbox/plugins/RBLyrics/display.animations', 'False')
 		self._setting['display.avoid_panels'] = Config('display.avoid_panels', '/apps/rhythmbox/plugins/RBLyrics/display.avoid_panels', 'True')
+		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE.values()[0])
 		# init dialog widgets
 		self._dialog = gtk.Dialog(title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
 		self._dialog.connect('delete-event', self._on_delete_event)
@@ -142,6 +143,7 @@ class Preference:
 		self._filedlg = None
 		self._horidlg = None
 		self._vertdlg = None
+		self._patterndlg = None
 		log.debug('leave')
 		return
 	
@@ -232,6 +234,32 @@ class Preference:
 			self._vertdlg.hide()
 			if response == gtk.RESPONSE_OK:
 				c.set_value(self._vertcmb.get_active_text())
+		elif c.name() == 'main.file_pattern':
+			if self._patterndlg == None:
+				self._patterndlg = gtk.Dialog(title = _('Lyrics save pattern'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				self._patternmdl = gtk.ListStore(str, str)
+				self._patterncmb = gtk.ComboBox(self._patternmdl)
+				cell = gtk.CellRendererText()
+				self._patterncmb.pack_start(cell)
+				self._patterncmb.add_attribute(cell, 'text', 0)
+				choice = -1
+				count = 0
+				for k in LRC_PATH_TEMPLATE.keys():
+					self._patternmdl.append([_(k), LRC_PATH_TEMPLATE[k]])
+					if LRC_PATH_TEMPLATE[k] == c.value():
+						choice = count
+					count += 1
+				self._patterncmb.set_active(choice)
+				container = gtk.HBox()
+				self._patterndlg.get_content_area().pack_start(container, False, False, 10)
+				container.pack_start(gtk.Label(_('Lyrics save pattern')), False, False, 10)
+				container.pack_start(self._patterncmb, False, False, 10)
+				self._patterndlg.show_all()
+			response = self._patterndlg.run()
+			self._patterndlg.hide()
+			if response == gtk.RESPONSE_OK:
+				choice = self._patterncmb.get_active_iter()
+				c.set_value(self._patternmdl.get_value(choice, 1))
 		# update view
 		self._model.set_value(iter, 1, c.value())
 		if c.value() != c.default():
