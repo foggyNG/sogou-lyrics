@@ -42,6 +42,7 @@ class LyricsChooser:
 		#
 		self._model = gtk.ListStore(int, str, str, int)
 		treeview = gtk.TreeView(self._model)
+		treeview.set_rules_hint(True)
 		treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
 		treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
 		treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))

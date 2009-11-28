@@ -104,6 +104,7 @@ class Preference:
 			self._model.append([c.name(), c.value(), weight, _(c.name()), _(c.value())])
 		#
 		treeview = gtk.TreeView(self._model)
+		treeview.set_rules_hint(True)
 		cell = gtk.CellRendererText()
 		vc = gtk.TreeViewColumn(_('Name'), cell, text = 3, weight = 2)
 		vc.set_sort_column_id(0)
