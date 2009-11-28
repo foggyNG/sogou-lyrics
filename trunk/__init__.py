@@ -26,6 +26,7 @@ import rhythmdb, rb
 import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
 _ = gettext.gettext
 
+from chooser import LyricsChooser
 from prefs import Preference
 from engine import Engine
 from display import Display
@@ -106,25 +107,40 @@ class RBLyrics(rb.Plugin):
 		log.debug('leave')
 		return
 	
-	## Lyrics choose response hander.
-	def _receive_lyrics(self, songinfo, lyrics):
+	def _chooser_handler(self, song, lyrics):
 		log.debug('enter')
-		is_current = False
+		if lyrics:
+			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), song, lyrics)
+		#
+		current_song = None
 		entry = self._shell.props.shell_player.get_playing_entry()
 		if entry:
 			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
-			songinfo_t = SongInfo(artist, title)
-			if songinfo == songinfo_t:
-				is_current = True
-		#
-		if lyrics:
-			if is_current:
-				self._display.show(_('%s prepared') % songinfo)
+			current_song = SongInfo(artist, title)
+		if current_song != None and song != None and current_song == song:
+			if lyrics:
+				self._display.show(_('%s prepared') % song)
 				self._lyrics = lyrics
+			else:
+				self._display.show(_('%s not found') % song)
+		log.debug('leave')
+		return
+		
+	## Lyrics choose response hander.
+	def _receive_lyrics(self, songinfo, candidate):
+		log.debug('enter')
+		n_candidates = len(candidate)
+		log.info('%d candidates found for %s' % (n_candidates, songinfo))
+		if n_candidates == 0:
+			self._chooser_handler(songinfo, None)
+		elif candidate[0][0] == 0:
+			self._chooser_handler(songinfo, candidate[0][1])
 		else:
-			if is_current:
-				self._display.show(_('%s not found') % songinfo)
+			gtk.gdk.threads_enter()
+			self._chooser.add_task(songinfo, candidate)
+			self._chooser.present()
+			gtk.gdk.threads_leave()
 		log.debug('leave')
 		return
 	
@@ -189,11 +205,14 @@ class RBLyrics(rb.Plugin):
 		uim.insert_action_group(self._actiongroup, 0)
 		self._ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
+		#
+		self._chooser = LyricsChooser(self._chooser_handler)
 		log.info('activated')
 		return
 	
 	## Plugin deactivation.
 	def deactivate(self, shell):
+		del self._chooser
 		for handler in self._handler:
 			self._shell.props.shell_player.disconnect(handler)
 		uim = shell.props.ui_manager

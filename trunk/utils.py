@@ -48,7 +48,7 @@ class SongInfo:
 		return
 	
 	def __str__(self):
-		return '(%s - %s)' % (self._info['ar'], self._info['ti'])
+		return '%s - %s' % (self._info['ar'], self._info['ti'])
 		
 	def __eq__(self, other):
 		ret = False

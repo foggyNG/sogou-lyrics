@@ -25,7 +25,6 @@
 import threading, gtk.gdk
 from chardet import detect
 
-from chooser import LyricsChooser
 from sogou import Sogou
 from ttplayer import TTPlayer
 from minilyrics import Minilyrics
@@ -106,25 +105,6 @@ class Engine(threading.Thread):
 		for t in threads:
 			t.join()
 		self._candidate.sort(candidate_cmp)
-		#
-		n_candidates = len(self._candidate)
-		log.info('%d candidates found for %s' % (n_candidates, self._songinfo))
-		lyrics = None
-		if n_candidates == 0:
-			pass
-		elif self._candidate[0][0] == 0:
-			lyrics = self._candidate[0][1]
-		else:
-			gtk.gdk.threads_enter()
-			chooser = LyricsChooser(self._songinfo, self._candidate)
-			response = chooser.run()
-			if response == gtk.RESPONSE_OK:
-				lyrics = chooser.get_lyrics()
-			chooser.hide()
-			gtk.gdk.threads_leave()
-		#
-		if lyrics:
-			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), self._songinfo, lyrics)
-		self._callback(self._songinfo, lyrics)
+		self._callback(self._songinfo, self._candidate)
 		log.debug('leave')
 		return
