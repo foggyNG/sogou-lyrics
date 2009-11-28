@@ -22,14 +22,15 @@
 ## @package RBLyrics.engine
 #  Lyrics search engine.
 
-import threading
+import threading, gtk.gdk
 from chardet import detect
 
+from chooser import LyricsChooser
 from sogou import Sogou
 from ttplayer import TTPlayer
 from minilyrics import Minilyrics
 from lyricist import Lyricist
-from utils import log, clean_token, distance, LyricsInfo
+from utils import log, clean_token, distance, LyricsInfo, save_lyrics
 
 ## Lyrics search engine map.
 engine_map = {
@@ -44,7 +45,7 @@ def candidate_cmp(x, y):
 	return x[0] - y[0]
 
 ## Lyrics search engine manager.
-class Engine:
+class Engine(threading.Thread):
 	
 	## @var _engine
 	#  Lyrics engine keys.
@@ -61,10 +62,12 @@ class Engine:
 	## The constructor.
 	#  @param engine Engine list.
 	#  @param songinfo Song information.
-	def __init__(self, engine, songinfo):
+	def __init__(self, prefs, songinfo, callback):
+		threading.Thread.__init__(self)
 		log.debug('enter')
-		self._engine = engine
+		self._prefs = prefs
 		self._songinfo = songinfo
+		self._callback = callback
 		self._candidate = []
 		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
@@ -83,13 +86,13 @@ class Engine:
 			self._candidate.append([d, l])
 		self._lock.release()
 		return
-		
+	
 	## Retrieve lyrics.
 	#  @return Lyrics candidate list.
-	def get_lyrics(self):
+	def run(self):
 		log.debug('enter')
 		threads = []
-		for key in self._engine:
+		for key in self._prefs.get_engine():
 			engine = engine_map[key]
 			token = clean_token(self._songinfo.get('ar'))
 			encoding = detect(token)['encoding']
@@ -103,6 +106,25 @@ class Engine:
 		for t in threads:
 			t.join()
 		self._candidate.sort(candidate_cmp)
-		log.info('%d candidates found for %s' % (len(self._candidate), self._songinfo))
+		#
+		n_candidates = len(self._candidate)
+		log.info('%d candidates found for %s' % (n_candidates, self._songinfo))
+		lyrics = None
+		if n_candidates == 0:
+			pass
+		elif self._candidate[0][0] == 0:
+			lyrics = self._candidate[0][1]
+		else:
+			gtk.gdk.threads_enter()
+			chooser = LyricsChooser(self._songinfo, self._candidate)
+			response = chooser.run()
+			if response == gtk.RESPONSE_OK:
+				lyrics = chooser.get_lyrics()
+			chooser.hide()
+			gtk.gdk.threads_leave()
+		#
+		if lyrics:
+			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), self._songinfo, lyrics)
+		self._callback(self._songinfo, lyrics)
 		log.debug('leave')
-		return self._candidate
+		return

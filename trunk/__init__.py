@@ -27,7 +27,6 @@ import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
 _ = gettext.gettext
 
 from prefs import Preference
-from chooser import LyricsChooser
 from engine import Engine
 from display import Display
 from utils import *
@@ -49,23 +48,6 @@ class RBLyrics(rb.Plugin):
 				self._display.show(line)
 		return
 	
-	## Receive lyrics from search engine.
-	#  @param songinfo Song information.
-	#  @param candidate Lyrics candidates.
-	def _receive_lyrics(self, songinfo, candidate):
-		log.debug('enter')
-		n_candidates = len(candidate)
-		if n_candidates == 0:
-			self._display.show(_('%s not found') % songinfo)
-		elif candidate[0][0] == 0:
-			self._display.show(_('%s prepared') % songinfo)
-			self._lyrics = candidate[0][1]
-			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), songinfo, self._lyrics)
-		else:
-			self._chooser.set_instance(songinfo, candidate)
-		log.debug('leave')
-		return
-	
 	## Playing song changed handler.
 	def _playing_song_changed_handler(self, player, entry):
 		log.debug('enter')
@@ -80,8 +62,7 @@ class RBLyrics(rb.Plugin):
 				self._display.show(_('%s prepared') % songinfo)
 			elif self._prefs.get('main.download') == 'True':
 				self._display.show(_('%s downloading') % songinfo)
-				candidate = Engine(self._prefs.get_engine(), songinfo).get_lyrics()
-				self._receive_lyrics(songinfo, candidate)
+				Engine(self._prefs, songinfo, self._receive_lyrics).start()
 			else:
 				self._display.show(_('%s not found') % songinfo)
 		log.debug('leave')
@@ -126,7 +107,7 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	## Lyrics choose response hander.
-	def _chooser_response_handler(self, songinfo, lyrics):
+	def _receive_lyrics(self, songinfo, lyrics):
 		log.debug('enter')
 		is_current = False
 		entry = self._shell.props.shell_player.get_playing_entry()
@@ -138,7 +119,6 @@ class RBLyrics(rb.Plugin):
 				is_current = True
 		#
 		if lyrics:
-			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), songinfo, lyrics)
 			if is_current:
 				self._display.show(_('%s prepared') % songinfo)
 				self._lyrics = lyrics
@@ -178,7 +158,6 @@ class RBLyrics(rb.Plugin):
 		self._display = Display(self._prefs)
 		if not os.path.exists(self._prefs.get('main.directory')):
 			os.mkdir(self._prefs.get('main.directory'))
-		self._chooser = LyricsChooser(self._chooser_response_handler)
 		self._lyrics = None
 		self._shell = shell
 		self._handler = [
@@ -228,7 +207,6 @@ class RBLyrics(rb.Plugin):
 		del self._handler
 		del self._shell
 		del self._lyrics
-		del self._chooser
 		del self._display
 		del self._prefs
 		log.info('deactivated')
