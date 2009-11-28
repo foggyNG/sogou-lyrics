@@ -29,9 +29,7 @@ _ = gettext.gettext
 TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
 
 ## Pattern for generate lyrics path.
-LRC_PATH_TEMPLATE = {
-	'artist/title.lrc':'%s/%s.lrc',
-	'artist - title.lrc':'%s - %s.lrc'}
+LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 
 ## Logging system.
 log = logging.getLogger('RBLyrics')
@@ -233,7 +231,7 @@ def save_lyrics(root, pattern, songinfo, lyrics):
 def load_lyrics(root, songinfo):
 	log.debug('enter')
 	lyrics = None
-	for p in LRC_PATH_TEMPLATE.values():
+	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
 			log.info('load <file://%s>' % urllib.pathname2url(path))
@@ -249,7 +247,7 @@ def load_lyrics(root, songinfo):
 def open_lyrics(root, songinfo):
 	log.debug('enter')
 	ret = False
-	for p in LRC_PATH_TEMPLATE.values():
+	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
 		if os.path.exists(path):
 			log.info('open <file://%s>' % urllib.pathname2url(path))
