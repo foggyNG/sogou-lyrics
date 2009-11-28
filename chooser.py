@@ -22,35 +22,44 @@
 ## @package RBLyrics.chooser
 #  Lyrics chooser.
 
-import gobject, gtk, gettext, logging
+import gtk, gettext, logging
 
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
 ## Lyrics chooser dialog.
-class LyricsChooser:
+class LyricsChooser(gtk.Dialog):
 	
 	## The constructor.
 	#  @param callback Response callback.
-	def __init__(self, callback):
+	def __init__(self, songinfo, candidate):
+		gtk.Dialog.__init__(self,
+			title = '%s - %s' % (songinfo.get('ar'), songinfo.get('ti')),
+			flags = gtk.DIALOG_NO_SEPARATOR,
+			buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
 		log.debug('enter')
-		self._dialog = gtk.Dialog(flags = gtk.DIALOG_NO_SEPARATOR, buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-		self._dialog.set_default_size(640, 480)
-		self._callback = callback
+		self.set_default_size(640, 480)
+		self._candidate = candidate
 		self._lyrics = None
-		self._song = None
 		#
-		self._model = gtk.ListStore(int, str, str, int)
-		treeview = gtk.TreeView(self._model)
+		model = gtk.ListStore(int, str, str, int)
+		treeview = gtk.TreeView(model)
 		treeview.set_rules_hint(True)
 		treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
 		treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
 		treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))
 		self._selection = treeview.get_selection()
 		self._selection.connect('changed', self._selection_changed)
+		count = 0
+		for c in self._candidate:
+			model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
+			count = count + 1
+		#
 		self._viewer = gtk.TextView()
 		self._viewer.set_editable(False)
 		self._viewer.set_cursor_visible(False)
+		#
+		self._selection.select_iter(model.get_iter_first())
 		#
 		panel = gtk.HPaned()
 		scroll = gtk.ScrolledWindow()
@@ -62,11 +71,9 @@ class LyricsChooser:
 		scroll.add_with_viewport(self._viewer)
 		panel.pack2(scroll, False, False)
 		panel.set_position(180)
-		self._dialog.get_content_area().add(panel)
-		self._dialog.get_content_area().show_all()
-		#
-		self._dialog.connect('delete-event', self._on_delete_event)
-		self._dialog.connect('response', self._on_response)
+		self.get_content_area().add(panel)
+		self.get_content_area().show_all()
+		self.connect('response', self._on_response)
 		log.debug('leave')
 		return
 	
@@ -88,36 +95,12 @@ class LyricsChooser:
 		log.debug('enter <%d>' % response_id)
 		if response_id == gtk.RESPONSE_OK:
 			selected = self._selection.get_selected()
-			index = selected[0].get_value(selected[1], 3)
-			lyrics = self._candidate[index][1]
-			dialog.hide()
-			self._callback(self._songinfo, lyrics)
+			self._lyrics = selected[0].get_value(selected[1], 3)
+		log.debug('leave')
+		return
+	
+	def get_lyrics(self):
+		if self._lyrics is None:
+			return None
 		else:
-			dialog.hide()
-			self._callback(self._songinfo, None)
-		log.debug('leave')
-		return
-	
-	def _on_delete_event(self, widget, event):
-		widget.hide()
-		self._callback(self._songinfo, None)
-		return True
-	
-	## Set choosing instance.
-	#  @param songinfo Song information to be chosen.
-	#  @param candidate Lyrics candidates to be chosen.
-	def set_instance(self, songinfo, candidate):
-		log.debug('enter')
-		self._songinfo = songinfo
-		self._dialog.set_title('%s - %s' % (self._songinfo.get('ar'), self._songinfo.get('ti')))
-		self._model.clear()
-		self._candidate = candidate
-		count = 0
-		for c in self._candidate:
-			self._model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
-			count = count + 1
-		self._selection.select_iter(self._model.get_iter_first())
-		self._dialog.show()
-		log.debug('leave')
-		return
-
+			return self._candidate[self._lyrics][1]
