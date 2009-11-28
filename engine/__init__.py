@@ -22,7 +22,7 @@
 ## @package RBLyrics.engine
 #  Lyrics search engine.
 
-import threading, gtk.gdk
+import threading
 from chardet import detect
 
 from sogou import Sogou

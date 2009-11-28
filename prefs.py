@@ -61,7 +61,7 @@ class Config:
 ## Application preference.
 #
 #  Parse and retrieve application preferece, display preference dialog.
-class Preference:
+class Preference(gtk.Dialog):
 	
 	## @var _dialog
 	#  Preference dialog object.
@@ -71,12 +71,12 @@ class Preference:
 	
 	## The constructor.
 	def __init__(self):
+		gtk.Dialog.__init__(self, title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
 		log.debug('enter')
 		self._setting = {}
-		self._setting['engine.sogou'] = Config('engine.sogou', '/apps/rhythmbox/plugins/RBLyrics/engine.sogou', 'True')
-		self._setting['engine.lyricist'] = Config('engine.lyricist', '/apps/rhythmbox/plugins/RBLyrics/engine.lyricist', 'True')
-		self._setting['engine.minilyrics'] = Config('engine.minilyrics', '/apps/rhythmbox/plugins/RBLyrics/engine.minilyrics', 'True')
-		self._setting['engine.ttplayer'] = Config('engine.ttplayer', '/apps/rhythmbox/plugins/RBLyrics/engine.ttplayer', 'True')
+		for engine in engine_map.keys():
+			key = 'engine.%s' % engine
+			self._setting[key] = Config(key, '/apps/rhythmbox/plugins/RBLyrics/%s' % key, 'True')
 		self._setting['display.horizontal'] = Config('display.horizontal', '/apps/rhythmbox/plugins/RBLyrics/display.horizontal', 'center')
 		self._setting['display.vertical'] = Config('display.vertical', '/apps/rhythmbox/plugins/RBLyrics/display.vertical', 'top')
 		self._setting['main.display'] = Config('main.display', '/apps/rhythmbox/plugins/RBLyrics/main.display', 'True')
@@ -89,9 +89,8 @@ class Preference:
 		self._setting['display.avoid_panels'] = Config('display.avoid_panels', '/apps/rhythmbox/plugins/RBLyrics/display.avoid_panels', 'True')
 		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE[0])
 		# init dialog widgets
-		self._dialog = gtk.Dialog(title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
-		self._dialog.connect('delete-event', self._on_delete_event)
-		self._dialog.set_default_size(400, 350)
+		self.connect('delete-event', self._on_delete_event)
+		self.set_default_size(400, 350)
 		self._model = gtk.ListStore(str, str, int, str, str)
 		names = self._setting.keys()
 		names.sort()
@@ -115,30 +114,30 @@ class Preference:
 		scroll = gtk.ScrolledWindow()
 		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		scroll.add_with_viewport(treeview)
-		self._dialog.get_content_area().add(scroll)
-		self._dialog.get_content_area().show_all()
+		self.get_content_area().add(scroll)
+		self.get_content_area().show_all()
 		#
 		btnlog = gtk.Button(_('Log'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_INFO, gtk.ICON_SIZE_BUTTON)
 		btnlog.set_image(icon)
 		btnlog.connect('released', self._on_btnlog_released)
-		self._dialog.get_action_area().pack_end(btnlog, False, False)
+		self.get_action_area().pack_end(btnlog, False, False)
 		#
 		btnrestore = gtk.Button(_('Restore'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
 		btnrestore.set_image(icon)
 		btnrestore.connect('released', self._on_btnrestore_released)
-		self._dialog.get_action_area().pack_end(btnrestore, False, False)
+		self.get_action_area().pack_end(btnrestore, False, False)
 		#
 		btnclose = gtk.Button(_('Close'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_CLOSE, gtk.ICON_SIZE_BUTTON)
 		btnclose.set_image(icon)
 		btnclose.connect('released', self._on_btnclose_released)
-		self._dialog.get_action_area().pack_end(btnclose, False, False)
-		self._dialog.get_action_area().show_all()
+		self.get_action_area().pack_end(btnclose, False, False)
+		self.get_action_area().show_all()
 		log.debug('leave')
 		return
 	
@@ -196,7 +195,7 @@ class Preference:
 			if response == gtk.RESPONSE_OK:
 				c.set_value(dialog.get_filename())
 		elif c.name() == 'display.horizontal':
-			dialog = gtk.Dialog(_('Horizontal'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			dialog = gtk.Dialog(_('Horizontal'), self, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
 			model = gtk.ListStore(str, str)
 			combo = gtk.ComboBox(model)
 			cell = gtk.CellRendererText()
@@ -217,7 +216,7 @@ class Preference:
 				choice = combo.get_active_iter()
 				c.set_value(model.get_value(choice, 1))
 		elif c.name() == 'display.vertical':
-			dialog = gtk.Dialog(_('Vertical'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			dialog = gtk.Dialog(_('Vertical'), self, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
 			model = gtk.ListStore(str, str)
 			combo = gtk.ComboBox(model)
 			cell = gtk.CellRendererText()
@@ -238,7 +237,7 @@ class Preference:
 				choice = combo.get_active_iter()
 				c.set_value(model.get_value(choice, 1))
 		elif c.name() == 'main.file_pattern':
-			dialog = gtk.Dialog(_('Lyrics save pattern'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			dialog = gtk.Dialog(_('Lyrics save pattern'), self, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
 			model = gtk.ListStore(str, str)
 			combo = gtk.ComboBox(model)
 			cell = gtk.CellRendererText()
@@ -280,14 +279,9 @@ class Preference:
 	
 	def _on_btnclose_released(self, widget):
 		log.debug('enter')
-		self._dialog.hide()
+		self.hide()
 		log.debug('leave')
 		return
-	
-	## Get preference dialog.
-	#  @return Dialog object.
-	def get_dialog (self):
-		return self._dialog
 	
 	## Get setting.
 	#  @param key Key of the setting.
@@ -297,13 +291,10 @@ class Preference:
 	
 	def get_engine(self):
 		engine = []
-		if self._setting['engine.sogou'].value() == 'True':
-			engine.append('sogou')
-		if self._setting['engine.lyricist'].value() == 'True':
-			engine.append('lyricist')
-		if self._setting['engine.minilyrics'].value() == 'True':
-			engine.append('minilyrics')
-		if self._setting['engine.ttplayer'].value() == 'True':
-			engine.append('ttplayer')
+		for k in self._setting.keys():
+			if k.startswith('engine.'):
+				v = self._setting[k]
+				if v.value() == 'True':
+					engine.append(k.split('.')[1])
 		return engine
 

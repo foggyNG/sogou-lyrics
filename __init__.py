@@ -233,7 +233,6 @@ class RBLyrics(rb.Plugin):
 	
 	## Configure dialog interface.
 	def create_configure_dialog(self):
-		dialog = self._prefs.get_dialog()
-		dialog.present()
-		return dialog
+		self._prefs.present()
+		return self._prefs
 
