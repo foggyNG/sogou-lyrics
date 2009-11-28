@@ -22,7 +22,7 @@
 ## @package RBLyrics.prefs
 #  Preference.
 
-import os, gtk, gconf, logging, urllib, rb, gettext, pango
+import os, gtk, gconf, logging, urllib, rb, gettext, pango, gtk.gdk
 from engine import engine_map
 from utils import LRC_PATH_TEMPLATE
 _ = gettext.gettext
@@ -87,12 +87,12 @@ class Preference:
 		self._setting['display.hide_on_hover'] = Config('display.hide_on_hover', '/apps/rhythmbox/plugins/RBLyrics/display.hide_on_hover', 'True')
 		self._setting['display.animations'] = Config('display.animations', '/apps/rhythmbox/plugins/RBLyrics/display.animations', 'False')
 		self._setting['display.avoid_panels'] = Config('display.avoid_panels', '/apps/rhythmbox/plugins/RBLyrics/display.avoid_panels', 'True')
-		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE.values()[0])
+		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE[0])
 		# init dialog widgets
 		self._dialog = gtk.Dialog(title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
 		self._dialog.connect('delete-event', self._on_delete_event)
 		self._dialog.set_default_size(400, 350)
-		self._model = gtk.ListStore(str, str, int, str)
+		self._model = gtk.ListStore(str, str, int, str, str)
 		names = self._setting.keys()
 		names.sort()
 		for n in names:
@@ -101,14 +101,14 @@ class Preference:
 				weight = pango.WEIGHT_BOLD
 			else:
 				weight = pango.WEIGHT_NORMAL
-			self._model.append([c.name(), c.value(), weight, _(c.name())])
+			self._model.append([c.name(), c.value(), weight, _(c.name()), _(c.value())])
 		#
 		treeview = gtk.TreeView(self._model)
 		cell = gtk.CellRendererText()
 		vc = gtk.TreeViewColumn(_('Name'), cell, text = 3, weight = 2)
 		vc.set_sort_column_id(0)
 		treeview.append_column(vc)
-		vc = gtk.TreeViewColumn(_('Value'), cell, text = 1, weight = 2)
+		vc = gtk.TreeViewColumn(_('Value'), cell, text = 4, weight = 2)
 		treeview.append_column(vc)
 		treeview.connect('row-activated', self._on_row_activated)
 		scroll = gtk.ScrolledWindow()
@@ -138,17 +138,13 @@ class Preference:
 		btnclose.connect('released', self._on_btnclose_released)
 		self._dialog.get_action_area().pack_end(btnclose, False, False)
 		self._dialog.get_action_area().show_all()
-		self._colordlg = None
-		self._fontdlg = None
-		self._filedlg = None
-		self._horidlg = None
-		self._vertdlg = None
-		self._patterndlg = None
 		log.debug('leave')
 		return
 	
 	def _on_delete_event(self, widget, event):
+		log.debug('enter')
 		widget.hide()
+		log.debug('leave')
 		return True
 	
 	def _on_btnrestore_released(self, widget):
@@ -160,6 +156,7 @@ class Preference:
 			c.set_value(c.default())
 			self._model.set_value(iter, 1, c.value())
 			self._model.set_value(iter, 2, pango.WEIGHT_NORMAL)
+			self._model.set_value(iter, 4, _(c.value()))
 			log.info(c)
 			iter = self._model.iter_next(iter)
 		log.debug('leave')
@@ -174,94 +171,95 @@ class Preference:
 		'main.display', 'main.download', 'display.hide_on_hover', 'display.animations', 'display.avoid_panels']:
 			c.set_value(str(c.value() != 'True'))
 		elif c.name() == 'display.color':
-			if self._colordlg == None:
-				self._colordlg = gtk.ColorSelectionDialog(_('Choose foreground color'))
-				self._colordlg.get_color_selection().set_current_color(gtk.gdk.color_parse(c.value()))
-			response = self._colordlg.run()
-			self._colordlg.hide()
+			dialog = gtk.ColorSelectionDialog(_('Choose foreground color'))
+			dialog.get_color_selection().set_current_color(gtk.gdk.color_parse(c.value()))
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._colordlg.get_color_selection().get_current_color().to_string())
+				c.set_value(dialog.get_color_selection().get_current_color().to_string())
 		elif c.name() == 'display.font':
-			if self._fontdlg == None:
-				self._fontdlg = gtk.FontSelectionDialog(_('Choose font'))
-				self._fontdlg.set_font_name(c.value())
-			response = self._fontdlg.run()
-			self._fontdlg.hide()
+			dialog = gtk.FontSelectionDialog(_('Choose font'))
+			dialog.set_font_name(c.value())
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._fontdlg.get_font_name())
+				c.set_value(dialog.get_font_name())
 		elif c.name() == 'main.directory':
-			if self._filedlg == None:
-				self._filedlg = gtk.FileChooserDialog(title = _('Select lyrics folder'), action = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-				filter = gtk.FileFilter()
-				filter.add_mime_type('inode/directory')
-				self._filedlg.set_filter(filter)
-				self._filedlg.set_current_folder(c.value())
-			response = self._filedlg.run()
-			self._filedlg.hide()
+			dialog = gtk.FileChooserDialog(title = _('Select lyrics folder'), action = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			filter = gtk.FileFilter()
+			filter.add_mime_type('inode/directory')
+			dialog.set_filter(filter)
+			dialog.set_current_folder(c.value())
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._filedlg.get_filename())
+				c.set_value(dialog.get_filename())
 		elif c.name() == 'display.horizontal':
-			if self._horidlg == None:
-				self._horidlg = gtk.Dialog(title = _('Horizontal'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-				self._horicmb = gtk.combo_box_new_text()
-				choice = ['left', 'center', 'right']
-				for i in choice:
-					self._horicmb.append_text(i)
-				self._horicmb.set_active(choice.index(c.value()))
-				container = gtk.HBox()
-				self._horidlg.get_content_area().pack_start(container, False, False, 10)
-				container.pack_start(gtk.Label(_('Horizontal')), False, False, 10)
-				container.pack_start(self._horicmb, False, False, 10)
-				self._horidlg.show_all()
-			response = self._horidlg.run()
-			self._horidlg.hide()
+			dialog = gtk.Dialog(_('Horizontal'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			model = gtk.ListStore(str, str)
+			combo = gtk.ComboBox(model)
+			cell = gtk.CellRendererText()
+			combo.pack_start(cell)
+			combo.add_attribute(cell, 'text', 0)
+			for k in ['left', 'center', 'right']:
+				choice = model.append([_(k), k])
+				if k == c.value():
+					combo.set_active_iter(choice)
+			container = gtk.HBox()
+			dialog.get_content_area().pack_start(container, False, False, 10)
+			container.pack_start(gtk.Label(_('Horizontal')), False, False, 10)
+			container.pack_start(combo, False, False, 10)
+			dialog.show_all()
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._horicmb.get_active_text())
+				choice = combo.get_active_iter()
+				c.set_value(model.get_value(choice, 1))
 		elif c.name() == 'display.vertical':
-			if self._vertdlg == None:
-				self._vertdlg = gtk.Dialog(title = _('Vertical'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-				self._vertcmb = gtk.combo_box_new_text()
-				choice = ['top', 'center', 'bottom']
-				for i in choice:
-					self._vertcmb.append_text(i)
-				self._vertcmb.set_active(choice.index(c.value()))
-				container = gtk.HBox()
-				self._vertdlg.get_content_area().pack_start(container, False, False, 10)
-				container.pack_start(gtk.Label(_('Vertical')), False, False, 10)
-				container.pack_start(self._vertcmb, False, False, 10)
-				self._vertdlg.show_all()
-			response = self._vertdlg.run()
-			self._vertdlg.hide()
+			dialog = gtk.Dialog(_('Vertical'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			model = gtk.ListStore(str, str)
+			combo = gtk.ComboBox(model)
+			cell = gtk.CellRendererText()
+			combo.pack_start(cell)
+			combo.add_attribute(cell, 'text', 0)
+			for k in ['top', 'center', 'bottom']:
+				choice = model.append([_(k), k])
+				if k == c.value():
+					combo.set_active_iter(choice)
+			container = gtk.HBox()
+			dialog.get_content_area().pack_start(container, False, False, 10)
+			container.pack_start(gtk.Label(_('Vertical')), False, False, 10)
+			container.pack_start(combo, False, False, 10)
+			dialog.show_all()
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				c.set_value(self._vertcmb.get_active_text())
+				choice = combo.get_active_iter()
+				c.set_value(model.get_value(choice, 1))
 		elif c.name() == 'main.file_pattern':
-			if self._patterndlg == None:
-				self._patterndlg = gtk.Dialog(title = _('Lyrics save pattern'), buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-				self._patternmdl = gtk.ListStore(str, str)
-				self._patterncmb = gtk.ComboBox(self._patternmdl)
-				cell = gtk.CellRendererText()
-				self._patterncmb.pack_start(cell)
-				self._patterncmb.add_attribute(cell, 'text', 0)
-				choice = -1
-				count = 0
-				for k in LRC_PATH_TEMPLATE.keys():
-					self._patternmdl.append([_(k), LRC_PATH_TEMPLATE[k]])
-					if LRC_PATH_TEMPLATE[k] == c.value():
-						choice = count
-					count += 1
-				self._patterncmb.set_active(choice)
-				container = gtk.HBox()
-				self._patterndlg.get_content_area().pack_start(container, False, False, 10)
-				container.pack_start(gtk.Label(_('Lyrics save pattern')), False, False, 10)
-				container.pack_start(self._patterncmb, False, False, 10)
-				self._patterndlg.show_all()
-			response = self._patterndlg.run()
-			self._patterndlg.hide()
+			dialog = gtk.Dialog(_('Lyrics save pattern'), self._dialog, gtk.DIALOG_MODAL, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+			model = gtk.ListStore(str, str)
+			combo = gtk.ComboBox(model)
+			cell = gtk.CellRendererText()
+			combo.pack_start(cell)
+			combo.add_attribute(cell, 'text', 0)
+			for k in LRC_PATH_TEMPLATE:
+				choice = model.append([_(k), k])
+				if k == c.value():
+					combo.set_active_iter(choice)
+			container = gtk.HBox()
+			dialog.get_content_area().pack_start(container, False, False, 10)
+			container.pack_start(gtk.Label(_('Lyrics save pattern')), False, False, 10)
+			container.pack_start(combo, False, False, 10)
+			dialog.show_all()
+			response = dialog.run()
+			dialog.hide()
 			if response == gtk.RESPONSE_OK:
-				choice = self._patterncmb.get_active_iter()
-				c.set_value(self._patternmdl.get_value(choice, 1))
+				choice = combo.get_active_iter()
+				c.set_value(model.get_value(choice, 1))
 		# update view
 		self._model.set_value(iter, 1, c.value())
+		self._model.set_value(iter, 4, _(c.value()))
 		if c.value() != c.default():
 			weight = pango.WEIGHT_BOLD
 		else:
