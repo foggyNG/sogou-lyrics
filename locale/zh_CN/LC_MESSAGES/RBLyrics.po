@@ -56,7 +56,8 @@ msgid "Select lyrics folder"
 msgstr "选择歌词目录"
 msgid "Lyrics save pattern"
 msgstr "歌词保存方式"
-
+msgid "Select lyrics"
+msgstr "选择歌词"
 #
 msgid "True"
 msgstr "启用"

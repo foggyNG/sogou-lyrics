@@ -28,79 +28,173 @@ _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
 ## Lyrics chooser dialog.
-class LyricsChooser(gtk.Dialog):
+class LyricsChooser(gtk.Window):
 	
 	## The constructor.
 	#  @param callback Response callback.
-	def __init__(self, songinfo, candidate):
-		gtk.Dialog.__init__(self,
-			title = '%s - %s' % (songinfo.get('ar'), songinfo.get('ti')),
-			flags = gtk.DIALOG_NO_SEPARATOR,
-			buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+	def __init__(self, callback):
+		gtk.Window.__init__(self, type = gtk.WINDOW_TOPLEVEL)
 		log.debug('enter')
+		self.set_title(_('Select lyrics'))
 		self.set_default_size(640, 480)
-		self._candidate = candidate
-		self._lyrics = None
+		self.set_position(gtk.WIN_POS_CENTER)
+		self.connect('delete-event', self._on_delete_event)
+		self._notebook = gtk.Notebook()
+		self._notebook.set_scrollable(True)
+		action_area = gtk.HButtonBox()
+		action_area.set_layout(gtk.BUTTONBOX_END)
+		action_area.set_border_width(2)
+		action_area.set_spacing(2)
+		btn_ok = gtk.Button(stock = gtk.STOCK_OK)
+		btn_ok.connect('released', self._on_ok_released)
+		action_area.pack_start(btn_ok, False, False)
+		btn_cancel = gtk.Button(stock = gtk.STOCK_CANCEL)
+		btn_cancel.connect('released', self._on_cancel_released)
+		action_area.pack_start(btn_cancel, False, False)
+		vbox = gtk.VBox()
+		vbox.pack_start(self._notebook)
+		vbox.pack_start(action_area, False, True)
+		vbox.show_all()
+		self.add(vbox)
 		#
-		model = gtk.ListStore(int, str, str, int)
-		treeview = gtk.TreeView(model)
-		treeview.set_rules_hint(True)
-		treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
-		treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
-		treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))
-		self._selection = treeview.get_selection()
-		self._selection.connect('changed', self._selection_changed)
-		count = 0
-		for c in self._candidate:
-			model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
-			count = count + 1
-		#
-		self._viewer = gtk.TextView()
-		self._viewer.set_editable(False)
-		self._viewer.set_cursor_visible(False)
-		#
-		self._selection.select_iter(model.get_iter_first())
-		#
-		panel = gtk.HPaned()
-		scroll = gtk.ScrolledWindow()
-		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-		scroll.add_with_viewport(treeview)
-		panel.pack1(scroll, False, False)
-		scroll = gtk.ScrolledWindow()
-		scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-		scroll.add_with_viewport(self._viewer)
-		panel.pack2(scroll, False, False)
-		panel.set_position(180)
-		self.get_content_area().add(panel)
-		self.get_content_area().show_all()
-		self.connect('response', self._on_response)
+		self._callback = callback
+		self._songinfo = {}
+		self._candidate = {}
+		self._model = {}
+		self._treeview = {}
+		self._selection = {}
+		self._preview = {}
+		log.debug('leave')
+		return
+	
+	def add_task(self, songinfo, candidate):
+		log.debug('enter')
+		hashid = hash(str(songinfo))
+		if hashid in self._songinfo:
+			log.warn('song already exist %s' % songinfo)
+		else:
+			# build widgets
+			model = gtk.ListStore(int, str, str, int)
+			count = 0
+			for c in candidate:
+				model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
+				count = count + 1
+			treeview = gtk.TreeView(model)
+			treeview.set_rules_hint(True)
+			treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
+			treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
+			treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))
+			selection = treeview.get_selection()
+			selection.connect('changed', self._selection_changed)
+			preview = gtk.TextView()
+			preview.set_editable(False)
+			preview.set_cursor_visible(False)
+			# add to notebook
+			label = gtk.Label(str(songinfo))
+			panel = gtk.HPaned()
+			scroll = gtk.ScrolledWindow()
+			scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+			scroll.add_with_viewport(treeview)
+			panel.pack1(scroll, False, False)
+			scroll = gtk.ScrolledWindow()
+			scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+			scroll.add_with_viewport(preview)
+			panel.pack2(scroll, False, False)
+			panel.set_position(180)
+			panel.show_all()
+			pageid = self._notebook.append_page(panel, label)
+			self._notebook.set_tab_label_packing(panel, False, False, gtk.PACK_START)
+			# store widgets handle
+			self._songinfo[hashid] = songinfo
+			self._candidate[hashid] = candidate
+			self._model[hashid] = model
+			self._treeview[hashid] = treeview
+			self._selection[hashid] = selection
+			self._preview[hashid] = preview
+			# show up
+			self._notebook.set_current_page(pageid)
+			selection.select_iter(model.get_iter_first())
 		log.debug('leave')
 		return
 	
 	## Selection changed handler.
 	def _selection_changed(self, widget):
 		log.debug('enter')
+		pageid = self._notebook.get_current_page()
+		child = self._notebook.get_nth_page(pageid)
+		hashid = hash(self._notebook.get_tab_label_text(child))
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 3)
 			log.debug('select [index = %d]' % index)
-			self._viewer.get_buffer().set_text(self._candidate[index][1].get_raw())
+			self._preview[hashid].get_buffer().set_text(self._candidate[hashid][index][1].get_raw())
 		else:
-			self._viewer.get_buffer().set_text('')
+			self._preview[hashid].get_buffer().set_text('')
 		log.debug('leave')
 		return
 	
+	def _on_ok_released(self, button):
+		log.debug('enter')
+		#gtk.gdk.threads_enter()
+		if self._notebook.get_n_pages() == 1:
+			self.hide()
+		pageid = self._notebook.get_current_page()
+		child = self._notebook.get_nth_page(pageid)
+		hashid = hash(self._notebook.get_tab_label_text(child))
+		song = self._songinfo[hashid]
+		selected = self._selection[hashid].get_selected()
+		index = selected[0].get_value(selected[1], 3)
+		lyrics = self._candidate[hashid][index][1]
+		self._notebook.remove_page(pageid)
+		del self._preview[hashid]
+		del self._selection[hashid]
+		del self._treeview[hashid]
+		del self._model[hashid]
+		del self._candidate[hashid]
+		del self._songinfo[hashid]
+		self._callback(song, lyrics)
+		#gtk.gdk.threads_leave()
+		log.debug('leave')
+		return
+	
+	def _on_cancel_released(self, button):
+		log.debug('enter')
+		#gtk.gdk.threads_enter()
+		if self._notebook.get_n_pages() == 1:
+			self.hide()
+		pageid = self._notebook.get_current_page()
+		child = self._notebook.get_nth_page(pageid)
+		hashid = hash(self._notebook.get_tab_label_text(child))
+		song = self._songinfo[hashid]
+		self._notebook.remove_page(pageid)
+		del self._preview[hashid]
+		del self._selection[hashid]
+		del self._treeview[hashid]
+		del self._model[hashid]
+		del self._candidate[hashid]
+		del self._songinfo[hashid]
+		self._callback(song, None)
+		#gtk.gdk.threads_leave()
+		log.debug('leave')
+		return
+		
 	## Dialog response handler.
-	def _on_response(self, dialog, response_id):
-		log.debug('enter <%d>' % response_id)
-		if response_id == gtk.RESPONSE_OK:
-			selected = self._selection.get_selected()
-			self._lyrics = selected[0].get_value(selected[1], 3)
+	def _on_delete_event(self, widget, event):
+		log.debug('enter')
+		#gtk.gdk.threads_enter()
+		self.hide()
+		for pageid in range(self._notebook.get_n_pages()):
+			child = self._notebook.get_nth_page(pageid)
+			hashid = hash(self._notebook.get_tab_label_text(child))
+			self._notebook.remove_page(pageid)
+			del self._preview[hashid]
+			del self._selection[hashid]
+			del self._treeview[hashid]
+			del self._model[hashid]
+			del self._candidate[hashid]
+			del self._songinfo[hashid]
+		self._callback(None, None)
+		#gtk.gdk.threads_leave()
 		log.debug('leave')
-		return
+		return True
 	
-	def get_lyrics(self):
-		if self._lyrics is None:
-			return None
-		else:
-			return self._candidate[self._lyrics][1]
