@@ -1,9 +1,9 @@
 [RB Plugin]
 Loader=python
-Module=RBLyrics
+Module=RBLyrics-dev
 IAge=1
-Name=RBLyrics
-Name[zh_CN]=鲁班歌词
+Name=RBLyrics-dev
+Name[zh_CN]=鲁班歌词dev
 Description=Download lyrics for the current playing track and display by OSD.
 Description[zh_CN]=下载当前播放歌曲歌词并以OSD方式显示。
 Authors=wonder <gogo.wonder@gmail.com>

@@ -44,11 +44,19 @@ class Single(gtk.DrawingArea, threading.Thread):
 	
 	## The constructor.
 	#  @param prefs Preference.
-	def __init__(self, prefs):
+	def __init__(self, prefs, window):
 		gtk.DrawingArea.__init__(self)
 		threading.Thread.__init__(self)
 		log.debug('enter')
 		#
+		self._layout = self.create_pango_layout('')
+		self._layout.set_justify(False)
+		self._layout.set_alignment(pango.ALIGN_CENTER)
+		self._layout.set_font_description(pango.FontDescription(prefs.get('display.font')))
+		self._layout.set_ellipsize(pango.ELLIPSIZE_NONE)
+		self._layout.set_width(pango.SCALE * (gtk.gdk.screen_width()-8))
+		#
+		self._window = window
 		self._prefs = prefs
 		self._running = False
 		self._start_time = None
@@ -72,47 +80,51 @@ class Single(gtk.DrawingArea, threading.Thread):
 			line = self._lyrics.get_line(elapsed)
 			if line is None or line == self._lastline:
 				continue
+			gtk.gdk.threads_enter()
 			self._lastline = line
 			log.error(line)
-			layout = self.create_pango_layout(line)
-			layout.set_ellipsize(pango.ELLIPSIZE_NONE)
-			layout.set_justify(False)
-			layout.set_alignment(pango.ALIGN_CENTER)
-			layout.set_font_description(pango.FontDescription(self._prefs.get('display.font')))
-			layout.set_width(pango.SCALE * gtk.gdk.screen_width())
-			width, height = layout.get_pixel_size()
-			log.error(layout.get_pixel_extents())
-			log.error(layout.get_pixel_size())
-			off_x = (width - gtk.gdk.screen_width())/2
+			self._layout.set_markup(line)
+			width, height = self._layout.get_pixel_size()
+			width += 4
+			height += 4
+			off_x = (width - gtk.gdk.screen_width())/2 + 2
+			off_y = 2
 			self.set_size_request(width, height)
 			self.realize()
+			fgcolor = self.get_colormap().alloc_color(self._prefs.get('display.color'))
+			bgcolor = self.get_colormap().alloc_color('#000')
 			pixmap = gtk.gdk.Pixmap(self.window, width, height)
-			fg_gc = gtk.gdk.GC(pixmap)
-			bg_gc = gtk.gdk.GC(pixmap)
-			fg_gc.set_foreground(gtk.gdk.Color(self._prefs.get('display.color')))
-			bg_gc.set_background(gtk.gdk.Color('#000000'))
+			fg_gc = gtk.gdk.GC(pixmap); fg_gc.copy(self.style.fg_gc[gtk.STATE_NORMAL])
+			bg_gc = gtk.gdk.GC(pixmap); bg_gc.copy(self.style.fg_gc[gtk.STATE_NORMAL])
+			fg_gc.set_foreground(fgcolor)
+			bg_gc.set_background(bgcolor)
 			pixmap.draw_rectangle(bg_gc, True, 0, 0, width, height)
-			pixmap.draw_layout(fg_gc, off_x, 0, layout)
+			pixmap.draw_layout(fg_gc, off_x, off_y, self._layout)
+			self.window.set_back_pixmap(pixmap, False)
+			#
+			#pixbuf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, True, 8, width, height)
+			#pixbuf.get_from_drawable(self.window, self.window.get_colormap(), 0, 0, 0, 0, width, height)
+			#pixmap, bitmap = pixbuf.render_pixmap_and_mask(255)
 			bitmap = gtk.gdk.Pixmap(self.window, width, height, 1)
 			fg_gc = gtk.gdk.GC(bitmap)
 			bg_gc = gtk.gdk.GC(bitmap)
-			fg_gc.set_foreground(gtk.gdk.Color(self._prefs.get('display.color')))
-			bg_gc.set_background(gtk.gdk.Color('#000000'))
-
-			
+			fg_gc.set_foreground(gtk.gdk.Color(pixel=-1))
+			bg_gc.set_background(gtk.gdk.Color(pixel=0))
 			bitmap.draw_rectangle(bg_gc, True, 0, 0, width, height)
-			bitmap.draw_layout(fg_gc, off_x, 0, layout)
-			BORDER_WIDTH = 1
-			bitmap.draw_layout(fg_gc, off_x + BORDER_WIDTH, 0, layout)
-			bitmap.draw_layout(fg_gc, off_x + BORDER_WIDTH, 0 + BORDER_WIDTH, layout)
-			bitmap.draw_layout(fg_gc, off_x, 0 + BORDER_WIDTH, layout)
-			bitmap.draw_layout(fg_gc, off_x - BORDER_WIDTH, 0 + BORDER_WIDTH, layout)
-			bitmap.draw_layout(fg_gc, off_x - BORDER_WIDTH, 0, layout)
-			bitmap.draw_layout(fg_gc, off_x - BORDER_WIDTH, 0 - BORDER_WIDTH, layout)
-			bitmap.draw_layout(fg_gc, off_x, 0 - BORDER_WIDTH, layout)
-			bitmap.draw_layout(fg_gc, off_x + BORDER_WIDTH, 0 - BORDER_WIDTH, layout)
-			self.window.set_back_pixmap(pixmap, False)
-			self.window.shape_combine_mask(bitmap, 0, 0)
+			bitmap.draw_layout(fg_gc, off_x, off_y, self._layout)
+			bitmap.draw_layout(fg_gc, off_x + 1, off_y, self._layout)
+			bitmap.draw_layout(fg_gc, off_x + 1, off_y + 1, self._layout)
+			bitmap.draw_layout(fg_gc, off_x, off_y + 1, self._layout)
+			bitmap.draw_layout(fg_gc, off_x - 1, off_y + 1, self._layout)
+			bitmap.draw_layout(fg_gc, off_x - 1, off_y, self._layout)
+			bitmap.draw_layout(fg_gc, off_x - 1, off_y - 1, self._layout)
+			bitmap.draw_layout(fg_gc, off_x, off_y - 1, self._layout)
+			bitmap.draw_layout(fg_gc, off_x + 1, off_y - 1, self._layout)
+			
+			self._window.window.shape_combine_mask(bitmap, 0, 0)
+			#self._window.width = width
+			#self._window.height = height
+			gtk.gdk.threads_leave()
 		return
 	
 	def resume(self):

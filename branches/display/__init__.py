@@ -22,7 +22,7 @@
 ## @package RBLyrics.display
 #  Displayer.
 
-import logging, gtk, gtk.gdk
+import logging, gtk, gtk.gdk, pango
 
 from single import Single
 log = logging.getLogger('RBLyrics')
@@ -38,9 +38,9 @@ class Display(gtk.Window):
 	def __init__(self, prefs):
 		gtk.Window.__init__(self, gtk.WINDOW_POPUP)
 		log.debug('enter')
-		log.error(self.is_composited())
-		self.set_opacity(0.5)
-		self._interface = Single(prefs)
+		if self.is_composited():
+			self.set_opacity(0.5)
+		self._interface = Single(prefs, self)
 		self.add(self._interface)
 		self._interface.show_all()
 		#
