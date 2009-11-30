@@ -24,7 +24,8 @@
 
 import logging, gtk, gtk.gdk, pango
 
-from single import Single
+from singleline import SingleLine
+from doubleline import DoubleLine
 log = logging.getLogger('RBLyrics')
 
 ## Lyrics displayer manager.
@@ -37,16 +38,18 @@ class Display(gtk.Window):
 	#  @param prefs Preference.
 	def __init__(self, prefs):
 		gtk.Window.__init__(self, gtk.WINDOW_POPUP)
+		self.set_gravity(gtk.gdk.GRAVITY_CENTER)
 		log.debug('enter')
 		if self.is_composited():
 			self.set_opacity(0.5)
-		self._interface = Single(prefs, self)
+		self._interface = SingleLine(prefs, self)
 		self.add(self._interface)
 		self._interface.show_all()
 		#
 		self.add_events(gtk.gdk.POINTER_MOTION_HINT_MASK|gtk.gdk.BUTTON1_MOTION_MASK|gtk.gdk.BUTTON_PRESS_MASK)
 		self.connect('button-press-event', self._on_button_press)
 		self.connect('motion-notify-event', self._on_motion)
+		
 		self.show()
 		log.debug('leave')
 		return

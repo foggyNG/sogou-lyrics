@@ -263,3 +263,21 @@ def open_lyrics(root, songinfo):
 def get_seconds(timedelta):
 	sec = timedelta.days * 24 * 3600 + timedelta.seconds + int(timedelta.microseconds >= 500000)
 	return sec
+
+def get_position(sortedlist, value):
+	index = -1;
+	found = False;
+	for i in range(len(sortedlist)):
+		if sortedlist[i] == value:
+			index = i
+			found = True
+			break
+		elif sortedlist[i] > value:
+			index = i - 1
+			found = False
+			break
+	else:
+		index = i
+		found = False
+	return (index, found)
+	

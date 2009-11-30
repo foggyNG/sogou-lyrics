@@ -41,14 +41,19 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	## Elapsed changed handler.
-	def _elapsed_changed_handler(self, player, playing):
-		if playing:
-			elapsed = player.get_playing_time()
-			self._display.interface().synchronize(elapsed)
+	def _on_elapsed_changed(self, player, elapsed):
+		elapsed = player.get_playing_time()
+		self._display.interface().synchronize(elapsed)
 		return
 	
+	def _on_playing_changed(self, player, playing):
+		if playing:
+			self._display.interface().resume()
+		else:
+			self._display.interface().pause()
+		return
 	## Playing song changed handler.
-	def _playing_song_changed_handler(self, player, entry):
+	def _on_playing_song_changed(self, player, entry):
 		log.debug('enter')
 		self._display.interface().pause()
 		if entry:
@@ -170,8 +175,9 @@ class RBLyrics(rb.Plugin):
 			os.mkdir(self._prefs.get('main.directory'))
 		self._shell = shell
 		self._handler = [
-			self._shell.props.shell_player.connect('playing-song-changed', self._playing_song_changed_handler),
-			self._shell.props.shell_player.connect('elapsed-changed', self._elapsed_changed_handler)]
+			self._shell.props.shell_player.connect('playing-song-changed', self._on_playing_song_changed),
+			self._shell.props.shell_player.connect('elapsed-changed', self._on_elapsed_changed),
+			self._shell.props.shell_player.connect('playing-changed', self._on_playing_changed)]
 		#
 		self._action = [
 			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),

@@ -31,7 +31,7 @@ log = logging.getLogger('RBLyrics')
 ## Gnome OSD displayer.
 #
 #  Display message using Gnome OSD interface.
-class Single(gtk.DrawingArea, threading.Thread):
+class SingleLine(gtk.DrawingArea, threading.Thread):
 	
 	## @var _prefs
 	#  Preference.
@@ -47,6 +47,7 @@ class Single(gtk.DrawingArea, threading.Thread):
 	def __init__(self, prefs, window):
 		gtk.DrawingArea.__init__(self)
 		threading.Thread.__init__(self)
+		self.set_size_request(200,50)
 		log.debug('enter')
 		#
 		self._layout = self.create_pango_layout('')
@@ -63,8 +64,8 @@ class Single(gtk.DrawingArea, threading.Thread):
 		self._lyrics = None
 		self._runnable = True
 		self._lastline = None
-		log.debug('leave')
 		self.start()
+		log.debug('leave')
 		return
 	
 	## Display message.
@@ -72,17 +73,20 @@ class Single(gtk.DrawingArea, threading.Thread):
 	def run(self):
 		while(self._runnable):
 			time.sleep(0.3)
-			if (not self._running) or (self._lyrics is None):
+			if (not self._running):
 				continue
 			#
-			now = datetime.datetime.now()
-			elapsed = get_seconds(now - self._start_time)
-			line = self._lyrics.get_line(elapsed)
+			if self._lyrics is None:
+				line = _('lyrics not found!')
+			else:
+				now = datetime.datetime.now()
+				elapsed = get_seconds(now - self._start_time)
+				line = self._lyrics.get_line(elapsed)
 			if line is None or line == self._lastline:
 				continue
 			gtk.gdk.threads_enter()
 			self._lastline = line
-			log.error(line)
+			#log.error(line)
 			self._layout.set_markup(line)
 			width, height = self._layout.get_pixel_size()
 			width += 4
@@ -128,12 +132,16 @@ class Single(gtk.DrawingArea, threading.Thread):
 		return
 	
 	def resume(self):
+		log.debug('enter')
 		self._start_time = datetime.datetime.now()
 		self._running = True
+		log.debug('leave')
 		return
 		
 	def pause(self):
+		log.debug('enter')
 		self._running = False
+		log.debug('leave')
 		return
 		
 	def synchronize(self, elapsed):
@@ -141,5 +149,7 @@ class Single(gtk.DrawingArea, threading.Thread):
 		return
 	
 	def set_lyrics(self, lyrics):
+		log.debug('enter')
 		self._lyrics = lyrics
+		log.debug('leave')
 		return
