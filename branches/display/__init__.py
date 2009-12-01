@@ -50,7 +50,7 @@ class Display(gtk.Window):
 		self.connect('button-press-event', self._on_button_press)
 		self.connect('motion-notify-event', self._on_motion)
 		
-		self.show()
+		#self.show()
 		log.debug('leave')
 		return
 	

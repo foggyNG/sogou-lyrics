@@ -49,8 +49,10 @@ class RBLyrics(rb.Plugin):
 	def _on_playing_changed(self, player, playing):
 		if playing:
 			self._display.interface().resume()
+			self._display.show()
 		else:
 			self._display.interface().pause()
+			self._display.hide()
 		return
 	## Playing song changed handler.
 	def _on_playing_song_changed(self, player, entry):
