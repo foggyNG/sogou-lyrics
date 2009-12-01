@@ -154,7 +154,7 @@ class RBLyrics(rb.Plugin):
 			module.textdomain('RBLyrics')
 		gettext.install('RBLyrics')
 		# logging
-		log.setLevel(logging.DEBUG)
+		log.setLevel(logging.INFO)
 		console_handler = logging.StreamHandler()
 		console_handler.setLevel(logging.DEBUG)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))

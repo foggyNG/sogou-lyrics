@@ -25,13 +25,14 @@
 import re, cookielib, urllib2, logging, threading
 from optparse import OptionParser
 from chardet import detect
+from utils import LyricsInfo, distance, clean_token
 
 log = logging.getLogger('RBLyrics')
 
 ## Sogou mp3 engine.
 #
 #  Retrieve lyrics from mp3.sogou.com.
-class Sogou:
+class Sogou(threading.Thread):
 	
 	## @var _timeout
 	#  HTTP request timeout.
@@ -50,17 +51,19 @@ class Sogou:
 	#  @param max Max number of lyrics expected.
 	def __init__(self, timeout = 3, max = 5):
 		log.debug('enter')
+		threading.Thread.__init__(self)
+		self._stopevent = threading.Event()
 		self._timeout = timeout
 		self._max = max
+		self._songinfo = None
 		self._candidate = []
-		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
 		return
 	
 	## Lyrics receive handler.
 	#  @param opener Cookie opener.
 	#  @param url Lyrics url.
-	def _receive_lyrics(self, opener, url):
+	def _get_lyrics(self, opener, url):
 		log.debug('enter')
 		try:
 			cache = opener.open(url, None, self._timeout).read()
@@ -70,9 +73,9 @@ class Sogou:
 			encoding = detect(cache)['encoding']
 			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 			log.info('lyrics <%s>' % url)
-			self._lock.acquire()
-			self._candidate.append(cache)
-			self._lock.release()
+			lyrics = LyricsInfo(cache)
+			ret = distance(self._songinfo, lyrics)
+			self._candidate.append([ret, lyrics])
 		log.debug('leave')
 		return
 		
@@ -80,11 +83,16 @@ class Sogou:
 	#  @param artist Song artist.
 	#  @param title Song title.
 	#  @return Lyrics candidates.
-	def search(self, artist, title):
+	def search(self, songinfo):
 		log.debug('enter')
-		retval = []
-		artist_token = urllib2.quote(artist.encode('GBK', 'ignore'))
-		title_token = urllib2.quote(title.encode('GBK', 'ignore'))
+		self._songinfo = songinfo
+		self.start()
+		log.debug('leave')
+		return
+	
+	def run(self):
+		artist_token = urllib2.quote(clean_token(self._songinfo.get('ar')).encode('GBK', 'ignore'))
+		title_token = urllib2.quote(clean_token(self._songinfo.get('ti')).encode('GBK', 'ignore'))
 		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
 		log.debug('search page <%s>' % url)
 		try:
@@ -114,21 +122,27 @@ class Sogou:
 						for line in cache:
 							m = re.search('downlrc\.jsp\?[^\"]*', line)
 							if m != None:
-								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								threads.append(threading.Thread(target=self._receive_lyrics, args=(opener, url,)))
-								if len(threads) >= self._max:
+								if self._stopevent.is_set():
+									log.warn('stopped')
 									break
-						for t in threads:
-							t.start()
-						for t in threads:
-							t.join()
+								url = 'http://mp3.sogou.com/%s' % m.group(0)
+								distance = self._get_lyrics(opener, url)
+								if len(self._candidate) >= self._max or distance <= 0:
+									break
 						log.info('%d candidates found' % len(self._candidate))
 					break
 			else:
 				log.info('0 candidates found')
+			return
+	def stop(self):
+		log.debug('enter')
+		self._stopevent.set()
 		log.debug('leave')
+		return
+		
+	def candidate(self):
 		return self._candidate
-
+		
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)
 	handler = logging.StreamHandler()

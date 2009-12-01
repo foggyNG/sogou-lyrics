@@ -26,13 +26,14 @@ import urllib2, re, logging, threading
 from xml.dom.minidom import parseString
 from optparse import OptionParser
 from chardet import detect
+from utils import LyricsInfo, distance, clean_token
 
 log = logging.getLogger('RBLyrics')
 
 ## Lyricist engine.
 #
 #  Retrieve lyrics from www.winampcn.com.
-class Lyricist:
+class Lyricist(threading.Thread):
 	
 	## @var _timeout
 	#  HTTP request timeout.
@@ -50,11 +51,13 @@ class Lyricist:
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
 	def __init__(self, timeout = 3, max = 5):
+		threading.Thread.__init__(self)
 		log.debug('enter')
+		self._stopevent = threading.Event()
 		self._timeout = timeout
 		self._max = max
+		self._songinfo = None
 		self._candidate = []
-		self._lock = threading.Condition(threading.Lock())
 		log.debug('leave')
 		return
 	
@@ -62,12 +65,16 @@ class Lyricist:
 	#  @param token Original token.
 	#  @return Cleaned token.
 	def _clean_token(self, token):
+		token = clean_token(token)
+		encoding = detect(token)['encoding']
+		token = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 	
 	## Lyrics receive handler.
 	#  @param url Lyrics url.
-	def _receive_lyrics(self, url):
+	def _get_lyrics(self, url):
 		log.debug('enter')
+		ret = -1
 		try:
 			cache = urllib2.urlopen(url, None, self._timeout).read()
 		except Exception as e:
@@ -76,21 +83,27 @@ class Lyricist:
 			encoding = detect(cache)['encoding']
 			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 			log.info('lyrics <%s>' % url)
-			self._lock.acquire()
-			self._candidate.append(cache)
-			self._lock.release()
+			lyrics = LyricsInfo(cache)
+			ret = distance(self._songinfo, lyrics)
+			self._candidate.append([ret, lyrics])
 		log.debug('leave')
-		return
+		return ret
 		
 	## Retrieve lyrics.
 	#  @param artist Song artist.
 	#  @param title Song title.
 	#  @return Lyrics candidates.
-	def search(self, artist, title):
+	def search(self, songinfo):
 		log.debug('enter')
-		retval = []
-		artist_token = urllib2.quote(self._clean_token(artist))
-		title_token = urllib2.quote(self._clean_token(title))
+		self._songinfo = songinfo
+		self.start()
+		log.debug('leave')
+		return
+	
+	def run(self):
+		log.debug('enter')
+		artist_token = urllib2.quote(self._clean_token(self._songinfo.get('ar')))
+		title_token = urllib2.quote(self._clean_token(self._songinfo.get('ti')))
 		url = 'http://www.winampcn.com/lrceng/get.aspx?song=%s&artist=%s&lsong=%s&prec=1&Datetime=20060601' % (title_token, artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		try:
@@ -99,20 +112,27 @@ class Lyricist:
 		except Exception as e:
 			log.error(e)
 		else:
-			threads = []
 			for element in elements:
-				url = element.firstChild.data
-				threads.append(threading.Thread(target=self._receive_lyrics, args=(url,)))
-				if len(threads) >= self._max:
+				if self._stopevent.is_set():
+					log.warn('stopped')
 					break
-			for t in threads:
-				t.start()
-			for t in threads:
-				t.join()
+				url = element.firstChild.data
+				distance = self._get_lyrics(url)
+				if len(self._candidate) >= self._max or distance <= 0:
+					break
 			log.info('%d candidates found' % len(self._candidate))
 		log.debug('leave')
+		return
+	
+	def stop(self):
+		log.debug('enter')
+		self._stopevent.set()
+		log.debug('leave')
+		return
+		
+	def candidate(self):
 		return self._candidate
-
+		
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)
 	handler = logging.StreamHandler()

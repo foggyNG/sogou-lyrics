@@ -22,7 +22,7 @@
 ## @package RBLyrics.engine
 #  Lyrics search engine.
 
-import threading
+import threading, time
 from chardet import detect
 
 from sogou import Sogou
@@ -33,7 +33,7 @@ from utils import log, clean_token, distance, LyricsInfo, save_lyrics
 
 ## Lyrics search engine map.
 engine_map = {
-	'ttplayer' : TTPlayer,
+	#'ttplayer' : TTPlayer,
 	'sogou' : Sogou,
 	'minilyrics': Minilyrics,
 	'lyricist': Lyricist
@@ -76,13 +76,10 @@ class Engine(threading.Thread):
 	#  @param engine Lyrics search engine.
 	#  @param artist Song artist.
 	#  @param title Song title.
-	def _receive_lyrics(self, engine, artist, title):
-		lyrics = engine.search(artist, title)
+	def _receive_lyrics(self, candidate):
 		self._lock.acquire()
-		for raw in lyrics:
-			l = LyricsInfo(raw)
-			d = distance(self._songinfo, l)
-			self._candidate.append([d, l])
+		for raw in candidate():
+			self._candidate.append(raw)
 		self._lock.release()
 		return
 	
@@ -92,18 +89,26 @@ class Engine(threading.Thread):
 		log.debug('enter')
 		threads = []
 		for key in self._prefs.get_engine():
-			engine = engine_map[key]
-			token = clean_token(self._songinfo.get('ar'))
-			encoding = detect(token)['encoding']
-			artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			token = clean_token(self._songinfo.get('ti'))
-			encoding = detect(token)['encoding']
-			title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			threads.append(threading.Thread(target=self._receive_lyrics, args=(engine(), artist, title,)))
+			engine = engine_map[key]()
+			threads.append(engine)
 		for t in threads:
-			t.start()
-		for t in threads:
-			t.join()
+			t.search(self._songinfo)
+		finished = False
+		found = False
+		while not finished:
+			time.sleep(0.5)
+			finished = True
+			for t in threads:
+				if t.is_alive():
+					finished = False
+					if found:
+						t.stop()
+				else:
+					threads.remove(t)
+					for c in t.candidate():
+						if c[0] == 0:
+							found = True
+						self._candidate.append(c)
 		self._candidate.sort(candidate_cmp)
 		self._callback(self._songinfo, self._candidate)
 		log.debug('leave')
