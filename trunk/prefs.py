@@ -72,12 +72,12 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.embedded.font'] = Config('display.embedded.font', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.font', '13', False)
 		self._setting['display.embedded.foreground'] = Config('display.embedded.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.foreground', '#FF0080', False)
 		self._setting['display.embedded.background'] = Config('display.embedded.background', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.background', '#EDECEB', False)
-		self._setting['display.single'] = Config('display.single', '/apps/rhythmbox/plugins/RBLyrics/display.single', 'True', True)
+		self._setting['display.single'] = Config('display.single', '/apps/rhythmbox/plugins/RBLyrics/display.single', 'True', False)
 		self._setting['display.single.x'] = Config('display.single.x', '/apps/rhythmbox/plugins/RBLyrics/display.single.x', str(gtk.gdk.screen_width()/2), True)
-		self._setting['display.single.y'] = Config('display.single.y', '/apps/rhythmbox/plugins/RBLyrics/display.single.y', 30, True)
-		self._setting['display.single.font'] = Config('display.single.font', '/apps/rhythmbox/plugins/RBLyrics/display.single.font', '18', True)
-		self._setting['display.single.foreground'] = Config('display.single.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.single.foreground', '#FFFF00', True)
-		self._setting['display.single.background'] = Config('display.single.background', '/apps/rhythmbox/plugins/RBLyrics/display.single.background', '#000000', True)
+		self._setting['display.single.y'] = Config('display.single.y', '/apps/rhythmbox/plugins/RBLyrics/display.single.y', 40, True)
+		self._setting['display.single.font'] = Config('display.single.font', '/apps/rhythmbox/plugins/RBLyrics/display.single.font', '18', False)
+		self._setting['display.single.foreground'] = Config('display.single.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.single.foreground', '#00FF40', False)
+		self._setting['display.single.background'] = Config('display.single.background', '/apps/rhythmbox/plugins/RBLyrics/display.single.background', '#000000', False)
 		self._setting['display.double'] = Config('display.double', '/apps/rhythmbox/plugins/RBLyrics/display.double', 'True', True)
 		self._setting['display.double.x'] = Config('display.double.x', '/apps/rhythmbox/plugins/RBLyrics/display.double.x', str(gtk.gdk.screen_width()/2), True)
 		self._setting['display.double.y'] = Config('display.double.y', '/apps/rhythmbox/plugins/RBLyrics/display.double.y', 30, True)
@@ -188,7 +188,8 @@ class Preference(gtk.Dialog, object):
 				'display.embedded', 'display.single',
 				'main.download']:
 				value = str(c.value != 'True')
-			elif c.name in ['display.embedded.foreground', 'display.embedded.background', 'display.single.foreground']:
+			elif c.name in ['display.embedded.foreground', 'display.embedded.background',
+				'display.single.foreground', 'display.single.background']:
 				dialog = gtk.ColorSelectionDialog(_('Choose color'))
 				dialog.get_color_selection().set_current_color(gtk.gdk.color_parse(c.value))
 				response = dialog.run()

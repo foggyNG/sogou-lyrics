@@ -110,10 +110,6 @@ msgstr "打开当前播放曲目歌词"
 msgid "Open the lyrics of the selected song"
 msgstr "打开当前选择曲目歌词"
 
-# display osd
-msgid "lyrics not found"
-msgstr "歌词未找到"
-
 # error dialog
 msgid "RBLyrics"
 msgstr "鲁班歌词"
