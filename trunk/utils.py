@@ -35,53 +35,34 @@ LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 log = logging.getLogger('RBLyrics')
 
 ## Song information.
-class SongInfo:
-	
-	## @var _info
-	#  Song information dict.
+class SongInfo(object):
 	
 	## The constructor.
 	#  @param artist Artist.
 	#  @param title Title.
 	def __init__(self, artist, title):
-		self._info = {'ti':title, 'ar':artist}
+		self._artist = artist
+		self._title = title
 		return
 	
 	def __str__(self):
-		return '%s - %s' % (self._info['ar'], self._info['ti'])
+		return '%s - %s' % (self._artist, self._title)
 		
 	def __eq__(self, other):
-		ret = False
-		for k in self._info.keys():
-			if self._info[k] != other.get(k):
-				break
-		else:
-			ret = True
-		return ret
-	
-	## Get information.
-	#  @param key Key of the information.
-	#  @return Information to the key.
-	def get(self, key):
-		return self._info[key]
+		return self._title == other.ti and self._artist == other.ar
 
+	ar = property(lambda self: self._artist)
+	ti = property(lambda self: self._title)
+	
 ## Lyrics information.
-class LyricsInfo:
-	
-	## @var _raw
-	#  Raw lyrics content.
-	
-	## @var _info
-	#  Lyrics information.
-	
-	## @var _content
-	#  Parsed lyrics content.
+class LyricsInfo(object):
 	
 	## The constructor.
 	#  @param raw Lyrics raw content.
 	def __init__(self, raw):
 		self._raw = raw
-		self._info = {'ar':'', 'ti':''}
+		self._artist = ''
+		self._title = ''
 		self._content = {}
 		self._parse()
 		return
@@ -101,11 +82,11 @@ class LyricsInfo:
 			# search for title property
 			m = re_ti.search(line)
 			if not m is None:
-				self._info['ti'] = m.groups()[0]
+				self._title = m.groups()[0]
 			# search for artist property
 			m = re_ar.search(line)
 			if not m is None:
-				self._info['ar'] = m.groups()[0]
+				self._artist = m.groups()[0]
 			# search for offset property
 			m = re_offset.search(line)
 			if not m is None:
@@ -122,7 +103,6 @@ class LyricsInfo:
 					# ignore blank line
 					continue
 				for time in tm:
-					#log.debug(time)
 					try:
 						minute = int(time[1])
 						second = int(time[2])
@@ -139,34 +119,18 @@ class LyricsInfo:
 		for key in tags:
 			second = int(round((key + offset) / 1000.0))
 			if second in self._content:
-				self._content[second] += cache[key]
+				self._content[second] += ' ' + cache[key]
 				self._content[second].replace(os.linesep, ' ')
 			else:
 				self._content[second] = cache[key]
 		log.debug('leave')
 		return
+		
+	ar = property(lambda self: self._artist)
+	ti = property(lambda self: self._title)
+	raw = property(lambda self: self._raw)
+	content = property(lambda self: self._content)
 	
-	## Get lyrics information.
-	#  @param key Key of the information.
-	#  @return Information to the key.
-	def get(self, key):
-		return self._info[key]
-	
-	## Get raw lyrics content.
-	#  @return Raw lyrics content.
-	def get_raw(self):
-		return self._raw
-	
-	## Get lyrics line.
-	#  @param timestamp Timestamp of the line.
-	#  @return Content to the timestamp, None for missed.
-	def get_line(self, timestamp):
-		try:
-			line = self._content[timestamp]
-		except:
-			line = None
-		return line
-
 ## Clean token.
 #  @param token Original token.
 #  @return Cleaned token.
@@ -207,7 +171,7 @@ def edit_distance(left, right):
 #  @param lyrics Lyrics information.
 #  @return Edit distance between songinfo and lyrics.
 def distance(songinfo, lyrics):
-	return edit_distance(songinfo.get('ar').lower(), lyrics.get('ar').lower()) + edit_distance(songinfo.get('ti').lower(), lyrics.get('ti').lower())
+	return edit_distance(songinfo.ar.lower(), lyrics.ar.lower()) + edit_distance(songinfo.ti.lower(), lyrics.ti.lower())
 
 ## Save lyrics to file.
 #  @param root Lyrics root directory.
@@ -215,11 +179,11 @@ def distance(songinfo, lyrics):
 #  @param lyrics Lyrics information.
 def save_lyrics(root, pattern, songinfo, lyrics):
 	log.debug('enter')
-	path = os.path.join(root, pattern % (songinfo.get('ar'), songinfo.get('ti')))
+	path = os.path.join(root, pattern % (songinfo.ar, songinfo.ti))
 	dir = os.path.dirname(path)
 	if not os.path.exists(dir):
 		os.makedirs(dir)
-	open(path, 'w').write(lyrics.get_raw())
+	open(path, 'w').write(lyrics.raw)
 	log.info('save <file://%s>' % urllib.pathname2url(path))
 	log.debug('leave')
 	return
@@ -232,7 +196,7 @@ def load_lyrics(root, songinfo):
 	log.debug('enter')
 	lyrics = None
 	for p in LRC_PATH_TEMPLATE:
-		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
+		path = os.path.join(root, p % (songinfo.ar, songinfo.ti))
 		if os.path.exists(path):
 			log.info('load <file://%s>' % urllib.pathname2url(path))
 			lyrics = LyricsInfo(open(path, 'r').read())
@@ -248,7 +212,7 @@ def open_lyrics(root, songinfo):
 	log.debug('enter')
 	ret = False
 	for p in LRC_PATH_TEMPLATE:
-		path = os.path.join(root, p % (songinfo.get('ar'), songinfo.get('ti')))
+		path = os.path.join(root, p % (songinfo.ar, songinfo.ti))
 		if os.path.exists(path):
 			log.info('open <file://%s>' % urllib.pathname2url(path))
 			os.system('/usr/bin/xdg-open \"%s\"' % path)

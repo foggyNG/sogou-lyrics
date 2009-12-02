@@ -24,26 +24,71 @@
 
 import logging
 
-from osd import OSD
+from embedded import Embedded
+from single import Single
 log = logging.getLogger('RBLyrics')
+
+display_map = {
+	#'display.roller' : Roller,
+	#'display.double' : Double,
+	'display.single' : Single,
+	'display.embedded' : Embedded
+}
 
 ## Lyrics displayer manager.
 class Display:
 	
-	## @var _interface
-	#  Display interface.
-	
 	## The constructor.
 	#  @param prefs Preference.
-	def __init__(self, prefs):
-		log.debug('enter')
-		self._interface = OSD(prefs)
-		log.debug('leave')
+	def __init__(self, shell, prefs):
+		self._shell = shell
+		self._prefs = prefs
+		prefs.watcher.append(self)
+		self._interface = {}
+		for config in prefs.setting.values():
+			self.update_config(config)
+		return
+		
+	def resume(self):
+		for e in self._interface.values():
+			e.resume()
 		return
 	
-	## Display message.
-	#  @param message Message to show.
-	def show(self, message):
-		self._interface.show(message)
+	def pause(self):
+		for e in self._interface.values():
+			e.pause()
+		return
+	
+	def set_lyrics(self, lyrics):
+		for e in self._interface.values():
+			e.set_lyrics(lyrics)
+		return
+	
+	def synchronize(self, elapsed):
+		for e in self._interface.values():
+			e.synchronize(elapsed)
+		return
+	
+	def finialize(self):
+		for e in self._interface.values():
+			e.finialize()
+		self._prefs.watcher.remove(self)
+		return
+	
+	def update_config(self, config):
+		log.debug('enter %s' % config)
+		name = config.name
+		value = config.value
+		if name.startswith('display.') and len(name.split('.')) == 2:
+			if not display_map.has_key(name):
+				log.error('invalid display mode : %s' % name)
+			elif (name in self._interface) and value == 'False':
+				log.info(config)
+				e = self._interface.pop(name)
+				e.finialize()
+			elif (not name in self._interface) and value == 'True':
+				log.info(config)
+				self._interface[name] = display_map[name](self._shell, self._prefs)
+		log.debug('leave')
 		return
 		

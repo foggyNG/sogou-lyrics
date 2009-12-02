@@ -33,59 +33,23 @@ log = logging.getLogger('RBLyrics')
 ## TTPlayer engine.
 #
 #  Retrieve lyrics from www.viewlyrics.com.
-class Minilyrics:
-	
-	## @var _timeout
-	#  HTTP request timeout.
-	
-	## @var _max
-	#  Max number of lyrics expected.
-	
-	## @var _candidate
-	#  Lyrics candidates.
-	
-	## @var _lock
-	#  Thread lock for appending _candidate list.
+class Minilyrics(threading.Thread):
 	
 	## The constructor.
-	#  @param timeout HTTP request timeout.
-	#  @param max Max number of lyrics expected.
-	def __init__(self, timeout = 3, max = 5):
-		log.debug('enter')
+	def __init__(self, artist, title, receiver, timeout = 3, max = 5):
+		threading.Thread.__init__(self)
+		self._artist = artist
+		self._title = title
+		self._receiver = receiver
 		self._timeout = timeout
 		self._max = max
-		self._candidate = []
-		self._lock = threading.Condition(threading.Lock())
-		log.debug('leave')
 		return
 	
-	## Lyrics receive handler.
-	#  @param url Lyrics url.
-	def _receive_lyrics(self, url):
-		log.debug('enter')
-		try:
-			cache = urllib2.urlopen(url, None, self._timeout).read()
-		except Exception as e:
-			log.error(e)
-		else:
-			encoding = detect(cache)['encoding']
-			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			log.info('lyrics <%s>' % url)
-			self._lock.acquire()
-			self._candidate.append(cache)
-			self._lock.release()
-		log.debug('leave')
-		return
-		
 	## Retrieve lyrics.
-	#  @param artist Song artist.
-	#  @param title Song title.
-	#  @return Lyrics candidates.
-	def search(self, artist, title):
+	def run(self):
 		log.debug('enter')
-		retval = []
-		artist_token = urllib2.quote(artist)
-		title_token = urllib2.quote(title)
+		artist_token = urllib2.quote(self._artist)
+		title_token = urllib2.quote(self._title)
 		xml = "<?xml version=\"1.0\" encoding='utf-8'?>\r\n"
 		xml += "<search filetype=\"lyrics\" artist=\"%s\" title=\"%s\" " % (artist_token, title_token)
 		xml += "ClientCharEncoding=\"utf-8\"/>\r\n"
@@ -99,20 +63,25 @@ class Minilyrics:
 		except Exception as e:
 			log.error(e)
 		else:
-			threads = []
 			for element in elements:
 				url = element.getAttribute('link')
-				threads.append(threading.Thread(target=self._receive_lyrics, args=(url,)))
-				if len(threads) >= self._max:
-					break
-			for t in threads:
-				t.start()
-			for t in threads:
-				t.join()
-			log.info('%d candidates found' % len(self._candidate))
+				try:
+					cache = urllib2.urlopen(url, None, self._timeout).read()
+				except Exception as e:
+					log.error(e)
+				else:
+					encoding = detect(cache)['encoding']
+					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+					log.info('lyrics <%s>' % url)
+					if self._receiver(cache) or elements.index(element) >= self._max:
+						break
 		log.debug('leave')
-		return self._candidate
+		return
 
+def console_receiver(raw):
+	log.info('candidate:\n%s' % raw.decode('UTF-8', 'ignore'))
+	return False
+	
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)
 	handler = logging.StreamHandler()
@@ -132,8 +101,7 @@ if __name__ == '__main__':
 	elif options.title is None:
 		parser.error('title is required')
 	else:
-		engine = Minilyrics(options.timeout, options.max)
-		candidate = engine.search(options.artist, options.title)
-		for c in candidate:
-			log.info('candidate:\n%s' % c.decode('UTF-8', 'ignore'))
+		engine = Minilyrics(options.artist, options.title, console_receiver, options.timeout, options.max)
+		engine.start()
+		engine.join()
 			

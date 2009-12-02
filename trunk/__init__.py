@@ -24,14 +24,13 @@
 
 import rhythmdb, rb
 import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
-_ = gettext.gettext
-
 from chooser import LyricsChooser
 from prefs import Preference
 from engine import Engine
 from display import Display
-from utils import *
-
+from utils import save_lyrics, load_lyrics, open_lyrics, SongInfo
+_ = gettext.gettext
+log = logging.getLogger('RBLyrics')
 ## RBLyrics plugin.
 class RBLyrics(rb.Plugin):
 
@@ -40,18 +39,32 @@ class RBLyrics(rb.Plugin):
 		rb.Plugin.__init__(self)
 		return
 	
+	def _on_playing_changed(self, player, playing):
+		if playing:
+			try:
+				elapsed = player.get_playing_time()
+				self._display.synchronize(elapsed)
+			except Exception as e:
+				log.error(e)
+			self._display.resume()
+		else:
+			self._display.pause()
+		return
+		
 	## Elapsed changed handler.
-	def _elapsed_changed_handler(self, player, playing):
-		if playing and self._lyrics != None:
-			elapsed = player.get_playing_time()
-			line = self._lyrics.get_line(elapsed)
-			if line != None:
-				self._display.show(line)
+	def _on_elapsed_changed(self, player, elapsed):
+		if player.get_playing():
+			self._display.set_lyrics(self._lyrics)
+			self._display.synchronize(elapsed)
+			self._display.resume()
 		return
 	
 	## Playing song changed handler.
-	def _playing_song_changed_handler(self, player, entry):
+	def _on_playing_song_changed(self, player, entry):
 		log.debug('enter')
+		self._display.pause()
+		self._lyrics = None
+		self._display.set_lyrics(None)
 		if entry:
 			# get playing song properties		
 			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
@@ -59,13 +72,11 @@ class RBLyrics(rb.Plugin):
 			songinfo = SongInfo(artist, title)
 			log.info(songinfo)
 			self._lyrics = load_lyrics(self._prefs.get('main.directory'), songinfo)
-			if self._lyrics != None:
-				self._display.show(_('%s prepared') % songinfo)
+			if self._lyrics:
+				self._display.set_lyrics(self._lyrics)
+				self._display.resume()
 			elif self._prefs.get('main.download') == 'True':
-				self._display.show(_('%s downloading') % songinfo)
-				Engine(self._prefs, songinfo, self._receive_lyrics).start()
-			else:
-				self._display.show(_('%s not found') % songinfo)
+				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics).start()
 		log.debug('leave')
 		return
 	
@@ -99,11 +110,7 @@ class RBLyrics(rb.Plugin):
 		songinfo = SongInfo(artist, title)
 		if not open_lyrics(self._prefs.get('main.directory'), songinfo):
 			log.info('%s not found' % songinfo)
-			message = _('Artist:\t%s\nTitle:\t%s\nLyrics not found!') % (artist, title)
-			dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_CLOSE, message_format=message)
-			dlg.set_title(_('RBLyrics'))
-			dlg.run()
-			dlg.destroy()
+			rb.error_dialog(title = _('Lyrics not found'), message = str(songinfo))
 		log.debug('leave')
 		return
 	
@@ -119,11 +126,9 @@ class RBLyrics(rb.Plugin):
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			current_song = SongInfo(artist, title)
 		if current_song != None and song != None and current_song == song:
-			if lyrics:
-				self._display.show(_('%s prepared') % song)
-				self._lyrics = lyrics
-			else:
-				self._display.show(_('%s not found') % song)
+			self._lyrics = lyrics
+			self._display.set_lyrics(lyrics)
+			self._display.resume()
 		log.debug('leave')
 		return
 		
@@ -171,27 +176,25 @@ class RBLyrics(rb.Plugin):
 			log.critical(sys.version)
 		#
 		self._prefs = Preference()
-		self._display = Display(self._prefs)
+		self._display = Display(shell, self._prefs)
+		self._chooser = LyricsChooser(self._chooser_handler)
+		self._lyrics = None
 		if not os.path.exists(self._prefs.get('main.directory')):
 			os.mkdir(self._prefs.get('main.directory'))
-		self._lyrics = None
 		self._shell = shell
 		self._handler = [
-			self._shell.props.shell_player.connect('playing-song-changed', self._playing_song_changed_handler),
-			self._shell.props.shell_player.connect('elapsed-changed', self._elapsed_changed_handler)]
+			self._shell.props.shell_player.connect('playing-song-changed', self._on_playing_song_changed),
+			self._shell.props.shell_player.connect('elapsed-changed', self._on_elapsed_changed),
+			self._shell.props.shell_player.connect('playing-changed', self._on_playing_changed)]
 		#
 		self._action = [
 			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),
 			gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), 'RBLyrics')]
-			#gtk.Action('OpenLyricsMenuBar', _('Open Playing Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics')]
 		self._action[0].connect('activate', self._open_lyrics_shortcut)
 		self._action[1].connect('activate', self._open_lyrics_popup)
-		#self.action[2].connect('activate', self._open_lyrics_shortcut)
 		self._actiongroup = gtk.ActionGroup('RBLyricsActions')
 		self._actiongroup.add_action(self._action[0])
 		self._actiongroup.add_action(self._action[1])
-		#self._actiongroup.add_action_with_accel (self.action[2], "<control>L")
-		
 		# add icon
 		iconsource = gtk.IconSource()
 		iconsource.set_filename(self.find_file("RBLyrics.svg"))
@@ -205,14 +208,11 @@ class RBLyrics(rb.Plugin):
 		uim.insert_action_group(self._actiongroup, 0)
 		self._ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
-		#
-		self._chooser = LyricsChooser(self._chooser_handler)
 		log.info('activated')
 		return
 	
 	## Plugin deactivation.
 	def deactivate(self, shell):
-		del self._chooser
 		for handler in self._handler:
 			self._shell.props.shell_player.disconnect(handler)
 		uim = shell.props.ui_manager
@@ -225,10 +225,14 @@ class RBLyrics(rb.Plugin):
 		del self._action
 		del self._handler
 		del self._shell
-		del self._lyrics
+		del self._chooser
+		self._display.finialize()
 		del self._display
+		del self._lyrics
 		del self._prefs
 		log.info('deactivated')
+		for handler in log.handlers:
+			log.removeHandler(handler)
 		return
 	
 	## Configure dialog interface.
