@@ -33,8 +33,8 @@ class Embedded(gtk.EventBox, threading.Thread):
 	
 	def __init__(self, shell, prefs):
 		log.debug('enter')
-		threading.Thread.__init__(self)
 		gtk.EventBox.__init__(self)
+		threading.Thread.__init__(self)
 		#
 		self._prefs = prefs
 		self._runnable = True
@@ -63,6 +63,7 @@ class Embedded(gtk.EventBox, threading.Thread):
 	def finialize(self):
 		self._prefs.watcher.remove(self)
 		self._runnable = False
+		self.join()
 		self._shell.remove_widget(self, rb.SHELL_UI_LOCATION_MAIN_TOP)
 		return
 		
@@ -126,7 +127,7 @@ class Embedded(gtk.EventBox, threading.Thread):
 				continue
 			#
 			if self._lyrics is None:
-				line = _('lyrics not found')
+				line = _('Lyrics not found')
 			else:
 				timedelta = datetime.datetime.now() - self._start_time
 				elapsed = timedelta.days * 24 * 3600 + timedelta.seconds + int(timedelta.microseconds >= 500000)

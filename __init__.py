@@ -160,7 +160,7 @@ class RBLyrics(rb.Plugin):
 		# logging
 		log.setLevel(logging.DEBUG)
 		console_handler = logging.StreamHandler()
-		console_handler.setLevel(logging.INFO)
+		console_handler.setLevel(logging.DEBUG)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
 		cachedir = os.path.join(rb.user_cache_dir(), 'RBLyrics')
