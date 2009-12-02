@@ -31,60 +31,23 @@ log = logging.getLogger('RBLyrics')
 ## Sogou mp3 engine.
 #
 #  Retrieve lyrics from mp3.sogou.com.
-class Sogou:
-	
-	## @var _timeout
-	#  HTTP request timeout.
-	
-	## @var _max
-	#  Max number of lyrics expected.
-	
-	## @var _candidate
-	#  Lyrics candidates.
-	
-	## @var _lock
-	#  Thread lock for appending _candidate list.
+class Sogou(threading.Thread):
 	
 	## The constructor.
-	#  @param timeout HTTP request timeout.
-	#  @param max Max number of lyrics expected.
-	def __init__(self, timeout = 3, max = 5):
-		log.debug('enter')
+	def __init__(self, artist, title, receiver, timeout = 3, max = 5):
+		threading.Thread.__init__(self)
+		self._artist = artist
+		self._title = title
+		self._receiver = receiver
 		self._timeout = timeout
 		self._max = max
-		self._candidate = []
-		self._lock = threading.Condition(threading.Lock())
-		log.debug('leave')
-		return
-	
-	## Lyrics receive handler.
-	#  @param opener Cookie opener.
-	#  @param url Lyrics url.
-	def _receive_lyrics(self, opener, url):
-		log.debug('enter')
-		try:
-			cache = opener.open(url, None, self._timeout).read()
-		except Exception as e:
-			log.error(e)
-		else:
-			encoding = detect(cache)['encoding']
-			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			log.info('lyrics <%s>' % url)
-			self._lock.acquire()
-			self._candidate.append(cache)
-			self._lock.release()
-		log.debug('leave')
 		return
 		
 	## Retrieve lyrics.
-	#  @param artist Song artist.
-	#  @param title Song title.
-	#  @return Lyrics candidates.
-	def search(self, artist, title):
+	def run(self):
 		log.debug('enter')
-		retval = []
-		artist_token = urllib2.quote(artist.encode('GBK', 'ignore'))
-		title_token = urllib2.quote(title.encode('GBK', 'ignore'))
+		artist_token = urllib2.quote(self._artist.encode('GBK', 'ignore'))
+		title_token = urllib2.quote(self._title.encode('GBK', 'ignore'))
 		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
 		log.debug('search page <%s>' % url)
 		try:
@@ -110,25 +73,30 @@ class Sogou:
 						log.error(e)
 					else:
 						# grab lyrics file url, try all of them
-						threads = []
+						trycount = 0
 						for line in cache:
 							m = re.search('downlrc\.jsp\?[^\"]*', line)
 							if m != None:
 								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								threads.append(threading.Thread(target=self._receive_lyrics, args=(opener, url,)))
-								if len(threads) >= self._max:
-									break
-						for t in threads:
-							t.start()
-						for t in threads:
-							t.join()
-						log.info('%d candidates found' % len(self._candidate))
+								try:
+									trycount += 1
+									cache = opener.open(url, None, self._timeout).read()
+								except Exception as e:
+									log.error(e)
+								else:
+									encoding = detect(cache)['encoding']
+									cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+									log.info('lyrics <%s>' % url)
+									if self._receiver(cache) or trycount >= self._max:
+										break
 					break
-			else:
-				log.info('0 candidates found')
 		log.debug('leave')
-		return self._candidate
+		return
 
+def console_receiver(raw):
+	log.info('candidate:\n%s' % raw.decode('UTF-8', 'ignore'))
+	return False
+	
 if __name__ == '__main__':
 	log.setLevel(logging.DEBUG)
 	handler = logging.StreamHandler()
@@ -148,9 +116,8 @@ if __name__ == '__main__':
 	elif options.title is None:
 		parser.error('title is required')
 	else:
-		engine = Sogou(options.timeout, options.max)
-		candidate = engine.search(options.artist.decode('UTF-8', 'ignore'), options.title.decode('UTF-8', 'ignore'))
-		for c in candidate:
-			log.info('candidate:\n%s' % c.decode('UTF-8', 'ignore'))
+		engine = Sogou(options.artist, options.title, console_receiver, options.timeout, options.max)
+		engine.start()
+		engine.join()
 			
 		

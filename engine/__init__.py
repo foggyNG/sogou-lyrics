@@ -22,7 +22,7 @@
 ## @package RBLyrics.engine
 #  Lyrics search engine.
 
-import threading
+import threading, sys
 from chardet import detect
 
 from sogou import Sogou
@@ -33,10 +33,10 @@ from utils import log, clean_token, distance, LyricsInfo, save_lyrics
 
 ## Lyrics search engine map.
 engine_map = {
-	'ttplayer' : TTPlayer,
-	'sogou' : Sogou,
-	'minilyrics': Minilyrics,
-	'lyricist': Lyricist
+	'engine.ttplayer' : TTPlayer,
+	'engine.sogou' : Sogou,
+	'engine.minilyrics': Minilyrics,
+	'engine.lyricist': Lyricist
 }
 
 ## Lyrics candidate comparison handler.
@@ -46,62 +46,46 @@ def candidate_cmp(x, y):
 ## Lyrics search engine manager.
 class Engine(threading.Thread):
 	
-	## @var _engine
-	#  Lyrics engine keys.
-	
-	## @var _songinfo
-	#  Song information.
-	
-	## @var _candidate
-	#  Lyrics candidates.
-	
-	## @var _lock
-	#  Thread lock for appending _candidate list.
-	
 	## The constructor.
 	#  @param engine Engine list.
 	#  @param songinfo Song information.
-	def __init__(self, prefs, songinfo, callback):
+	def __init__(self, engine, songinfo, callback):
 		threading.Thread.__init__(self)
-		log.debug('enter')
-		self._prefs = prefs
+		self._engine = engine
 		self._songinfo = songinfo
 		self._callback = callback
 		self._candidate = []
+		self._found = False
 		self._lock = threading.Condition(threading.Lock())
-		log.debug('leave')
 		return
 	
 	## Lyrics receive handler.
-	#  @param engine Lyrics search engine.
-	#  @param artist Song artist.
-	#  @param title Song title.
-	def _receive_lyrics(self, engine, artist, title):
-		lyrics = engine.search(artist, title)
+	def _receive_lyrics(self, raw):
 		self._lock.acquire()
-		for raw in lyrics:
+		log.debug('enter')
+		if not self._found:
 			l = LyricsInfo(raw)
 			d = distance(self._songinfo, l)
 			self._candidate.append([d, l])
+			self._found = d == 0
+		log.debug('leave')
 		self._lock.release()
-		return
+		return self._found
 	
 	## Retrieve lyrics.
-	#  @return Lyrics candidate list.
 	def run(self):
 		log.debug('enter')
 		threads = []
-		for key in self._prefs.get_engine():
-			engine = engine_map[key]
-			token = clean_token(self._songinfo.get('ar'))
-			encoding = detect(token)['encoding']
-			artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			token = clean_token(self._songinfo.get('ti'))
-			encoding = detect(token)['encoding']
-			title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			threads.append(threading.Thread(target=self._receive_lyrics, args=(engine(), artist, title,)))
-		for t in threads:
-			t.start()
+		token = clean_token(self._songinfo.ar)
+		encoding = detect(token)['encoding']
+		artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+		token = clean_token(self._songinfo.ti)
+		encoding = detect(token)['encoding']
+		title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+		for key in self._engine:
+			engine = engine_map[key](artist, title, self._receive_lyrics)
+			threads.append(engine)
+			engine.start()
 		for t in threads:
 			t.join()
 		self._candidate.sort(candidate_cmp)

@@ -77,7 +77,7 @@ class LyricsChooser(gtk.Window):
 			model = gtk.ListStore(int, str, str, int)
 			count = 0
 			for c in candidate:
-				model.append([c[0], c[1].get('ar'), c[1].get('ti'), count])
+				model.append([c[0], c[1].ar, c[1].ti, count])
 				count = count + 1
 			treeview = gtk.TreeView(model)
 			treeview.set_rules_hint(True)
@@ -127,7 +127,7 @@ class LyricsChooser(gtk.Window):
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 3)
 			log.debug('select [index = %d]' % index)
-			self._preview[hashid].get_buffer().set_text(self._candidate[hashid][index][1].get_raw())
+			self._preview[hashid].get_buffer().set_text(self._candidate[hashid][index][1].raw)
 		else:
 			self._preview[hashid].get_buffer().set_text('')
 		log.debug('leave')
