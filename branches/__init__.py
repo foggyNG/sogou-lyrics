@@ -23,7 +23,7 @@
 #  RBLyrics.
 
 import rhythmdb, rb
-import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
+import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade, gtk.gdk, pango
 _ = gettext.gettext
 
 from chooser import LyricsChooser
@@ -208,6 +208,12 @@ class RBLyrics(rb.Plugin):
 		uim.ensure_update()
 		#
 		self._chooser = LyricsChooser(self._chooser_handler)
+		#
+		'''self._embedded = gtk.Label('lyrics')
+		self._embedded.modify_font(pango.FontDescription(self._prefs.get('display.font')))
+		self._embedded.modify_fg(gtk.STATE_NORMAL, gtk.gdk.Color(self._prefs.get('display.color')))
+		shell.add_widget (self._embedded, rb.SHELL_UI_LOCATION_MAIN_TOP)
+		self._embedded.show()'''
 		log.info('activated')
 		return
 	

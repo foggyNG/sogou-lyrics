@@ -46,10 +46,11 @@ class Display(gtk.Window):
 		self.add(self._interface)
 		self._interface.show_all()
 		#
-		self.add_events(gtk.gdk.POINTER_MOTION_HINT_MASK|gtk.gdk.BUTTON1_MOTION_MASK|gtk.gdk.BUTTON_PRESS_MASK)
+		self.add_events(gtk.gdk.POINTER_MOTION_HINT_MASK|gtk.gdk.BUTTON1_MOTION_MASK|gtk.gdk.BUTTON_PRESS_MASK|gtk.gdk.ENTER_NOTIFY_MASK|gtk.gdk.LEAVE_NOTIFY_MASK)
 		self.connect('button-press-event', self._on_button_press)
 		self.connect('motion-notify-event', self._on_motion)
-		
+		self.connect('enter-notify-event', self._on_enter)
+		self.connect('leave-notify-event', self._on_leave)
 		#self.show()
 		log.debug('leave')
 		return
@@ -66,7 +67,13 @@ class Display(gtk.Window):
 			y = offset_y + y - self._move_base[1]
 			event.window.move(x,y)
 		return True
-		
+	
+	def _on_enter(self, widget, event):
+		event.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.FLEUR))
+		return True
+	
+	def _on_leave(self, widget, event):
+		return True
 	def interface(self):
 		return self._interface
 			

@@ -68,6 +68,9 @@ class SingleLine(gtk.DrawingArea, threading.Thread):
 		log.debug('leave')
 		return
 	
+	def get_font(self): return self._font
+	def set_font(self, font): self._font = font
+	font = property(get_font, set_font, None, 'display font')
 	## Display message.
 	#  @param message Message to show.
 	def run(self):

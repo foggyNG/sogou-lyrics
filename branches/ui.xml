@@ -1,9 +1,9 @@
 <ui>
-  <!-- <popup name="BrowserSourceViewPopup">
+  <!--<popup name="BrowserSourceViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
     </placeholder>
-  </popup> -->
+  </popup>-->
 
   <popup name="PlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
