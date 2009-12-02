@@ -1,7 +1,0 @@
-domain "RBLyrics"
-
-msgid "%s/%s.lrc"
-msgstr "artist/title.lrc"
-msgid "%s - %s.lrc"
-msgstr "artist - title.lrc"
-
