@@ -1,0 +1,28 @@
+#!/bin/bash
+ROOT=$PWD
+SRC=~/.gnome2/rhythmbox/plugins/RBLyrics
+VERSION=`svn info $SOURCE | grep Revision | awk '{print $2}'`
+DEST="${ROOT}/rblyrics-svn$VERSION"
+# remove old files
+if [ -x $DEST ];then
+	rm -rf $DEST
+fi
+# make directory structure
+APPDIR=$DEST/usr/lib/rhythmbox/plugins/RBLyrics
+CONTROL=$DEST/DEBIAN/control
+mkdir -p $APPDIR
+mkdir -p `dirname $CONTROL`
+# copy app files
+cd $SRC
+for i in `find . -name .svn -prune -o -type f -print`;
+do
+	cp --parents -t $APPDIR $i
+done
+# write control
+cd $ROOT
+cp control $CONTROL
+SIZE=`du -sc $SOURCE | tail -n 1 | awk '{print $1}'`
+perl -p -i -e "s|^Version:*$|Version:\ svn$VERSION|g" $CONTROL
+perl -p -i -e "s|^Installed-Size:*$|Installed-Size:\ $SIZE|g" $CONTROL
+# package
+dpkg -b $DEST $DEST.deb
