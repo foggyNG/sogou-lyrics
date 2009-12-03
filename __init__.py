@@ -170,10 +170,6 @@ class RBLyrics(rb.Plugin):
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)
-		# checkout python version
-		version = sys.version_info
-		if version[0] != 2 or version[1] < 6:
-			log.critical(sys.version)
 		#
 		self._prefs = Preference()
 		self._display = Display(shell, self._prefs)
