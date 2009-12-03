@@ -23,40 +23,26 @@
 ## @package RBLyrics.display.embedded
 #  Embedded displayer.
 
-import rb
-import logging, gtk, gtk.gdk, gettext, pango, bisect
+import logging, gettext, bisect
+from gnomeosd import eventbridge
 
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
-class Embedded(gtk.EventBox):
+class GOSD:
 	
 	def __init__(self, shell, prefs):
 		log.debug('enter')
-		gtk.EventBox.__init__(self)
-		#
-		self._prefs = prefs
+		self._osd = eventbridge.OSD()
 		self._running = False
 		self._lyrics = None
 		self._timestamp = None
 		self._lastline = None
-		#
-		self._shell = shell
-		self._label = gtk.Label(_('RBLyrics'))
-		self._label.modify_font(pango.FontDescription(prefs.get('display.embedded.font')))
-		self._label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.Color(prefs.get('display.embedded.foreground')))
-		self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(prefs.get('display.embedded.background')))
-		self.add(self._label)
-		self._shell.add_widget(self, rb.SHELL_UI_LOCATION_MAIN_TOP)
-		self.show_all()
-		#
-		prefs.watcher.append(self)
 		log.debug('leave')
 		return
 	
 	def finialize(self):
-		self._prefs.watcher.remove(self)
-		self._shell.remove_widget(self, rb.SHELL_UI_LOCATION_MAIN_TOP)
+		del self._osd
 		return
 		
 	def resume(self):
@@ -99,22 +85,5 @@ class Embedded(gtk.EventBox):
 				line = self._get_line(elapsed)
 			if line != self._lastline:
 				self._lastline = line
-				self._label.set_text(line)
-		return
-	
-	def update_config(self, config):
-		log.debug('enter %s' % config)
-		name = config.name
-		value = config.value
-		if name.startswith('display.embedded.'):
-			if name == 'display.embedded.font':
-				log.info(config)
-				self._label.modify_font(pango.FontDescription(value))
-			elif name == 'display.embedded.foreground':
-				log.info(config)
-				self._label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
-			elif name == 'display.embedded.background':
-				log.info(config)
-				self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
-		log.debug('leave')
+				self._osd.send('<message>%s</message>' % line)
 		return

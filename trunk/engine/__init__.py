@@ -29,10 +29,14 @@ from sogou import Sogou
 from ttplayer import TTPlayer
 from minilyrics import Minilyrics
 from lyricist import Lyricist
+from jpwy import Jpwy
+from bzmtv import Bzmtv
 from utils import log, clean_token, distance, LyricsInfo, save_lyrics
 
 ## Lyrics search engine map.
 engine_map = {
+	'engine.bzmtv' : Bzmtv,
+	'engine.jpwy' : Jpwy,
 	'engine.ttplayer' : TTPlayer,
 	'engine.sogou' : Sogou,
 	'engine.minilyrics': Minilyrics,
@@ -68,6 +72,9 @@ class Engine(threading.Thread):
 			d = distance(self._songinfo, l)
 			self._candidate.append([d, l])
 			self._found = d == 0
+			if self._found:
+				self._candidate.sort(candidate_cmp)
+				self._callback(self._songinfo, self._candidate)
 		log.debug('leave')
 		self._lock.release()
 		return self._found
@@ -88,7 +95,8 @@ class Engine(threading.Thread):
 			engine.start()
 		for t in threads:
 			t.join()
-		self._candidate.sort(candidate_cmp)
-		self._callback(self._songinfo, self._candidate)
+		if not self._found:
+			self._candidate.sort(candidate_cmp)
+			self._callback(self._songinfo, self._candidate)
 		log.debug('leave')
 		return
