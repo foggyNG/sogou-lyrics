@@ -1,0 +1,12 @@
+Package: rblyrics
+Version: svn131
+Architecture: all
+Section: Apps/Tools
+Installed-Size: 196
+Maintainer: wonder <gogo.wonder@gmail.com>
+Depends: python (>= 2.6), python-gconf, python-gobject, python-chardet
+Priority: optional
+Homepage: http://code.google.com/p/sogou-lyrics/
+Description: This is a lyrics plugin for Rhythmbox. Lyrics is downloaded from internet automatically and displayed on OSD.
+ .
+ * HomePage: http://code.google.com/p/sogou-lyrics/
