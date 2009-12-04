@@ -22,11 +22,10 @@
 ## @package RBLyrics.engine.ttplayer
 #  TTPlayer search engine.
 
-import random, urllib2, logging, threading
+import rb, urllib, re, logging, random
 from xml.dom.minidom import parseString
-from optparse import OptionParser
-from chardet import detect
 
+from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
 ## TTPlayer lyrics server crack functionality.
@@ -114,75 +113,50 @@ class ttpClient:
 ## QianQian player engine.
 #
 #  Retrieve lyrics from www.ttplayer.com.
-class TTPlayer(threading.Thread):
+class TTPlayer(LRCBase):
 	
 	## The constructor.
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
-	def __init__(self, artist, title, receiver, timeout = 3, max = 5):
-		threading.Thread.__init__(self)
-		self._artist = artist
-		self._title = title
-		self._receiver = receiver
-		self._timeout = timeout
-		self._max = max
+	def __init__(self, artist, title, receiver, max = 5):
+		LRCBase.__init__(self, artist, title, receiver, max)
+		return
+	
+	def _on_meta_arrive(self, xml, callback):
+		log.debug('enter')
+		if xml is None:
+			log.warn('network error')
+			# the following code make sure the main Engine to quit normally
+			self._receiver(None)
+			callback(self.__class__.__name__)
+		else:
+			try:
+				elements = parseString(xml).getElementsByTagName('lrc')
+			except Exception as e:
+				log.error(e)
+				# the following code make sure the main Engine to quit normally
+				self._receiver(None)
+				callback(self.__class__.__name__)
+			else:
+				for element in elements:
+					artist = element.getAttribute('artist')
+					title = element.getAttribute('title')
+					id = int(element.getAttribute('id'))
+					url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
+					self._job.append(url)
+					if len(self._job) >= self._max:
+						break
+				log.debug('%d lyrics url found' % len(self._job))
+				self._get_next_lyrics(callback, self.__class__.__name__)
+		log.debug('leave')
 		return
 		
-	## Retrieve lyrics.
-	def run(self):
+	def search(self, callback):
 		log.debug('enter')
 		artist_token = ttpClient.EncodeArtTit(self._artist.replace(' ','').lower())
 		title_token = ttpClient.EncodeArtTit(self._title.replace(' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		log.debug('search url <%s>' % url)
-		try:
-			xml = urllib2.urlopen(url, None, self._timeout).read()
-			elements = parseString(xml).getElementsByTagName('lrc')
-		except Exception as e:
-			log.error(e)
-		else:
-			for element in elements:
-				artist = element.getAttribute('artist')
-				title = element.getAttribute('title')
-				id = int(element.getAttribute('id'))
-				url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
-				try:
-					cache = urllib2.urlopen(url, None, self._timeout).read()
-				except Exception as e:
-					log.error(e)
-				else:
-					encoding = detect(cache)['encoding']
-					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-					log.info('lyrics <%s>' % url)
-					if self._receiver(cache) or elements.index(element) >= self._max:
-						break
+		rb.Loader().get_url(url, self._on_meta_arrive, callback)
 		log.debug('leave')
 		return
-
-def console_receiver(raw):
-	log.info('candidate:\n%s' % raw.decode('UTF-8', 'ignore'))
-	return False
-	
-if __name__ == '__main__':
-	log.setLevel(logging.DEBUG)
-	handler = logging.StreamHandler()
-	handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
-	log.addHandler(handler)
-	parser = OptionParser()
-	parser.add_option('-a', '--artist', dest = 'artist', type = 'string', help = 'song artist')
-	parser.add_option('-i', '--title', dest = 'title', type = 'string', help = 'song title')
-	parser.add_option('-t', '--timeout', dest = 'timeout', type = 'int', help = 'url request timeout')
-	parser.add_option('-m', '--max', dest = 'max', type = 'int', help = 'max number of expected')
-	parser.set_defaults(timeout = 3, max = 5)
-	(options, args) = parser.parse_args()
-	if len(args) != 0:
-		parser.error("incorrect number of arguments")
-	elif options.artist is None:
-		parser.error('artist is required')
-	elif options.title is None:
-		parser.error('title is required')
-	else:
-		engine = TTPlayer(options.artist, options.title, console_receiver, options.timeout, options.max)
-		engine.start()
-		engine.join()
-			

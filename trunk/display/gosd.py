@@ -64,7 +64,9 @@ class GOSD:
 	
 	def _get_line(self, elapsed):
 		index = bisect.bisect_left(self._timestamp, elapsed)
-		if index == len(self._timestamp):
+		if len(self._timestamp) == 0:
+			line = _('RBLyrics')
+		elif index == len(self._timestamp):
 			# over the last line
 			line = self._lyrics.content[self._timestamp[index-1]]
 		elif elapsed == self._timestamp[index]:

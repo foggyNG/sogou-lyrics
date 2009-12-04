@@ -22,102 +22,89 @@
 ## @package RBLyrics.engine.sogou
 #  Sogou search engine.
 
-import re, cookielib, urllib2, logging, threading
-from optparse import OptionParser
+import rb, urllib, re, logging
+from xml.dom.minidom import parseString
 from chardet import detect
 
+from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
 ## Sogou mp3 engine.
 #
 #  Retrieve lyrics from mp3.sogou.com.
-class Sogou(threading.Thread):
+class Sogou(LRCBase):
 	
 	## The constructor.
-	def __init__(self, artist, title, receiver, timeout = 3, max = 5):
-		threading.Thread.__init__(self)
-		self._artist = artist
-		self._title = title
-		self._receiver = receiver
-		self._timeout = timeout
-		self._max = max
+	def __init__(self, artist, title, receiver, max = 5):
+		LRCBase.__init__(self, artist, title, receiver, max)
 		return
-		
-	## Retrieve lyrics.
-	def run(self):
+	
+	def _on_lyrics_page_arrive(self, cache, callback):
 		log.debug('enter')
-		artist_token = urllib2.quote(self._artist.encode('GBK', 'ignore'))
-		title_token = urllib2.quote(self._title.encode('GBK', 'ignore'))
-		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
-		log.debug('search page <%s>' % url)
-		try:
-			cj = cookielib.CookieJar()
-			opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-			cache = opener.open(url, None, self._timeout).read()
-			encoding = detect(cache)['encoding']
-			cache = cache.decode(encoding, 'ignore').splitlines()
-		except Exception as e:
-			log.error(e)
+		if cache is None:
+			log.warn('network error')
+			# the following code make sure the main Engine to quit normally
+			self._receiver(None)
+			callback(self.__class__.__name__)
 		else:
-			for line in cache:
-				# grab lyrics search page, only use the first
-				m = re.search('geci\.so\?[^\"]*', line)
-				if m != None:
-					url = 'http://mp3.sogou.com/%s' % m.group(0)
-					log.debug('lyrics page <%s>' % url)
-					try:
-						cache = opener.open(url, None, self._timeout).read()
-						encoding = detect(cache)['encoding']
-						cache = cache.decode(encoding, 'ignore').splitlines()
-					except Exception as e:
-						log.error(e)
-					else:
-						# grab lyrics file url, try all of them
-						trycount = 0
-						for line in cache:
-							m = re.search('downlrc\.jsp\?[^\"]*', line)
-							if m != None:
-								url = 'http://mp3.sogou.com/%s' % m.group(0)
-								try:
-									trycount += 1
-									cache = opener.open(url, None, self._timeout).read()
-								except Exception as e:
-									log.error(e)
-								else:
-									encoding = detect(cache)['encoding']
-									cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-									log.info('lyrics <%s>' % url)
-									if self._receiver(cache) or trycount >= self._max:
-										break
-					break
+			try:
+				encoding = detect(cache)['encoding']
+				cache = cache.decode(encoding, 'ignore').splitlines()
+			except Exception as e:
+				log.error(e)
+				# the following code make sure the main Engine to quit normally
+				self._receiver(None)
+				callback(self.__class__.__name__)
+			else:
+				pattern = re.compile(r'<a href="downlrc\.jsp\?(?P<url>[^"]+?)">')
+				for line in cache:
+					for seg in pattern.findall(line):
+						self._job.append('http://mp3.sogou.com/downlrc.jsp?%s' % seg)
+						if len(self._job) >= self._max:
+							break
+					if len(self._job) >= self._max:
+							break
+				log.debug('%d lyrics url found' % len(self._job))
+				self._get_next_lyrics(callback, self.__class__.__name__)
 		log.debug('leave')
 		return
-
-def console_receiver(raw):
-	log.info('candidate:\n%s' % raw.decode('UTF-8', 'ignore'))
-	return False
+		
+	def _on_search_page_arrive(self, cache, callback):
+		log.debug('enter')
+		if cache is None:
+			log.warn('network error')
+			# the following code make sure the main Engine to quit normally
+			self._receiver(None)
+			callback(self.__class__.__name__)
+		else:
+			try:
+				encoding = detect(cache)['encoding']
+				cache = cache.decode(encoding, 'ignore').splitlines()
+			except Exception as e:
+				log.error(e)
+				# the following code make sure the main Engine to quit normally
+				self._receiver(None)
+				callback(self.__class__.__name__)
+			else:
+				pattern = re.compile(r'onclick="dyama\(\'geci\'\);" href="(?P<url>[^"]+?)"')
+				for line in cache:
+					seg = pattern.findall(line)
+					if len(seg):
+						url = 'http://mp3.sogou.com' + seg[0]
+						log.debug('lyrics page url <%s>' % url)
+						rb.Loader().get_url(url, self._on_lyrics_page_arrive, callback)
+						break
+		log.debug('leave')
+		return
 	
-if __name__ == '__main__':
-	log.setLevel(logging.DEBUG)
-	handler = logging.StreamHandler()
-	handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
-	log.addHandler(handler)
-	parser = OptionParser()
-	parser.add_option('-a', '--artist', dest = 'artist', type = 'string', help = 'song artist')
-	parser.add_option('-i', '--title', dest = 'title', type = 'string', help = 'song title')
-	parser.add_option('-t', '--timeout', dest = 'timeout', type = 'int', help = 'url request timeout')
-	parser.add_option('-m', '--max', dest = 'max', type = 'int', help = 'max number of expected')
-	parser.set_defaults(timeout = 3, max = 5)
-	(options, args) = parser.parse_args()
-	if len(args) != 0:
-		parser.error("incorrect number of arguments")
-	elif options.artist is None:
-		parser.error('artist is required')
-	elif options.title is None:
-		parser.error('title is required')
-	else:
-		engine = Sogou(options.artist, options.title, console_receiver, options.timeout, options.max)
-		engine.start()
-		engine.join()
+	def search(self, callback):
+		log.debug('enter')
+		artist_token = urllib.quote(self._artist.encode('GBK', 'ignore'))
+		title_token = urllib.quote(self._title.encode('GBK', 'ignore'))
+		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
+		log.debug('search url <%s>' % url)
+		rb.Loader().get_url(url, self._on_search_page_arrive, callback)
+		log.debug('leave')
+		return
 			
 		

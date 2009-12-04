@@ -22,24 +22,24 @@
 ## @package RBLyrics.engine
 #  Lyrics search engine.
 
-import threading, sys
+import rb, logging, sys
 from chardet import detect
 
 from sogou import Sogou
 from ttplayer import TTPlayer
-from minilyrics import Minilyrics
+#from minilyrics import Minilyrics
 from lyricist import Lyricist
 from jpwy import Jpwy
 from bzmtv import Bzmtv
-from utils import log, clean_token, distance, LyricsInfo, save_lyrics
-
+from utils import clean_token, distance, LyricsInfo
+log = logging.getLogger('RBLyrics')
 ## Lyrics search engine map.
 engine_map = {
+	#'engine.minilyrics': Minilyrics,
+	'engine.sogou' : Sogou,
 	'engine.bzmtv' : Bzmtv,
 	'engine.jpwy' : Jpwy,
 	'engine.ttplayer' : TTPlayer,
-	'engine.sogou' : Sogou,
-	'engine.minilyrics': Minilyrics,
 	'engine.lyricist': Lyricist
 }
 
@@ -48,55 +48,77 @@ def candidate_cmp(x, y):
 	return x[0] - y[0]
 
 ## Lyrics search engine manager.
-class Engine(threading.Thread):
+class Engine:
 	
 	## The constructor.
 	#  @param engine Engine list.
 	#  @param songinfo Song information.
 	def __init__(self, engine, songinfo, callback):
-		threading.Thread.__init__(self)
 		self._engine = engine
 		self._songinfo = songinfo
 		self._callback = callback
 		self._candidate = []
+		# if lyrics with distance=0 found
 		self._found = False
-		self._lock = threading.Condition(threading.Lock())
+		# number of working lyrics engines
+		self._alive = 0
 		return
 	
 	## Lyrics receive handler.
+	#  @return True if continue
 	def _receive_lyrics(self, raw):
-		self._lock.acquire()
 		log.debug('enter')
-		if not self._found:
+		ret = False
+		if raw == None:
+			# while rb.Loader failed or finished
+			self._alive -= 1
+		elif self._found:
+			# while lyrics already found
+			self._alive -= 1
+		else:
+			# upcoming raw should be processed
 			l = LyricsInfo(raw)
 			d = distance(self._songinfo, l)
 			self._candidate.append([d, l])
 			self._found = d == 0
 			if self._found:
+				# upcoming raw distance=0
 				self._candidate.sort(candidate_cmp)
 				self._callback(self._songinfo, self._candidate)
+				self._alive -= 1
+			else:
+				# continue to next lyrics
+				ret = True
+		if self._alive == 0 and not self._found:
+			self._candidate.sort(candidate_cmp)
+			self._callback(self._songinfo, self._candidate)
 		log.debug('leave')
-		self._lock.release()
-		return self._found
+		return ret
 	
 	## Retrieve lyrics.
-	def run(self):
+	def _searcher(self, plexer):
 		log.debug('enter')
-		threads = []
 		token = clean_token(self._songinfo.ar)
 		encoding = detect(token)['encoding']
 		artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 		token = clean_token(self._songinfo.ti)
 		encoding = detect(token)['encoding']
 		title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-		for key in self._engine:
-			engine = engine_map[key](artist, title, self._receive_lyrics)
-			threads.append(engine)
-			engine.start()
-		for t in threads:
-			t.join()
-		if not self._found:
-			self._candidate.sort(candidate_cmp)
+		self._alive = len(self._engine)
+		if self._alive == 0:
+			# no engine selected
 			self._callback(self._songinfo, self._candidate)
+		else:
+			for key in self._engine:
+				plexer.clear()
+				engine = engine_map[key](artist, title, self._receive_lyrics)
+				engine.search(plexer.send())
+				yield None
+				_, (engine_name,) = plexer.receive()
+				log.debug('%s finished' % engine_name)
 		log.debug('leave')
+		return
+	
+	def search(self):
+		rb.Coroutine(self._searcher).begin()
 		return
