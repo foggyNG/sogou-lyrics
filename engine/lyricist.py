@@ -21,29 +21,22 @@
 
 ## @package RBLyrics.engine.lyricist
 #  Lyricist search engine.
-
-import urllib2, re, logging, threading
+import rb, urllib, re, logging
 from xml.dom.minidom import parseString
-from optparse import OptionParser
-from chardet import detect
 
+from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
 ## Lyricist engine.
 #
 #  Retrieve lyrics from www.winampcn.com.
-class Lyricist(threading.Thread):
+class Lyricist(LRCBase):
 	
 	## The constructor.
 	#  @param timeout HTTP request timeout.
 	#  @param max Max number of lyrics expected.
-	def __init__(self, artist, title, receiver, timeout = 3, max = 5):
-		threading.Thread.__init__(self)
-		self._artist = artist
-		self._title = title
-		self._receiver = receiver
-		self._timeout = timeout
-		self._max = max
+	def __init__(self, artist, title, receiver, max = 5):
+		LRCBase.__init__(self, artist, title, receiver, max)
 		return
 	
 	## Clean special characters.
@@ -52,62 +45,37 @@ class Lyricist(threading.Thread):
 	def _clean_token(self, token):
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 		
-	## Retrieve lyrics.
-	#  @param artist Song artist.
-	#  @param title Song title.
-	#  @return Lyrics candidates.
-	def run(self):
+	def _on_meta_arrive(self, xml, callback):
 		log.debug('enter')
-		artist_token = urllib2.quote(self._clean_token(self._artist))
-		title_token = urllib2.quote(self._clean_token(self._title))
-		url = 'http://www.winampcn.com/lrceng/get.aspx?song=%s&artist=%s&lsong=%s&prec=1&Datetime=20060601' % (title_token, artist_token, title_token)
-		log.debug('search url <%s>' % url)
-		try:
-			xml = urllib2.urlopen(url, None, self._timeout).read()
-			elements = parseString(xml).getElementsByTagName('LyricUrl')
-		except Exception as e:
-			log.error(e)
+		if xml is None:
+			log.warn('network error')
+			# the following code make sure the main Engine to quit normally
+			self._receiver(None)
+			callback(self.__class__.__name__)
 		else:
-			for element in elements:
-				url = element.firstChild.data
-				try:
-					cache = urllib2.urlopen(url, None, self._timeout).read()
-				except Exception as e:
-					log.error(e)
-				else:
-					encoding = detect(cache)['encoding']
-					cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-					log.info('lyrics <%s>' % url)
-					if self._receiver(cache) or elements.index(element) >= self._max:
+			try:
+				elements = parseString(xml).getElementsByTagName('LyricUrl')
+			except Exception as e:
+				log.error(e)
+				# the following code make sure the main Engine to quit normally
+				self._receiver(None)
+				callback(self.__class__.__name__)
+			else:
+				for element in elements:
+					self._job.append(element.firstChild.data)
+					if len(self._job) >= self._max:
 						break
+				log.debug('%d lyrics url found' % len(self._job))
+				self._get_next_lyrics(callback, self.__class__.__name__)
 		log.debug('leave')
 		return
-
-def console_receiver(raw):
-	log.info('candidate:\n%s' % raw.decode('UTF-8', 'ignore'))
-	return False
-	
-if __name__ == '__main__':
-	log.setLevel(logging.DEBUG)
-	handler = logging.StreamHandler()
-	handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
-	log.addHandler(handler)
-	parser = OptionParser()
-	parser.add_option('-a', '--artist', dest = 'artist', type = 'string', help = 'song artist')
-	parser.add_option('-i', '--title', dest = 'title', type = 'string', help = 'song title')
-	parser.add_option('-t', '--timeout', dest = 'timeout', type = 'int', help = 'url request timeout')
-	parser.add_option('-m', '--max', dest = 'max', type = 'int', help = 'max number of expected')
-	parser.set_defaults(timeout = 3, max = 5)
-	(options, args) = parser.parse_args()
-	if len(args) != 0:
-		parser.error("incorrect number of arguments")
-	elif options.artist is None:
-		parser.error('artist is required')
-	elif options.title is None:
-		parser.error('title is required')
-	else:
-		engine = Lyricist(options.artist, options.title, console_receiver, options.timeout, options.max)
-		engine.start()
-		engine.join()
-			
-			
+		
+	def search(self, callback):
+		log.debug('enter')
+		artist_token = urllib.quote(self._clean_token(self._artist))
+		title_token = urllib.quote(self._clean_token(self._title))
+		url = 'http://www.winampcn.com/lrceng/get.aspx?song=%s&artist=%s&lsong=%s&prec=1&Datetime=20060601' % (title_token, artist_token, title_token)
+		log.debug('search url <%s>' % url)
+		rb.Loader().get_url(url, self._on_meta_arrive, callback)
+		log.debug('leave')
+		return

@@ -76,7 +76,7 @@ class RBLyrics(rb.Plugin):
 				self._display.set_lyrics(self._lyrics)
 				self._display.resume()
 			elif self._prefs.get('main.download') == 'True':
-				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics).start()
+				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics).search()
 		log.debug('leave')
 		return
 	

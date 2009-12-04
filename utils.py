@@ -34,6 +34,13 @@ LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
 ## Logging system.
 log = logging.getLogger('RBLyrics')
 
+#
+re_ti = re.compile(r'\[ti:([^\]]*)\]')
+re_ar = re.compile(r'\[ar:([^\]]*)\]')
+re_offset = re.compile(r'\[offset:([+-]{0,1}[0-9]+)\]')
+re_time = re.compile(r'\[(?P<min>[0-9]{2}):(?P<sec>[0-9]{2})(\.(?P<milli>[0-9]{1,3}))?\]')
+
+		
 ## Song information.
 class SongInfo(object):
 	
@@ -67,53 +74,43 @@ class LyricsInfo(object):
 		self._parse()
 		return
 	
+	def _make_time(self, group):
+		min = int(group.group('min'))
+		sec = int(group.group('sec'))
+		milli = group.group('milli')
+		if milli:
+			milli = int(milli) * pow(10, 3-len(milli))
+		else:
+			milli = 0
+		return min*60000 + sec*1000 + milli
+		
 	## Parse lyrics raw content.
 	def _parse(self):
 		log.debug('enter')
-		lines = self._raw.split(os.linesep)
+		lines = self._raw.splitlines()
 		cache = {}
-		re_ti = re.compile('\[ti:([^\]]*)\]')
-		re_ar = re.compile('\[ar:([^\]]*)\]')
-		re_offset = re.compile('\[offset:([^\]]*)\]')
-		re_lrc = re.compile('(\[[0-9\.:]*\])+.*')
-		re_time = re.compile('(\[([0-9]{2}):([0-9]{2})\.?([0-9]{2})?\])')
 		offset = 0
 		for line in lines:
 			# search for title property
-			m = re_ti.search(line)
-			if not m is None:
-				self._title = m.groups()[0]
+			for ti in re_ti.findall(line):
+				self._title = ti
 			# search for artist property
-			m = re_ar.search(line)
-			if not m is None:
-				self._artist = m.groups()[0]
+			for ar in re_ar.findall(line):
+				self._artist = ar
 			# search for offset property
-			m = re_offset.search(line)
-			if not m is None:
-				offset = int(m.groups()[0])
+			for off in re_offset.findall(line):
+				offset = int(off)
 			# parse lrc
-			m = re_lrc.match(line)
-			if not m is None:
-				pos = 0
-				tm = re_time.findall(line)
-				for time in tm:
-					pos = pos + len(time[0])
-				lrc = line[pos:].strip()
-				if len(lrc) == 0:
-					# ignore blank line
-					continue
-				for time in tm:
-					try:
-						minute = int(time[1])
-						second = int(time[2])
-						try:
-							centi = int(time[3])
-						except:
-							centi = 0
-						key = (minute * 60 + second) * 1000 + centi * 10
-						cache[key] = lrc
-					except ValueError:
-						log.error('invalid timestamp %s' % time)
+			timestamp = []
+			result = re_time.search(line)
+			if result:
+				while result:
+					timestamp.append(self._make_time(result))
+					line = line[result.end():]
+					result = re_time.search(line)
+				if len(line):
+					for t in timestamp:
+						cache[t] = line
 		tags = cache.keys()
 		tags.sort()
 		for key in tags:
@@ -123,6 +120,8 @@ class LyricsInfo(object):
 				self._content[second].replace(os.linesep, ' ')
 			else:
 				self._content[second] = cache[key]
+		if len(self._content) == 0:
+			log.warn('empty or invalid lyrics file')
 		log.debug('leave')
 		return
 		
