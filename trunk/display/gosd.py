@@ -36,8 +36,8 @@ class GOSD:
 		self._osd = eventbridge.OSD()
 		self._prefs = prefs
 		self._running = False
-		self._lyrics = None
-		self._timestamp = None
+		self._lyrics = [_('RBLyrics')]
+		self._timestamp = [0, sys.maxint]
 		self._lines = None
 		self._lastline = None
 		#
