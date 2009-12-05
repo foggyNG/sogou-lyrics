@@ -105,18 +105,16 @@ class Embedded(gtk.EventBox):
 		return
 	
 	def update_config(self, config):
-		log.debug('enter %s' % config)
 		name = config.name
 		value = config.value
 		if name.startswith('display.embedded.'):
 			if name == 'display.embedded.font':
-				log.info(config)
+				log.debug(config)
 				self._label.modify_font(pango.FontDescription(value))
 			elif name == 'display.embedded.foreground':
-				log.info(config)
+				log.debug(config)
 				self._label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
 			elif name == 'display.embedded.background':
-				log.info(config)
+				log.debug(config)
 				self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
-		log.debug('leave')
 		return
