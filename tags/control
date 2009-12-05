@@ -4,7 +4,7 @@ Architecture: all
 Section: Apps/Tools
 Installed-Size:
 Maintainer: wonder <gogo.wonder@gmail.com>
-Depends: python (>= 2.6), gnome-osd, python-gconf, python-gobject, python-chardet
+Depends: rhythmbox, python (>= 2.6), gnome-osd, python-gconf, python-gobject, python-chardet
 Priority: optional
 Homepage: http://code.google.com/p/sogou-lyrics/
 Description: A lyrics plugin for Rhythmbox.
