@@ -115,12 +115,12 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.embedded.foreground'] = Config('display.embedded.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.foreground', '#FF0080', False)
 		self._setting['display.embedded.background'] = Config('display.embedded.background', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.background', '#EDECEB', False)
 		self._setting['display.roller'] = Config('display.roller', '/apps/rhythmbox/plugins/RBLyrics/display.roller', 'True', True)
-		self._setting['display.roller.x'] = Config('display.roller.x', '/apps/rhythmbox/plugins/RBLyrics/display.roller.x', str(gtk.gdk.screen_width()/2), True)
-		self._setting['display.roller.y'] = Config('display.roller.y', '/apps/rhythmbox/plugins/RBLyrics/display.roller.y', 30, True)
-		self._setting['display.roller.width'] = Config('display.roller.width', '/apps/rhythmbox/plugins/RBLyrics/display.roller.width', str(gtk.gdk.screen_width()/2), True)
-		self._setting['display.roller.height'] = Config('display.roller.height', '/apps/rhythmbox/plugins/RBLyrics/display.roller.height', 30, True)
+		self._setting['display.roller.x'] = Config('display.roller.x', '/apps/rhythmbox/plugins/RBLyrics/display.roller.x', '0', True)
+		self._setting['display.roller.y'] = Config('display.roller.y', '/apps/rhythmbox/plugins/RBLyrics/display.roller.y', '20', True)
+		self._setting['display.roller.width'] = Config('display.roller.width', '/apps/rhythmbox/plugins/RBLyrics/display.roller.width', str(int(gtk.gdk.screen_width()/3)), True)
+		self._setting['display.roller.height'] = Config('display.roller.height', '/apps/rhythmbox/plugins/RBLyrics/display.roller.height', str(int(gtk.gdk.screen_height()/3)), True)
 		self._setting['display.roller.font'] = Config('display.roller.font', '/apps/rhythmbox/plugins/RBLyrics/display.roller.font', '18', True)
-		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FFFF00', True)
+		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', True)
 		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', True)
 		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True', False)
 		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'), False)
@@ -138,7 +138,7 @@ class Preference(gtk.Dialog, object):
 			else:
 				weight = pango.WEIGHT_NORMAL
 			if c.readonly:
-				color = '#EDECEB'
+				color = '#A9A9A9'
 			else:
 				color = '#000000'
 			self._model.append([c.name, _(c.name), c.value, _(c.value), weight, color])
@@ -146,9 +146,10 @@ class Preference(gtk.Dialog, object):
 		treeview = gtk.TreeView(self._model)
 		treeview.set_rules_hint(True)
 		cell = gtk.CellRendererText()
-		vc = gtk.TreeViewColumn(_('Name'), cell, text = 1, weight = 4, foreground = 5)
+		vc = gtk.TreeViewColumn(_('Name'), cell, text = 1, weight = 4)
 		vc.set_sort_column_id(0)
 		treeview.append_column(vc)
+		cell = gtk.CellRendererText()
 		vc = gtk.TreeViewColumn(_('Value'), cell, text = 3, weight = 4, foreground = 5)
 		treeview.append_column(vc)
 		treeview.connect('row-activated', self._on_row_activated)
@@ -198,15 +199,13 @@ class Preference(gtk.Dialog, object):
 		while iter != None:
 			name = self._model.get_value(iter, 0)
 			c = self._setting[name]
-			# TODO remove readonly assertion
-			if not c.readonly and c.value != c.default:
+			if c.value != c.default:
 				self._on_value_changed(c, iter, c.default)
 			iter = self._model.iter_next(iter)
 		log.debug('leave')
 		return
 		
-	def _on_value_changed(self, c, iter, value):
-		log.debug('enter')
+	def _on_value_changed(self, c, iter, value, watch = True):
 		c.value = value
 		self._model.set_value(iter, 2, c.value)
 		self._model.set_value(iter, 3, _(c.value))
@@ -215,10 +214,10 @@ class Preference(gtk.Dialog, object):
 		else:
 			weight = pango.WEIGHT_NORMAL
 		self._model.set_value(iter, 4, weight)
-		log.info(c)
-		for w in self._watcher:
-			w.update_config(c)
-		log.debug('leave')
+		log.debug(c)
+		if watch:
+			for w in self._watcher:
+				w.update_config(c)
 		return
 		
 	def _on_bool_set(self, c, iter):
@@ -278,7 +277,6 @@ class Preference(gtk.Dialog, object):
 		return
 		
 	def _on_row_activated(self, treeview, path, column):
-		log.debug('enter <%s>' % path)
 		iter = self._model.get_iter(path)
 		name = self._model.get_value(iter, 0)
 		c = self._setting[name]
@@ -296,7 +294,6 @@ class Preference(gtk.Dialog, object):
 				self._on_directory_set(c, iter)
 			elif c.name == 'main.file_pattern':
 				self._on_combo_set(c, iter)
-		log.debug('leave')
 		return
 		
 	def _on_btnlog_released(self, widget):
@@ -311,6 +308,16 @@ class Preference(gtk.Dialog, object):
 	
 	def get(self, name):
 		return self._setting[name].value
+	
+	def set(self, name, value, watch = True):
+		config = self._setting[name]
+		iter = self._model.get_iter_first()
+		while iter != None:
+			if name == self._model.get_value(iter, 0):
+				break
+			iter = self._model.iter_next(iter)
+		self._on_value_changed(config, iter, value, watch)
+		return
 		
 	def get_engine(self):
 		engine = []

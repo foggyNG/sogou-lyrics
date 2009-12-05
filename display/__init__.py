@@ -26,6 +26,7 @@ import logging
 
 from embedded import Embedded
 from gosd import GOSD
+#from roller import Roller
 log = logging.getLogger('RBLyrics')
 
 display_map = {
@@ -75,19 +76,17 @@ class Display:
 		return
 	
 	def update_config(self, config):
-		log.debug('enter %s' % config)
 		name = config.name
 		value = config.value
 		if name.startswith('display.') and len(name.split('.')) == 2:
 			if not display_map.has_key(name):
 				log.error('invalid display mode : %s' % name)
 			elif (name in self._interface) and value == 'False':
-				log.info(config)
+				log.debug(config)
 				e = self._interface.pop(name)
 				e.finialize()
 			elif (not name in self._interface) and value == 'True':
-				log.info(config)
+				log.debug(config)
 				self._interface[name] = display_map[name](self._shell, self._prefs)
-		log.debug('leave')
 		return
 		
