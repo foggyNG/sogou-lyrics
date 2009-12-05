@@ -21,7 +21,7 @@ done
 # write control
 cd $ROOT
 cp control $CONTROL
-SIZE=`du --exclude=*svn* $SRC -sc | tail -n 1 | awk '{print $1}'`
+SIZE=`du $APPDIR -sc | tail -n 1 | awk '{print $1}'`
 perl -p -i -e "s|^Version:*$|Version:\ svn$VERSION|g" $CONTROL
 perl -p -i -e "s|^Installed-Size:*$|Installed-Size:\ $SIZE|g" $CONTROL
 # package
