@@ -114,14 +114,14 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.embedded.font'] = Config('display.embedded.font', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.font', '13', False)
 		self._setting['display.embedded.foreground'] = Config('display.embedded.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.foreground', '#FF0080', False)
 		self._setting['display.embedded.background'] = Config('display.embedded.background', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.background', '#EDECEB', False)
-		self._setting['display.roller'] = Config('display.roller', '/apps/rhythmbox/plugins/RBLyrics/display.roller', 'True', True)
+		self._setting['display.roller'] = Config('display.roller', '/apps/rhythmbox/plugins/RBLyrics/display.roller', 'True', False)
 		self._setting['display.roller.x'] = Config('display.roller.x', '/apps/rhythmbox/plugins/RBLyrics/display.roller.x', '0', True)
 		self._setting['display.roller.y'] = Config('display.roller.y', '/apps/rhythmbox/plugins/RBLyrics/display.roller.y', '20', True)
 		self._setting['display.roller.width'] = Config('display.roller.width', '/apps/rhythmbox/plugins/RBLyrics/display.roller.width', str(int(gtk.gdk.screen_width()/3)), True)
 		self._setting['display.roller.height'] = Config('display.roller.height', '/apps/rhythmbox/plugins/RBLyrics/display.roller.height', str(int(gtk.gdk.screen_height()/3)), True)
-		self._setting['display.roller.font'] = Config('display.roller.font', '/apps/rhythmbox/plugins/RBLyrics/display.roller.font', '18', True)
-		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', True)
-		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', True)
+		self._setting['display.roller.font'] = Config('display.roller.font', '/apps/rhythmbox/plugins/RBLyrics/display.roller.font', '14', False)
+		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', False)
+		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', False)
 		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True', False)
 		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'), False)
 		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE[0], False)
@@ -214,7 +214,6 @@ class Preference(gtk.Dialog, object):
 		else:
 			weight = pango.WEIGHT_NORMAL
 		self._model.set_value(iter, 4, weight)
-		log.debug(c)
 		if watch:
 			for w in self._watcher:
 				w.update_config(c)
