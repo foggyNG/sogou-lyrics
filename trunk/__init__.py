@@ -146,6 +146,32 @@ class RBLyrics(rb.Plugin):
 		log.debug('leave')
 		return
 	
+	def _on_embedded_toggled(self, widget):
+		if widget.get_active():
+			value = 'True'
+		else:
+			value = 'False'
+		log.debug('display.embedded = %s' % value)
+		self._prefs.set('display.embedded', value)
+		return
+	
+	def _on_gosd_toggled(self, widget):
+		if widget.get_active():
+			value = 'True'
+		else:
+			value = 'False'
+		log.debug('display.gosd = %s' % value)
+		self._prefs.set('display.gosd', value)
+		return
+	
+	def _on_roller_toggled(self, widget):
+		if widget.get_active():
+			value = 'True'
+		else:
+			value = 'False'
+		log.debug('display.roller = %s' % value)
+		self._prefs.set('display.roller', value)
+		return
 	## Plugin activation.
 	def activate(self, shell):
 		# internationalization
@@ -182,40 +208,47 @@ class RBLyrics(rb.Plugin):
 			self._shell.props.shell_player.connect('elapsed-changed', self._on_elapsed_changed),
 			self._shell.props.shell_player.connect('playing-changed', self._on_playing_changed)]
 		#
-		self._action = [
-			gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), 'RBLyrics'),
-			gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), 'RBLyrics')]
-		self._action[0].connect('activate', self._open_lyrics_shortcut)
-		self._action[1].connect('activate', self._open_lyrics_popup)
+		self._action = {}
 		self._actiongroup = gtk.ActionGroup('RBLyricsActions')
-		self._actiongroup.add_action(self._action[0])
-		self._actiongroup.add_action(self._action[1])
-		# add icon
-		iconsource = gtk.IconSource()
-		iconsource.set_filename(self.find_file("RBLyrics.svg"))
-		iconset = gtk.IconSet()
-		iconset.add_source(iconsource)
-		iconfactory = gtk.IconFactory()
-		iconfactory.add('RBLyrics', iconset)
-		iconfactory.add_default()
+		action = gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), gtk.STOCK_EDIT)
+		action.connect('activate', self._open_lyrics_shortcut)
+		self._actiongroup.add_action(action)
+		action = gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), gtk.STOCK_EDIT)
+		action.connect('activate', self._open_lyrics_popup)
+		self._actiongroup.add_action(action)
+		action = gtk.ToggleAction('rblyrics-embedded', _('RBLyrics.Embedded'), None, None)
+		action.set_active(self._prefs.get('display.embedded') == 'True')
+		action.connect('toggled', self._on_embedded_toggled)
+		self._action['display.embedded'] = action
+		self._actiongroup.add_action(action)
+		action = gtk.ToggleAction('rblyrics-gosd', _('RBLyrics.OSD'), None, None)
+		action.set_active(self._prefs.get('display.gosd') == 'True')
+		action.connect('toggled', self._on_gosd_toggled)
+		self._action['display.gosd'] = action
+		self._actiongroup.add_action(action)
+		action = gtk.ToggleAction('rblyrics-roller', _('RBLyrics.Roller'), None, None)
+		action.set_active(self._prefs.get('display.roller') == 'True')
+		action.connect('toggled', self._on_roller_toggled)
+		self._action['display.roller'] = action
+		self._actiongroup.add_action(action)
 		#
 		uim = shell.props.ui_manager
 		uim.insert_action_group(self._actiongroup, 0)
 		self._ui_id= uim.add_ui_from_file(self.find_file('ui.xml'))
 		uim.ensure_update()
+		self._prefs.watcher.append(self)
 		log.info('activated')
 		return
 	
 	## Plugin deactivation.
 	def deactivate(self, shell):
+		self._prefs.watcher.remove(self)
 		for handler in self._handler:
 			self._shell.props.shell_player.disconnect(handler)
 		uim = shell.props.ui_manager
 		uim.remove_ui(self._ui_id)
 		uim.remove_action_group(self._actiongroup)
 		uim.ensure_update()
-		for action in self._action:
-			del action
 		del self._actiongroup
 		del self._action
 		del self._handler
@@ -234,4 +267,11 @@ class RBLyrics(rb.Plugin):
 	def create_configure_dialog(self):
 		self._prefs.present()
 		return self._prefs
+		
+	def update_config(self, config):
+		name = config.name
+		value = config.value
+		if name in ['display.embedded', 'display.gosd', 'display.roller']:
+			self._action[name].set_active(value == 'True')
+		return
 

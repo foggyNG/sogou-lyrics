@@ -27,5 +27,17 @@
   	<placeholder name="PluginPlaceHolder">
 		<toolitem name="OpenLyrics" action="OpenLyricsToolBar"/>
 	</placeholder>
-	</toolbar>
+  </toolbar>
+  
+  <menubar name="MenuBar">
+    <menu name="ToolsMenu" action="Tools">
+      <placeholder name="RBLyrics">
+	    <separator/>
+	    <menuitem name="RBLyrics.Embedded" action="rblyrics-embedded"/>
+        <menuitem name="RBLyrics.OSD" action="rblyrics-gosd"/>
+		<menuitem name="RBLyrics.Roller" action="rblyrics-roller"/>
+		<separator/>
+      </placeholder>
+    </menu>
+  </menubar>
 </ui>
