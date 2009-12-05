@@ -38,8 +38,8 @@ class Embedded(gtk.EventBox):
 		self._prefs = prefs
 		self._running = False
 		self._lyrics = None
-		self._timestamp = None
-		self._lines = None
+		self._timestamp = [0, sys.maxint]
+		self._lines = [_('RBLyrics')]
 		self._lastline = None
 		#
 		self._shell = shell
@@ -102,13 +102,11 @@ class Embedded(gtk.EventBox):
 		name = config.name
 		value = config.value
 		if name.startswith('display.embedded.'):
+			log.debug(config)
 			if name == 'display.embedded.font':
-				log.debug(config)
 				self._label.modify_font(pango.FontDescription(value))
 			elif name == 'display.embedded.foreground':
-				log.debug(config)
 				self._label.modify_fg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
 			elif name == 'display.embedded.background':
-				log.debug(config)
 				self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.Color(value))
 		return
