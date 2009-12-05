@@ -52,7 +52,7 @@ class Bzmtv(LRCBase):
 			try:
 				encoding = detect(cache)['encoding']
 				cache = cache.decode(encoding, 'ignore').splitlines()
-			except Exception as e:
+			except Exception, e:
 				log.error(e)
 				# the following code make sure the main Engine to quit normally
 				self._receiver(None)

@@ -44,7 +44,7 @@ class RBLyrics(rb.Plugin):
 			try:
 				elapsed = player.get_playing_time()
 				self._display.synchronize(elapsed)
-			except Exception as e:
+			except Exception, e:
 				log.error(e)
 			self._display.resume()
 		else:
@@ -170,6 +170,8 @@ class RBLyrics(rb.Plugin):
 		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
 		file_handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
 		log.addHandler(file_handler)
+		#
+		log.info(sys.version)
 		#
 		self._prefs = Preference()
 		self._display = Display(shell, self._prefs)
