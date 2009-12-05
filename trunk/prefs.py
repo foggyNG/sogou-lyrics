@@ -57,7 +57,11 @@ class Config(object):
 	value = property(lambda self : self._value, _set_value)
 	readonly = property(lambda self : self._readonly)
 
-COMBO_PRESET = {'main.file_pattern' : LRC_PATH_TEMPLATE}
+COMBO_PRESET = {
+	'main.file_pattern' : LRC_PATH_TEMPLATE,
+	'display.gosd.vpos' : ['top', 'center', 'bottom'],
+	'display.gosd.halignment' : ['left', 'center', 'right']
+	}
 class ComboDialog(gtk.Dialog):
 	
 	def __init__(self):
@@ -110,6 +114,14 @@ class Preference(gtk.Dialog, object):
 		for name in engine_map.keys():
 			self._setting[name] = Config(name, '/apps/rhythmbox/plugins/RBLyrics/%s' % name, 'True', False)
 		self._setting['display.gosd'] = Config('display.gosd', '/apps/rhythmbox/plugins/RBLyrics/display.gosd', 'True', False)
+		self._setting['display.gosd.animations'] = Config('display.gosd.animations', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.animations', 'False', False)
+		self._setting['display.gosd.avoid_panels'] = Config('display.gosd.avoid_panels', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.avoid_panels', 'True', False)
+		self._setting['display.gosd.drop_shadow'] = Config('display.gosd.drop_shadow', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.drop_shadow', 'False', False)
+		self._setting['display.gosd.hide_on_hover'] = Config('display.gosd.hide_on_hover', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.hide_on_hover', 'True', False)
+		self._setting['display.gosd.font'] = Config('display.gosd.font', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.font', '16', False)
+		self._setting['display.gosd.color'] = Config('display.gosd.color', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.color', '#FF0080', False)
+		self._setting['display.gosd.vpos'] = Config('display.gosd.vpos', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.vpos', 'top', False)
+		self._setting['display.gosd.halignment'] = Config('display.gosd.halignment', '/apps/rhythmbox/plugins/RBLyrics/display.gosd.halignment', 'center', False)
 		self._setting['display.embedded'] = Config('display.embedded', '/apps/rhythmbox/plugins/RBLyrics/display.embedded', 'True', False)
 		self._setting['display.embedded.font'] = Config('display.embedded.font', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.font', '13', False)
 		self._setting['display.embedded.foreground'] = Config('display.embedded.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.foreground', '#FF0080', False)
@@ -282,16 +294,19 @@ class Preference(gtk.Dialog, object):
 		if not c.readonly:
 			value = None
 			if c.name in engine_map.keys() + ['main.download', 
-				'display.embedded', 'display.roller', 'display.gosd']:
+				'display.embedded', 'display.roller', 'display.gosd',
+				'display.gosd.animations', 'display.gosd.avoid_panels',
+				'display.gosd.drop_shadow', 'display.gosd.hide_on_hover']:
 				self._on_bool_set(c, iter)
 			elif c.name in ['display.embedded.foreground', 'display.embedded.background',
-				'display.roller.foreground', 'display.roller.background']:
+				'display.roller.foreground', 'display.roller.background',
+				'display.gosd.color']:
 				self._on_color_set(c, iter)
-			elif c.name in ['display.embedded.font', 'display.roller.font']:
+			elif c.name in ['display.embedded.font', 'display.roller.font', 'display.gosd.font']:
 				self._on_font_set(c, iter)
 			elif c.name == 'main.directory':
 				self._on_directory_set(c, iter)
-			elif c.name == 'main.file_pattern':
+			elif c.name in ['main.file_pattern', 'display.gosd.vpos', 'display.gosd.halignment']:
 				self._on_combo_set(c, iter)
 		return
 		

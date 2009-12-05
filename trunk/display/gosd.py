@@ -34,15 +34,27 @@ class GOSD:
 	def __init__(self, shell, prefs):
 		log.debug('enter')
 		self._osd = eventbridge.OSD()
+		self._prefs = prefs
 		self._running = False
 		self._lyrics = None
 		self._timestamp = None
 		self._lines = None
 		self._lastline = None
+		#
+		self._animations = prefs.get('display.gosd.animations')
+		self._avoid_panels = prefs.get('display.gosd.avoid_panels')
+		self._drop_shadow = prefs.get('display.gosd.drop_shadow')
+		self._hide_on_hover = prefs.get('display.gosd.hide_on_hover')
+		self._font = prefs.get('display.gosd.font')
+		self._color = prefs.get('display.gosd.color')
+		self._vpos = prefs.get('display.gosd.vpos')
+		self._halignment = prefs.get('display.gosd.halignment')
+		prefs.watcher.append(self)
 		log.debug('leave')
 		return
 	
 	def finialize(self):
+		self._prefs.watcher.remove(self)
 		del self._osd
 		return
 		
@@ -81,5 +93,31 @@ class GOSD:
 			line = self._get_line(elapsed)
 			if line != self._lastline:
 				self._lastline = line
-				self._osd.send('<message>%s</message>' % line)
+				message = "<message id='RBLyrics' animations='%s' avoid_panels='%s' drop_shadow='%s' hide_on_hover='%s' osd_vposition='%s' osd_halignment='%s'><span font='%s' fgcolor='%s'>%s</span></message>" % (
+					self._animations, self._avoid_panels, self._drop_shadow, self._hide_on_hover,
+					self._vpos, self._halignment, self._font, self._color, line)
+				self._osd.send(message)
+		return
+	
+	def update_config(self, config):
+		name = config.name
+		value = config.value
+		if name.startswith('display.gosd.'):
+			log.debug(config)
+			if name == 'display.gosd.animations':
+				self._animations = value
+			elif name == 'display.gosd.avoid_panels':
+				self._avoid_panels = value
+			elif name == 'display.gosd.drop_shadow':
+				self._drop_shadow = value
+			elif name == 'display.gosd.hide_on_hover':
+				self._hide_on_hover = value
+			elif name == 'display.gosd.font':
+				self._font = value
+			elif name == 'display.gosd.color':
+				self._color = value
+			elif name == 'display.gosd.vpos':
+				self._vpos = value
+			elif name == 'display.gosd.halignment':
+				self._halignment = value
 		return
