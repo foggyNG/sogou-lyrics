@@ -55,7 +55,7 @@ class Lyricist(LRCBase):
 		else:
 			try:
 				elements = parseString(xml).getElementsByTagName('LyricUrl')
-			except Exception as e:
+			except Exception, e:
 				log.error(e)
 				# the following code make sure the main Engine to quit normally
 				self._receiver(None)
