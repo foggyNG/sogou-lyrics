@@ -40,12 +40,9 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	def _on_playing_changed(self, player, playing):
+		log.debug(playing)
 		if playing:
-			try:
-				elapsed = player.get_playing_time()
-				self._display.synchronize(elapsed)
-			except Exception, e:
-				log.error(e)
+			self._display.set_lyrics(self._lyrics)
 			self._display.resume()
 		else:
 			self._display.pause()

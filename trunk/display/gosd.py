@@ -23,7 +23,7 @@
 ## @package RBLyrics.display.embedded
 #  Embedded displayer.
 
-import logging, gettext, bisect
+import logging, gettext, bisect, sys
 from gnomeosd import eventbridge
 
 _ = gettext.gettext
@@ -37,6 +37,7 @@ class GOSD:
 		self._running = False
 		self._lyrics = None
 		self._timestamp = None
+		self._lines = None
 		self._lastline = None
 		log.debug('leave')
 		return
@@ -57,34 +58,27 @@ class GOSD:
 		if lyrics != self._lyrics:
 			self._lyrics = lyrics
 			self._lastline = None
+			self._lines = [_('RBLyrics')]
 			if lyrics:
-				self._timestamp = self._lyrics.content.keys()
+				content = self._lyrics.content
+				self._timestamp = content.keys()
 				self._timestamp.sort()
+				for t in self._timestamp:
+					self._lines.append(content[t])
+				self._timestamp.insert(0, 0)
+				self._timestamp.append(sys.maxint)
+			else:
+				self._timestamp = [0, sys.maxint]
 		return
 	
 	def _get_line(self, elapsed):
-		index = bisect.bisect_left(self._timestamp, elapsed)
-		if len(self._timestamp) == 0:
-			line = _('RBLyrics')
-		elif index == len(self._timestamp):
-			# over the last line
-			line = self._lyrics.content[self._timestamp[index-1]]
-		elif elapsed == self._timestamp[index]:
-			# found the line
-			line = self._lyrics.content[elapsed]
-		elif index > 0:
-			# using the previous line
-			line = self._lyrics.content[self._timestamp[index-1]]
-		else:
-			line = _('RBLyrics')
+		index = bisect.bisect_right(self._timestamp, elapsed)
+		line = self._lines[index-1]
 		return line
 		
 	def synchronize(self, elapsed):
 		if self._running:
-			if self._lyrics is None:
-				line = _('Lyrics not found')
-			else:
-				line = self._get_line(elapsed)
+			line = self._get_line(elapsed)
 			if line != self._lastline:
 				self._lastline = line
 				self._osd.send('<message>%s</message>' % line)

@@ -26,11 +26,11 @@ import logging
 
 from embedded import Embedded
 from gosd import GOSD
-#from roller import Roller
+from roller import Roller
 log = logging.getLogger('RBLyrics')
 
 display_map = {
-	#'display.roller' : Roller,
+	'display.roller' : Roller,
 	'display.gosd' : GOSD,
 	'display.embedded' : Embedded
 }

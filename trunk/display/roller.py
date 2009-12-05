@@ -23,7 +23,7 @@
 ## @package RBLyrics.display.embedded
 #  Embedded displayer.
 
-import logging, gtk, gtk.gdk, gettext, pango, bisect
+import logging, gtk, gtk.gdk, gettext, pango, bisect, sys
 
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
@@ -53,24 +53,22 @@ class Roller(gtk.Window):
 		self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
 		self.modify_bg(gtk.STATE_NORMAL, bgcolor)
 		#
+		self._shell = shell
 		self._prefs = prefs
 		self._running = False
-		self._position_base = None
 		self._drag_base = None
 		self._lyrics = None
-		self._lastline = None
+		self._lastline = -1
 		self._timestamp = None
 		#
 		self._scroll = 0
 		self._vbox = gtk.VBox(True)
-		line = gtk.Label(_('RBLyrics'))
-		line.modify_fg(gtk.STATE_NORMAL, self._foreground)
-		line.modify_font(self._font)
-		self._vbox.pack_start(line)
-		line.show()
+		self._firstline = gtk.Label(_('RBLyrics'))
+		self._firstline.modify_fg(gtk.STATE_NORMAL, self._foreground)
+		self._firstline.modify_font(self._font)
+		self._vbox.pack_start(self._firstline)
+		self._firstline.show()
 		self._layout.put(self._vbox, 0, 0)
-		self._lineheight = line.get_layout().get_pixel_size()[1]
-		log.error(self._lineheight)
 		container = gtk.HBox()
 		container.pack_start(self._layout)
 		container.show_all()
@@ -82,39 +80,44 @@ class Roller(gtk.Window):
 		return
 		
 	def _on_configure(self, widget, event):
-		self._prefs.set('display.roller.x', str(event.x), False)
-		self._prefs.set('display.roller.y', str(event.y), False)
-		self._prefs.set('display.roller.width', str(event.width), False)
-		self._prefs.set('display.roller.height', str(event.height), False)
-		x = (event.width - self._vbox.size_request()[0])/2
-		y = event.height /2
-		self._layout.set_size(self._layout.allocation.width, self._vbox.size_request()[1] + event.height)
-		self._layout.move(self._vbox, x, y)
-		return
+		x, y = widget.get_position()
+		#log.debug('%d %d' % (x, y))
+		w, h = widget.get_size()
+		#log.debug('%d %d' % (w, h))
+		box_w, box_h = self._vbox.size_request()
+		#log.debug('%d %d' % (box_w, box_h))
+		new_x = (w - box_w)/2
+		new_y = (h - self._firstline.allocation.height)/2
+		new_w = self._layout.allocation.width
+		new_h = box_h + h
+		self._layout.show_all()
+		self._layout.set_size(new_w, new_h)
+		self._layout.move(self._vbox, new_x, new_y)
+		#log.info('%d, %d, %d, %d' % (new_x, new_y, new_w, new_h))
+		self._prefs.set('display.roller.x', str(x), False)
+		self._prefs.set('display.roller.y', str(y), False)
+		self._prefs.set('display.roller.width', str(w), False)
+		self._prefs.set('display.roller.height', str(h), False)
+		return True
 	
 	def _on_delete(self, widget, response):
 		self._prefs.set('display.roller', 'False')
-		return
+		return True
 		
 	def _on_button_press(self, widget, event):
 		if event.button == 1:
-			self._position_base = event.window.get_position()
-			self._drag_base = (event.x_root, event.y_root)
-			log.debug('drag %s' % str(self._drag_base))
+			# TODO
+			pass
 		return True
 		
 	def _on_button_release(self, widget, event):
 		if event.button == 1:
-			self._position_base = None
-			self._drag_base = None
-			log.debug('drag finished')
+			# TODO
+			pass
 		return True
 		
 	def _on_motion_notify(self, widget, event):
-		if event.is_hint:
-			log.debug('drag')
-		else:
-			log.debug('invalid')
+		# TODO
 		return True
 		
 	def finialize(self):
@@ -125,9 +128,10 @@ class Roller(gtk.Window):
 	def set_lyrics(self, lyrics):
 		if lyrics != self._lyrics:
 			self._lyrics = lyrics
-			self._lastline = None
+			self._lastline = -1
 			if lyrics:
-				self._timestamp = self._lyrics.content.keys()
+				content = self._lyrics.content
+				self._timestamp = content.keys()
 				self._timestamp.sort()
 				ptr = 0
 				children = self._vbox.get_children()
@@ -135,24 +139,29 @@ class Roller(gtk.Window):
 				for t in self._timestamp:
 					ptr += 1
 					if curcount > ptr:
-						children[ptr].set_text(self._lyrics.content[t])
+						children[ptr].set_text(content[t])
 					else:
-						line = gtk.Label(self._lyrics.content[t])
+						line = gtk.Label(content[t])
 						line.modify_fg(gtk.STATE_NORMAL, self._foreground)
 						line.modify_font(self._font)
 						self._vbox.pack_start(line)
-						line.show()
-				for l in range(ptr+1, curcount):
-					children[l].hide()
+						#line.show()
+				for line in children[ptr+1:]:
+					line.set_text('')
 				self.set_title('%s - %s' % (lyrics.ar, lyrics.ti))
 				self._timestamp.insert(0, 0)
+				self._timestamp.append(sys.maxint)
 			else:
 				children = self._vbox.get_children()
-				curcount = len(children)
-				for l in range(1, curcount):
-					children[l].hide()
+				for line in children[1:]:
+					line.set_text('')
 				self.set_title(_('RBLyrics'))
-				self._timestamp = [0]
+				self._timestamp = [0, sys.maxint]
+			for line in self._vbox.get_children():
+				line.show()
+			self._on_configure(self, None)
+			self._layout.window.scroll(0, self._scroll)
+			self._scroll = 0
 		return
 	
 	def resume(self):
@@ -165,15 +174,12 @@ class Roller(gtk.Window):
 	
 	def synchronize(self, elapsed):
 		if self._running:
-			index = bisect.bisect_left(self._timestamp, elapsed)
-			try:
-				percent = float(elapsed - self._timestamp[index]) / float(self._timestamp[index+1] - self._timestamp[index])
-				scroll =  int((index + percent) * self._lineheight)
-				log.debug('%d %d %d' % (index, self._lineheight, scroll))
-				self._layout.window.scroll(0, self._scroll - scroll)
-				self._scroll = scroll
-			except:
-				pass
+			index = bisect.bisect_right(self._timestamp, elapsed) - 1
+			score = index + float(elapsed - self._timestamp[index]) / float(self._timestamp[index+1] - self._timestamp[index])
+			scroll = int(score * self._firstline.allocation.height)
+			self._layout.window.scroll(0, self._scroll - scroll)
+			self._scroll = scroll
+		return
 		
 	def update_config(self, config):
 		name = config.name
@@ -185,11 +191,11 @@ class Roller(gtk.Window):
 				children = self._vbox.get_children()
 				for l in children:
 					l.modify_font(self._font)
-				self._lineheight = children[0].get_layout().get_pixel_size()[1]
+				self._on_configure(self, None)
 			elif name == 'display.roller.foreground':
 				log.info(config)
 				self._foreground = gtk.gdk.Color(value)
-				for l in self._children:
+				for l in self._vbox.get_children():
 					l.modify_fg(gtk.STATE_NORMAL, self._foreground)
 			elif name == 'display.roller.background':
 				log.info(config)
