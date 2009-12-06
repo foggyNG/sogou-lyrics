@@ -172,6 +172,16 @@ class RBLyrics(rb.Plugin):
 		log.debug('display.roller = %s' % value)
 		self._prefs.set('display.roller', value)
 		return
+		
+	def _on_single_toggled(self, widget):
+		if widget.get_active():
+			value = 'True'
+		else:
+			value = 'False'
+		log.debug('display.single = %s' % value)
+		self._prefs.set('display.single', value)
+		return
+		
 	## Plugin activation.
 	def activate(self, shell):
 		# internationalization
@@ -230,6 +240,11 @@ class RBLyrics(rb.Plugin):
 		action.set_active(self._prefs.get('display.roller') == 'True')
 		action.connect('toggled', self._on_roller_toggled)
 		self._action['display.roller'] = action
+		self._actiongroup.add_action(action)
+		action = gtk.ToggleAction('rblyrics-single', _('RBLyrics.Single'), None, None)
+		action.set_active(self._prefs.get('display.single') == 'True')
+		action.connect('toggled', self._on_single_toggled)
+		self._action['display.single'] = action
 		self._actiongroup.add_action(action)
 		#
 		uim = shell.props.ui_manager

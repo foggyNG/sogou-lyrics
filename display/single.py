@@ -28,7 +28,9 @@ import logging, gtk, gtk.gdk, gettext, pango, bisect, sys, glib, datetime
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
-class Roller(gtk.Window):
+SPACING = 10
+
+class Single(gtk.Window):
 	
 	def __init__(self, shell, prefs):
 		log.debug('enter')
@@ -45,20 +47,20 @@ class Roller(gtk.Window):
 		self._lastline = self._firstline
 		self._update_source = None
 		self._scroll = 0
-		self._font = pango.FontDescription(prefs.get('display.roller.font'))
+		self._font = pango.FontDescription(prefs.get('display.single.font'))
 		self._varfont = self._font.copy()
 		self._varfont.set_weight(pango.WEIGHT_BOLD)
-		self._foreground = gtk.gdk.Color(prefs.get('display.roller.foreground'))
-		self._highlight = gtk.gdk.Color(prefs.get('display.roller.highlight'))
+		self._foreground = gtk.gdk.Color(prefs.get('display.single.foreground'))
+		self._highlight = gtk.gdk.Color(prefs.get('display.single.highlight'))
 		#
 		self._firstline.modify_fg(gtk.STATE_NORMAL, self._highlight)
 		self._firstline.modify_font(self._font)
-		self._vbox = gtk.VBox(True)
-		self._vbox.pack_start(self._firstline)
+		self._hbox = gtk.HBox(False, SPACING)
+		self._hbox.pack_start(self._firstline)
 		self._layout = gtk.Layout()
-		bgcolor = gtk.gdk.Color(prefs.get('display.roller.background'))
+		bgcolor = gtk.gdk.Color(prefs.get('display.single.background'))
 		self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
-		self._layout.put(self._vbox, 0, 0)
+		self._layout.put(self._hbox, 0, 0)
 		container = gtk.HBox()
 		container.pack_start(self._layout)
 		container.show_all()
@@ -68,13 +70,13 @@ class Roller(gtk.Window):
 		self.set_keep_above(True)
 		self.stick()
 		self.set_skip_taskbar_hint(True)
-		x,y,w,h = map(int, prefs.get('display.roller.window').split(','))
+		x,y,w,h = map(int, prefs.get('display.single.window').split(','))
 		self.set_default_size(w, h)
 		self.move(x, y)
 		self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
 		self.show()
 		self._layout.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
-		self.set_size_request(self._firstline.allocation.width*3, self._firstline.allocation.height*3)
+		self.set_size_request(1, self._hbox.size_request()[1])
 		self._prefs.watcher.append(self)
 		self.connect("configure-event", self._on_configure)
 		self.connect("button-press-event", self._on_button_press)
@@ -84,25 +86,20 @@ class Roller(gtk.Window):
 	def _on_configure(self, widget, event):
 		x, y = widget.get_position()
 		w, h = widget.get_size()
-		box_w, box_h = self._vbox.size_request()
-		new_x = (w - box_w)/2
-		new_y = h/2
-		new_w = self._layout.allocation.width
-		new_h = box_h + h
+		box_w, box_h = self._hbox.size_request()
+		new_x = w/2
+		new_y = 0
+		new_w = box_w + w
+		new_h = self._layout.allocation.height
 		self._layout.set_size(new_w, new_h)
-		self._layout.move(self._vbox, new_x, new_y)
-		self._prefs.set('display.roller.window', '%d,%d,%d,%d' % (x,y,w,h), False)
+		self._layout.move(self._hbox, new_x, new_y)
+		self._prefs.set('display.single.window', '%d,%d,%d,%d' % (x,y,w,h), False)
 		return False
 		
 	def _on_button_press(self, widget, event):
 		catched = False
 		if event.button == 3 and isinstance(widget, gtk.Window):
-			w = widget.get_size()[0] / 2
-			if event.x < w:
-				hinter = gtk.gdk.WINDOW_EDGE_SOUTH_WEST
-			else:
-				hinter = gtk.gdk.WINDOW_EDGE_SOUTH_EAST
-			widget.begin_resize_drag(hinter, event.button, int(event.x_root), int(event.y_root), event.time)
+			widget.begin_resize_drag(gtk.gdk.WINDOW_EDGE_EAST, event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		elif event.button == 1 and isinstance(widget, gtk.Window):
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
@@ -128,7 +125,7 @@ class Roller(gtk.Window):
 				self._timestamp = content.keys()
 				self._timestamp.sort()
 				ptr = 0
-				children = self._vbox.get_children()
+				children = self._hbox.get_children()
 				curcount = len(children)
 				for t in self._timestamp:
 					ptr += 1
@@ -138,27 +135,27 @@ class Roller(gtk.Window):
 						line = gtk.Label(content[t])
 						line.modify_fg(gtk.STATE_NORMAL, self._foreground)
 						line.modify_font(self._font)
-						self._vbox.pack_start(line)
+						self._hbox.pack_start(line)
 				for line in children[ptr+1:]:
 					line.set_text('')
 				self._timestamp.insert(0, 0)
 				self._timestamp.append(sys.maxint)
 			else:
-				children = self._vbox.get_children()
+				children = self._hbox.get_children()
 				for line in children[1:]:
 					line.set_text('')
 				self._timestamp = [0, sys.maxint]
-			for line in self._vbox.get_children():
+			for line in self._hbox.get_children():
 				line.show()
 			self._on_configure(self, None)
-			self._layout.window.scroll(0, self._scroll)
+			self._layout.window.scroll(self._scroll, 0)
 			self._scroll = 0
 		return
 	
 	def resume(self):
 		self._running = True
 		if not self._update_source:
-			self._update_source = glib.timeout_add(100, self._scroll_up)
+			self._update_source = glib.timeout_add(100, self._scroll_left)
 		return
 	
 	def pause(self):
@@ -168,21 +165,24 @@ class Roller(gtk.Window):
 		self._update_source = None
 		return
 	
-	def _scroll_up(self):
+	def _scroll_left(self):
 		if self._running:
 			elapsed = datetime.datetime.now() - self._start_time
 			seconds = self._get_milli(elapsed) / 1000
 			index = bisect.bisect_right(self._timestamp, seconds) - 1
-			line = self._vbox.get_children()[index]
+			line = self._hbox.get_children()[index]
 			if line != self._lastline:
 				self._lastline.modify_fg(gtk.STATE_NORMAL, self._foreground)
 				line.modify_fg(gtk.STATE_NORMAL, self._highlight)
 				self._lastline = line
 			line_elapsed = self._get_milli(elapsed) - self._timestamp[index] * 1000
 			line_duration = 1000 * (self._timestamp[index+1] - self._timestamp[index])
-			score = index + float(line_elapsed) / line_duration
-			scroll = int(score * self._firstline.allocation.height)
-			self._layout.window.scroll(0, self._scroll - scroll)
+			score = float(line_elapsed) / line_duration
+			children = self._hbox.get_children()
+			scroll = int(score * children[index].allocation.width)
+			for c in children[:index]:
+				scroll += c.allocation.width + SPACING
+			self._layout.window.scroll(self._scroll - scroll, 0)
 			self._scroll = scroll
 		return self._running
 	
@@ -199,32 +199,33 @@ class Roller(gtk.Window):
 	def update_config(self, config):
 		name = config.name
 		value = config.value
-		if name.startswith('display.roller.'):
-			if name == 'display.roller.font':
+		if name.startswith('display.single.'):
+			if name == 'display.single.font':
 				log.info(config)
 				self._font = pango.FontDescription(value)
-				children = self._vbox.get_children()
+				children = self._hbox.get_children()
 				for l in children:
 					l.modify_font(self._font)
 				self._on_configure(self, None)
-				self.set_size_request(self._firstline.allocation.width*3, self._firstline.allocation.height*3)
-			elif name == 'display.roller.foreground':
+				self.set_size_request(1, self._hbox.size_request()[1])
+				self.resize(self.allocation.width, self._hbox.size_request()[1])
+			elif name == 'display.single.foreground':
 				log.info(config)
 				self._foreground = gtk.gdk.Color(value)
-				for l in self._vbox.get_children():
+				for l in self._hbox.get_children():
 					l.modify_fg(gtk.STATE_NORMAL, self._foreground)
-			elif name == 'display.roller.highlight':
+			elif name == 'display.single.highlight':
 				log.info(config)
 				self._highlight = gtk.gdk.Color(value)
 				self._lastline.modify_fg(gtk.STATE_NORMAL, self._highlight)
-			elif name == 'display.roller.background':
+			elif name == 'display.single.background':
 				log.info(config)
 				bgcolor = gtk.gdk.Color(value)
 				self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
 				self.modify_bg(gtk.STATE_NORMAL, bgcolor)
-			elif name == 'display.roller.window':
+			elif name == 'display.single.window':
 				log.info(config)
-				x,y,w,h = map(int, self._prefs.get('display.roller.window').split(','))
+				x,y,w,h = map(int, self._prefs.get('display.single.window').split(','))
 				self.resize(w, h)
 				self.move(x, y)
 		return
