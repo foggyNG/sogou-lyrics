@@ -127,12 +127,10 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.embedded.foreground'] = Config('display.embedded.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.foreground', '#FF0080', False)
 		self._setting['display.embedded.background'] = Config('display.embedded.background', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.background', '#EDECEB', False)
 		self._setting['display.roller'] = Config('display.roller', '/apps/rhythmbox/plugins/RBLyrics/display.roller', 'True', False)
-		self._setting['display.roller.x'] = Config('display.roller.x', '/apps/rhythmbox/plugins/RBLyrics/display.roller.x', '0', True)
-		self._setting['display.roller.y'] = Config('display.roller.y', '/apps/rhythmbox/plugins/RBLyrics/display.roller.y', '20', True)
-		self._setting['display.roller.width'] = Config('display.roller.width', '/apps/rhythmbox/plugins/RBLyrics/display.roller.width', str(int(gtk.gdk.screen_width()/3)), True)
-		self._setting['display.roller.height'] = Config('display.roller.height', '/apps/rhythmbox/plugins/RBLyrics/display.roller.height', str(int(gtk.gdk.screen_height()/3)), True)
+		self._setting['display.roller.window'] = Config('display.roller.window', '/apps/rhythmbox/plugins/RBLyrics/display.roller.window', '0,0,%d,%d' % (gtk.gdk.screen_width()/4, gtk.gdk.screen_height()/4), True)
 		self._setting['display.roller.font'] = Config('display.roller.font', '/apps/rhythmbox/plugins/RBLyrics/display.roller.font', '14', False)
 		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', False)
+		self._setting['display.roller.highlight'] = Config('display.roller.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.roller.highlight', '#00FF00', False)
 		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', False)
 		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True', False)
 		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'), False)
@@ -299,7 +297,7 @@ class Preference(gtk.Dialog, object):
 				'display.gosd.drop_shadow', 'display.gosd.hide_on_hover']:
 				self._on_bool_set(c, iter)
 			elif c.name in ['display.embedded.foreground', 'display.embedded.background',
-				'display.roller.foreground', 'display.roller.background',
+				'display.roller.foreground', 'display.roller.background', 'display.roller.highlight',
 				'display.gosd.color']:
 				self._on_color_set(c, iter)
 			elif c.name in ['display.embedded.font', 'display.roller.font', 'display.gosd.font']:
