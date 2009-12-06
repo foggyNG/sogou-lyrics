@@ -286,7 +286,7 @@ class RBLyrics(rb.Plugin):
 	def update_config(self, config):
 		name = config.name
 		value = config.value
-		if name in ['display.embedded', 'display.gosd', 'display.roller']:
+		if name in ['display.embedded', 'display.gosd', 'display.roller', 'display.single']:
 			self._action[name].set_active(value == 'True')
 		return
 
