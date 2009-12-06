@@ -36,6 +36,7 @@
 	    <menuitem name="RBLyrics.Embedded" action="rblyrics-embedded"/>
         <menuitem name="RBLyrics.OSD" action="rblyrics-gosd"/>
 		<menuitem name="RBLyrics.Roller" action="rblyrics-roller"/>
+		<menuitem name="RBLyrics.Single" action="rblyrics-single"/>
 		<separator/>
       </placeholder>
     </menu>

@@ -132,6 +132,12 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', False)
 		self._setting['display.roller.highlight'] = Config('display.roller.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.roller.highlight', '#00FF00', False)
 		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', False)
+		self._setting['display.single'] = Config('display.single', '/apps/rhythmbox/plugins/RBLyrics/display.single', 'True', False)
+		self._setting['display.single.window'] = Config('display.single.window', '/apps/rhythmbox/plugins/RBLyrics/display.single.window', '0,0,%d,%d' % (gtk.gdk.screen_width()/4, 1), True)
+		self._setting['display.single.font'] = Config('display.single.font', '/apps/rhythmbox/plugins/RBLyrics/display.single.font', '14', False)
+		self._setting['display.single.foreground'] = Config('display.single.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.single.foreground', '#FF0080', False)
+		self._setting['display.single.highlight'] = Config('display.single.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.single.highlight', '#00FF00', False)
+		self._setting['display.single.background'] = Config('display.single.background', '/apps/rhythmbox/plugins/RBLyrics/display.single.background', '#000000', False)
 		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True', False)
 		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'), False)
 		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE[0], False)
@@ -292,15 +298,16 @@ class Preference(gtk.Dialog, object):
 		if not c.readonly:
 			value = None
 			if c.name in engine_map.keys() + ['main.download', 
-				'display.embedded', 'display.roller', 'display.gosd',
+				'display.embedded', 'display.roller', 'display.gosd', 'display.single',
 				'display.gosd.animations', 'display.gosd.avoid_panels',
 				'display.gosd.drop_shadow', 'display.gosd.hide_on_hover']:
 				self._on_bool_set(c, iter)
 			elif c.name in ['display.embedded.foreground', 'display.embedded.background',
 				'display.roller.foreground', 'display.roller.background', 'display.roller.highlight',
+				'display.single.foreground', 'display.single.background', 'display.single.highlight',
 				'display.gosd.color']:
 				self._on_color_set(c, iter)
-			elif c.name in ['display.embedded.font', 'display.roller.font', 'display.gosd.font']:
+			elif c.name in ['display.embedded.font', 'display.roller.font', 'display.gosd.font', 'display.single.font']:
 				self._on_font_set(c, iter)
 			elif c.name == 'main.directory':
 				self._on_directory_set(c, iter)
