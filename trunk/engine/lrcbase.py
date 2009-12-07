@@ -43,7 +43,6 @@ class LRCBase:
 		return
 	
 	def _on_lyrics_arrive(self, cache, callback, engine_name):
-		log.debug('%s enter' % engine_name)
 		if cache is None:
 			# rb.Loader failed, stop the engine
 			self._receiver(cache)
@@ -56,11 +55,10 @@ class LRCBase:
 			else:
 				self._receiver(None)
 				callback(engine_name)
-		log.debug('%s leave' % engine_name)
 		return
 		
 	def _get_next_lyrics(self, callback, engine_name):
-		log.debug('%s enter, %d jobs left' % (engine_name, len(self._job)))
+		log.debug('%s, %d jobs left' % (engine_name, len(self._job)))
 		if len(self._job) > 0:
 			url = self._job.pop(0)
 			log.info('%s <%s>' % (engine_name, url))
@@ -68,6 +66,5 @@ class LRCBase:
 		else:
 			self._receiver(None)
 			callback(engine_name)
-		log.debug('%s leave' % engine_name)
 		return
 			

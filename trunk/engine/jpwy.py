@@ -42,7 +42,6 @@ class Jpwy(LRCBase):
 		return
 
 	def _on_meta_arrive(self, cache, callback):
-		log.debug('enter')
 		if cache is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -68,17 +67,14 @@ class Jpwy(LRCBase):
 							break
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
-		log.debug('leave')
 		return
 		
 	def search(self, callback):
-		log.debug('enter')
 		artist_token = self._artist.encode('GBK', 'ignore')
 		title_token = self._title.encode('GBK', 'ignore')
 		urldata = {'singer':artist_token, 'song':title_token}
 		url = 'http://www.jpwy.net/gc/search.php?%s' % urllib.urlencode(urldata)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_meta_arrive, callback)
-		log.debug('leave')
 		return
 			

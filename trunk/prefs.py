@@ -108,7 +108,6 @@ class Preference(gtk.Dialog, object):
 	
 	## The constructor.
 	def __init__(self):
-		log.debug('enter')
 		gtk.Dialog.__init__(self, title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
 		self._setting = {}
 		for name in engine_map.keys():
@@ -202,7 +201,6 @@ class Preference(gtk.Dialog, object):
 		self._dlgfont = None
 		self._dlgdirectory = None
 		self._dlgcombo = None
-		log.debug('leave')
 		return
 	
 	def _on_delete_event(self, widget, event):
@@ -210,15 +208,13 @@ class Preference(gtk.Dialog, object):
 		return True
 	
 	def _on_btnrestore_released(self, widget):
-		log.debug('enter')
 		iter = self._model.get_iter_first()
 		while iter != None:
 			name = self._model.get_value(iter, 0)
 			c = self._setting[name]
-			if c.value != c.default:
+			if not c.readonly and c.value != c.default:
 				self._on_value_changed(c, iter, c.default)
 			iter = self._model.iter_next(iter)
-		log.debug('leave')
 		return
 		
 	def _on_value_changed(self, c, iter, value, watch = True):

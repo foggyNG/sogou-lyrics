@@ -40,7 +40,6 @@ class Sogou(LRCBase):
 		return
 	
 	def _on_lyrics_page_arrive(self, cache, callback):
-		log.debug('enter')
 		if cache is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -66,11 +65,9 @@ class Sogou(LRCBase):
 							break
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
-		log.debug('leave')
 		return
 		
 	def _on_search_page_arrive(self, cache, callback):
-		log.debug('enter')
 		if cache is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -94,17 +91,14 @@ class Sogou(LRCBase):
 						log.debug('lyrics page url <%s>' % url)
 						rb.Loader().get_url(url, self._on_lyrics_page_arrive, callback)
 						break
-		log.debug('leave')
 		return
 	
 	def search(self, callback):
-		log.debug('enter')
 		artist_token = urllib.quote(self._artist.encode('GBK', 'ignore'))
 		title_token = urllib.quote(self._title.encode('GBK', 'ignore'))
 		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_search_page_arrive, callback)
-		log.debug('leave')
 		return
 			
 		

@@ -46,7 +46,6 @@ class Lyricist(LRCBase):
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
 		
 	def _on_meta_arrive(self, xml, callback):
-		log.debug('enter')
 		if xml is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -67,15 +66,12 @@ class Lyricist(LRCBase):
 						break
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
-		log.debug('leave')
 		return
 		
 	def search(self, callback):
-		log.debug('enter')
 		artist_token = urllib.quote(self._clean_token(self._artist))
 		title_token = urllib.quote(self._clean_token(self._title))
 		url = 'http://www.winampcn.com/lrceng/get.aspx?song=%s&artist=%s&lsong=%s&prec=1&Datetime=20060601' % (title_token, artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_meta_arrive, callback)
-		log.debug('leave')
 		return

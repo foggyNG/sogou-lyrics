@@ -40,7 +40,6 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	def _on_playing_changed(self, player, playing):
-		log.debug(playing)
 		if playing:
 			self._display.set_lyrics(self._lyrics)
 			self._display.resume()
@@ -58,8 +57,7 @@ class RBLyrics(rb.Plugin):
 	
 	## Playing song changed handler.
 	def _on_playing_song_changed(self, player, entry):
-		log.debug('enter')
-		self._display.pause()
+		#self._display.pause()
 		self._lyrics = None
 		self._display.set_lyrics(None)
 		if entry:
@@ -74,45 +72,37 @@ class RBLyrics(rb.Plugin):
 				self._display.resume()
 			elif self._prefs.get('main.download') == 'True':
 				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics).search()
-		log.debug('leave')
 		return
 	
 	## Open lyrics handler for popup menu.
 	def _open_lyrics_popup(self, action):
-		log.debug('enter')
 		source = self._shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
 		if selected != []:
 			entry = selected[0]
 			self._open_lyrics(entry)
-		log.debug('leave')
 		return
 	
 	## Open lyrics handler for shortcut menu.
 	def _open_lyrics_shortcut(self, action):
-		log.debug('enter')
 		entry = self._shell.props.shell_player.get_playing_entry ()
 		if entry:
 			self._open_lyrics(entry)
-		log.debug('leave')
 		return
 	
 	## Open lyrics file.
 	#  @param entry Song entry to be opened.
 	def _open_lyrics(self, entry):
-		log.debug('enter')
 		artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 		songinfo = SongInfo(artist, title)
 		if not open_lyrics(self._prefs.get('main.directory'), songinfo):
 			log.info('%s not found' % songinfo)
 			rb.error_dialog(title = _('Lyrics not found'), message = str(songinfo))
-		log.debug('leave')
 		return
 	
 	def _chooser_handler(self, song, lyrics):
-		log.debug('enter')
 		if lyrics:
 			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), song, lyrics)
 		#
@@ -126,12 +116,10 @@ class RBLyrics(rb.Plugin):
 			self._lyrics = lyrics
 			self._display.set_lyrics(lyrics)
 			self._display.resume()
-		log.debug('leave')
 		return
 		
 	## Lyrics choose response hander.
 	def _receive_lyrics(self, songinfo, candidate):
-		log.debug('enter')
 		n_candidates = len(candidate)
 		log.info('%d candidates found for %s' % (n_candidates, songinfo))
 		if n_candidates == 0:
@@ -143,7 +131,6 @@ class RBLyrics(rb.Plugin):
 			self._chooser.add_task(songinfo, candidate)
 			self._chooser.present()
 			gtk.gdk.threads_leave()
-		log.debug('leave')
 		return
 	
 	def _on_embedded_toggled(self, widget):
@@ -151,7 +138,6 @@ class RBLyrics(rb.Plugin):
 			value = 'True'
 		else:
 			value = 'False'
-		log.debug('display.embedded = %s' % value)
 		self._prefs.set('display.embedded', value)
 		return
 	
@@ -160,7 +146,6 @@ class RBLyrics(rb.Plugin):
 			value = 'True'
 		else:
 			value = 'False'
-		log.debug('display.gosd = %s' % value)
 		self._prefs.set('display.gosd', value)
 		return
 	
@@ -169,7 +154,6 @@ class RBLyrics(rb.Plugin):
 			value = 'True'
 		else:
 			value = 'False'
-		log.debug('display.roller = %s' % value)
 		self._prefs.set('display.roller', value)
 		return
 		
@@ -178,7 +162,6 @@ class RBLyrics(rb.Plugin):
 			value = 'True'
 		else:
 			value = 'False'
-		log.debug('display.single = %s' % value)
 		self._prefs.set('display.single', value)
 		return
 		
@@ -193,7 +176,7 @@ class RBLyrics(rb.Plugin):
 		# logging
 		log.setLevel(logging.DEBUG)
 		console_handler = logging.StreamHandler()
-		console_handler.setLevel(logging.DEBUG)
+		console_handler.setLevel(logging.INFO)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
 		cachedir = os.path.join(rb.user_cache_dir(), 'RBLyrics')

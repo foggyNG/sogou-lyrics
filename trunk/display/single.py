@@ -33,7 +33,6 @@ SPACING = 10
 class Single(gtk.Window):
 	
 	def __init__(self, shell, prefs):
-		log.debug('enter')
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 		#
 		self._shell = shell
@@ -71,29 +70,20 @@ class Single(gtk.Window):
 		self.stick()
 		self.set_skip_taskbar_hint(True)
 		x,y,w,h = map(int, prefs.get('display.single.window').split(','))
-		self.set_default_size(w, h)
+		self._layout.realize()
+		self.realize()
+		self.set_default_size(w, self._hbox.size_request()[1])
 		self.move(x, y)
 		self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
-		self.show()
-		self._layout.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
-		self.set_size_request(1, self._hbox.size_request()[1])
 		self._prefs.watcher.append(self)
-		self.connect("configure-event", self._on_configure)
-		self.connect("button-press-event", self._on_button_press)
-		log.debug('leave')
+		self.connect('configure-event', self._on_configure)
+		self.connect('button-press-event', self._on_button_press)
 		return
 	
 	def _on_configure(self, widget, event):
-		x, y = widget.get_position()
-		w, h = widget.get_size()
-		box_w, box_h = self._hbox.size_request()
-		new_x = w/2
-		new_y = 0
-		new_w = box_w + w
-		new_h = self._layout.allocation.height
-		self._layout.set_size(new_w, new_h)
-		self._layout.move(self._hbox, new_x, new_y)
-		self._prefs.set('display.single.window', '%d,%d,%d,%d' % (x,y,w,h), False)
+		self._layout.set_size(self._hbox.size_request()[0] + event.width, self._layout.allocation.height)
+		self._layout.move(self._hbox, event.width/2, 0)
+		self._prefs.set('display.single.window', '%d,%d,%d,%d' % (event.x,event.y,event.width,event.height), False)
 		return False
 		
 	def _on_button_press(self, widget, event):
@@ -147,22 +137,31 @@ class Single(gtk.Window):
 				self._timestamp = [0, sys.maxint]
 			for line in self._hbox.get_children():
 				line.show()
-			self._on_configure(self, None)
+			event = gtk.gdk.Event(gtk.gdk.CONFIGURE)
+			event.x, event.y = self.get_position()
+			event.width, event.height = self.get_size()
+			self.emit('configure-event', event)
 			self._layout.window.scroll(self._scroll, 0)
 			self._scroll = 0
 		return
 	
 	def resume(self):
-		self._running = True
-		if not self._update_source:
-			self._update_source = glib.timeout_add(100, self._scroll_left)
+		if not self._running:
+			self._running = True
+			if not self._update_source:
+				self._update_source = glib.timeout_add(100, self._scroll_left)
+			self.present()
+			x,y,w,h = map(int, self._prefs.get('display.single.window').split(','))
+			self.move(x, y)
 		return
 	
 	def pause(self):
-		self._running = False
-		if self._update_source and not glib.source_remove(self._update_source):
-			log.warn('update source remove failed %d' % self._update_source)
-		self._update_source = None
+		if self._running:
+			self._running = False
+			if self._update_source and not glib.source_remove(self._update_source):
+				log.warn('update source remove failed %d' % self._update_source)
+			self._update_source = None
+			self.hide()
 		return
 	
 	def _scroll_left(self):
@@ -200,32 +199,22 @@ class Single(gtk.Window):
 		name = config.name
 		value = config.value
 		if name.startswith('display.single.'):
+			log.info(config)
 			if name == 'display.single.font':
-				log.info(config)
 				self._font = pango.FontDescription(value)
 				children = self._hbox.get_children()
 				for l in children:
 					l.modify_font(self._font)
-				self._on_configure(self, None)
-				self.set_size_request(1, self._hbox.size_request()[1])
 				self.resize(self.allocation.width, self._hbox.size_request()[1])
 			elif name == 'display.single.foreground':
-				log.info(config)
 				self._foreground = gtk.gdk.Color(value)
 				for l in self._hbox.get_children():
 					l.modify_fg(gtk.STATE_NORMAL, self._foreground)
 			elif name == 'display.single.highlight':
-				log.info(config)
 				self._highlight = gtk.gdk.Color(value)
 				self._lastline.modify_fg(gtk.STATE_NORMAL, self._highlight)
 			elif name == 'display.single.background':
-				log.info(config)
 				bgcolor = gtk.gdk.Color(value)
 				self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
 				self.modify_bg(gtk.STATE_NORMAL, bgcolor)
-			elif name == 'display.single.window':
-				log.info(config)
-				x,y,w,h = map(int, self._prefs.get('display.single.window').split(','))
-				self.resize(w, h)
-				self.move(x, y)
 		return

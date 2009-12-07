@@ -32,7 +32,6 @@ log = logging.getLogger('RBLyrics')
 class GOSD:
 	
 	def __init__(self, shell, prefs):
-		log.debug('enter')
 		self._osd = eventbridge.OSD()
 		self._prefs = prefs
 		self._running = False
@@ -50,7 +49,6 @@ class GOSD:
 		self._vpos = prefs.get('display.gosd.vpos')
 		self._halignment = prefs.get('display.gosd.halignment')
 		prefs.watcher.append(self)
-		log.debug('leave')
 		return
 	
 	def finialize(self):
@@ -103,7 +101,7 @@ class GOSD:
 		name = config.name
 		value = config.value
 		if name.startswith('display.gosd.'):
-			log.debug(config)
+			log.info(config)
 			if name == 'display.gosd.animations':
 				self._animations = value
 			elif name == 'display.gosd.avoid_panels':
