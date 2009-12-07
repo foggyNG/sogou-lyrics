@@ -71,11 +71,11 @@ class RBLyrics(rb.Plugin):
 				self._display.set_lyrics(self._lyrics)
 				self._display.resume()
 			elif self._prefs.get('main.download') == 'True':
-				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics).search()
+				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics, True).search()
 		return
 	
 	## Open lyrics handler for popup menu.
-	def _open_lyrics_popup(self, action):
+	def _on_lyrics_popup_activated(self, action):
 		source = self._shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
 		selected = entry.get_selected_entries()
@@ -85,12 +85,24 @@ class RBLyrics(rb.Plugin):
 		return
 	
 	## Open lyrics handler for shortcut menu.
-	def _open_lyrics_shortcut(self, action):
+	def _on_lyrics_shortcut_activated(self, action):
 		entry = self._shell.props.shell_player.get_playing_entry ()
 		if entry:
 			self._open_lyrics(entry)
 		return
 	
+	def _on_download_activated(self, action):
+		source = self._shell.get_property("selected_source")
+		entry = rb.Source.get_entry_view(source)
+		selected = entry.get_selected_entries()
+		if selected != []:
+			entry = selected[0]
+			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
+			songinfo = SongInfo(artist, title)
+			Engine(self._prefs.get_engine(), songinfo, self._download_handler, False).search()
+		return
+		
 	## Open lyrics file.
 	#  @param entry Song entry to be opened.
 	def _open_lyrics(self, entry):
@@ -127,12 +139,19 @@ class RBLyrics(rb.Plugin):
 		elif candidate[0][0] == 0:
 			self._chooser_handler(songinfo, candidate[0][1])
 		else:
-			gtk.gdk.threads_enter()
+			#gtk.gdk.threads_enter()
 			self._chooser.add_task(songinfo, candidate)
 			self._chooser.present()
-			gtk.gdk.threads_leave()
+			#gtk.gdk.threads_leave()
 		return
 	
+	def _download_handler(self, songinfo, candidate):
+		n_candidates = len(candidate)
+		log.info('%d candidates found for %s' % (n_candidates, songinfo))
+		self._chooser.add_task(songinfo, candidate)
+		self._chooser.present()
+		return
+		
 	def _on_embedded_toggled(self, widget):
 		if widget.get_active():
 			value = 'True'
@@ -203,11 +222,14 @@ class RBLyrics(rb.Plugin):
 		#
 		self._action = {}
 		self._actiongroup = gtk.ActionGroup('RBLyricsActions')
-		action = gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open the lyrics of the playing song'), gtk.STOCK_EDIT)
-		action.connect('activate', self._open_lyrics_shortcut)
+		action = gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open lyrics of the playing song'), gtk.STOCK_EDIT)
+		action.connect('activate', self._on_lyrics_shortcut_activated)
 		self._actiongroup.add_action(action)
-		action = gtk.Action('OpenLyricsPopup', _('Lyrics'), _('Open the lyrics of the selected song'), gtk.STOCK_EDIT)
-		action.connect('activate', self._open_lyrics_popup)
+		action = gtk.Action('OpenLyricsPopup', _('Open Lyrics'), None, gtk.STOCK_EDIT)
+		action.connect('activate', self._on_lyrics_popup_activated)
+		self._actiongroup.add_action(action)
+		action = gtk.Action('download-lyrics', _('Download Lyrics Manually'), None, gtk.STOCK_FIND)
+		action.connect('activate', self._on_download_activated)
 		self._actiongroup.add_action(action)
 		action = gtk.ToggleAction('rblyrics-embedded', _('RBLyrics.Embedded'), None, None)
 		action.set_active(self._prefs.get('display.embedded') == 'True')

@@ -66,7 +66,8 @@ class LyricsChooser(gtk.Window):
 		return
 	
 	def add_task(self, songinfo, candidate):
-		hashid = hash(str(songinfo))
+		labeltext = '%s(%d)' % (songinfo, len(candidate))
+		hashid = hash(labeltext)
 		if hashid in self._songinfo:
 			log.warn('song already exist %s' % songinfo)
 		else:
@@ -87,7 +88,7 @@ class LyricsChooser(gtk.Window):
 			preview.set_editable(False)
 			preview.set_cursor_visible(False)
 			# add to notebook
-			label = gtk.Label(str(songinfo))
+			label = gtk.Label(labeltext)
 			panel = gtk.HPaned()
 			scroll = gtk.ScrolledWindow()
 			scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)

@@ -53,13 +53,14 @@ class Engine:
 	## The constructor.
 	#  @param engine Engine list.
 	#  @param songinfo Song information.
-	def __init__(self, engine, songinfo, callback):
+	def __init__(self, engine, songinfo, callback, auto):
 		self._engine = engine
 		self._songinfo = songinfo
 		self._callback = callback
 		self._candidate = []
 		# if lyrics with distance=0 found
 		self._found = False
+		self._auto = auto
 		# number of working lyrics engines
 		self._alive = 0
 		return
@@ -79,7 +80,7 @@ class Engine:
 			l = LyricsInfo(raw)
 			d = distance(self._songinfo, l)
 			self._candidate.append([d, l])
-			self._found = d == 0
+			self._found = (self._auto and (d == 0))
 			if self._found:
 				# upcoming raw distance=0
 				self._candidate.sort(candidate_cmp)
