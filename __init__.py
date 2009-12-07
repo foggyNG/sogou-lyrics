@@ -225,7 +225,7 @@ class RBLyrics(rb.Plugin):
 		action = gtk.Action('OpenLyricsToolBar', _('Lyrics'), _('Open lyrics of the playing song'), gtk.STOCK_EDIT)
 		action.connect('activate', self._on_lyrics_shortcut_activated)
 		self._actiongroup.add_action(action)
-		action = gtk.Action('OpenLyricsPopup', _('Open Lyrics'), None, gtk.STOCK_EDIT)
+		action = gtk.Action('OpenLyricsPopup', _('Edit Lyrics'), None, gtk.STOCK_EDIT)
 		action.connect('activate', self._on_lyrics_popup_activated)
 		self._actiongroup.add_action(action)
 		action = gtk.Action('download-lyrics', _('Download Lyrics Manually'), None, gtk.STOCK_FIND)
