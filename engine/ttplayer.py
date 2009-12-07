@@ -123,7 +123,6 @@ class TTPlayer(LRCBase):
 		return
 	
 	def _on_meta_arrive(self, xml, callback):
-		log.debug('enter')
 		if xml is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -148,15 +147,12 @@ class TTPlayer(LRCBase):
 						break
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
-		log.debug('leave')
 		return
 		
 	def search(self, callback):
-		log.debug('enter')
 		artist_token = ttpClient.EncodeArtTit(self._artist.replace(' ','').lower())
 		title_token = ttpClient.EncodeArtTit(self._title.replace(' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_meta_arrive, callback)
-		log.debug('leave')
 		return

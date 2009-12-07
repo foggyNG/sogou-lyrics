@@ -32,7 +32,6 @@ log = logging.getLogger('RBLyrics')
 class Embedded(gtk.EventBox):
 	
 	def __init__(self, shell, prefs):
-		log.debug('enter')
 		gtk.EventBox.__init__(self)
 		#
 		self._prefs = prefs
@@ -52,7 +51,6 @@ class Embedded(gtk.EventBox):
 		self.show_all()
 		#
 		prefs.watcher.append(self)
-		log.debug('leave')
 		return
 	
 	def finialize(self):
@@ -102,7 +100,7 @@ class Embedded(gtk.EventBox):
 		name = config.name
 		value = config.value
 		if name.startswith('display.embedded.'):
-			log.debug(config)
+			log.info(config)
 			if name == 'display.embedded.font':
 				self._label.modify_font(pango.FontDescription(value))
 			elif name == 'display.embedded.foreground':

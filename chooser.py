@@ -34,7 +34,6 @@ class LyricsChooser(gtk.Window):
 	#  @param callback Response callback.
 	def __init__(self, callback):
 		gtk.Window.__init__(self, type = gtk.WINDOW_TOPLEVEL)
-		log.debug('enter')
 		self.set_title(_('Select lyrics'))
 		self.set_default_size(640, 480)
 		self.set_position(gtk.WIN_POS_CENTER)
@@ -64,11 +63,9 @@ class LyricsChooser(gtk.Window):
 		self._treeview = {}
 		self._selection = {}
 		self._preview = {}
-		log.debug('leave')
 		return
 	
 	def add_task(self, songinfo, candidate):
-		log.debug('enter')
 		hashid = hash(str(songinfo))
 		if hashid in self._songinfo:
 			log.warn('song already exist %s' % songinfo)
@@ -114,28 +111,22 @@ class LyricsChooser(gtk.Window):
 			# show up
 			self._notebook.set_current_page(pageid)
 			selection.select_iter(model.get_iter_first())
-		log.debug('leave')
 		return
 	
 	## Selection changed handler.
 	def _selection_changed(self, widget):
-		log.debug('enter')
 		pageid = self._notebook.get_current_page()
 		child = self._notebook.get_nth_page(pageid)
 		hashid = hash(self._notebook.get_tab_label_text(child))
 		selected = widget.get_selected()
 		if selected[1]:
 			index = selected[0].get_value(selected[1], 3)
-			log.debug('select [index = %d]' % index)
 			self._preview[hashid].get_buffer().set_text(self._candidate[hashid][index][1].raw)
 		else:
 			self._preview[hashid].get_buffer().set_text('')
-		log.debug('leave')
 		return
 	
 	def _on_ok_released(self, button):
-		log.debug('enter')
-		#gtk.gdk.threads_enter()
 		if self._notebook.get_n_pages() == 1:
 			self.hide()
 		pageid = self._notebook.get_current_page()
@@ -153,13 +144,9 @@ class LyricsChooser(gtk.Window):
 		del self._candidate[hashid]
 		del self._songinfo[hashid]
 		self._callback(song, lyrics)
-		#gtk.gdk.threads_leave()
-		log.debug('leave')
 		return
 	
 	def _on_cancel_released(self, button):
-		log.debug('enter')
-		#gtk.gdk.threads_enter()
 		if self._notebook.get_n_pages() == 1:
 			self.hide()
 		pageid = self._notebook.get_current_page()
@@ -174,14 +161,10 @@ class LyricsChooser(gtk.Window):
 		del self._candidate[hashid]
 		del self._songinfo[hashid]
 		self._callback(song, None)
-		#gtk.gdk.threads_leave()
-		log.debug('leave')
 		return
 		
 	## Dialog response handler.
 	def _on_delete_event(self, widget, event):
-		log.debug('enter')
-		#gtk.gdk.threads_enter()
 		self.hide()
 		for pageid in range(self._notebook.get_n_pages()):
 			child = self._notebook.get_nth_page(pageid)
@@ -194,7 +177,5 @@ class LyricsChooser(gtk.Window):
 			del self._candidate[hashid]
 			del self._songinfo[hashid]
 		self._callback(None, None)
-		#gtk.gdk.threads_leave()
-		log.debug('leave')
 		return True
 	

@@ -67,7 +67,6 @@ class Engine:
 	## Lyrics receive handler.
 	#  @return True if continue
 	def _receive_lyrics(self, raw):
-		log.debug('enter')
 		ret = False
 		if raw == None:
 			# while rb.Loader failed or finished
@@ -92,12 +91,10 @@ class Engine:
 		if self._alive == 0 and not self._found:
 			self._candidate.sort(candidate_cmp)
 			self._callback(self._songinfo, self._candidate)
-		log.debug('leave')
 		return ret
 	
 	## Retrieve lyrics.
 	def _searcher(self, plexer):
-		log.debug('enter')
 		token = clean_token(self._songinfo.ar)
 		encoding = detect(token)['encoding']
 		artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
@@ -116,7 +113,6 @@ class Engine:
 				yield None
 				_, (engine_name,) = plexer.receive()
 				log.debug('%s finished' % engine_name)
-		log.debug('leave')
 		return
 	
 	def search(self):

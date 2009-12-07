@@ -81,14 +81,13 @@ class Display:
 		name = config.name
 		value = config.value
 		if name.startswith('display.') and len(name.split('.')) == 2:
+			log.info(config)
 			if not display_map.has_key(name):
 				log.error('invalid display mode : %s' % name)
 			elif (name in self._interface) and value == 'False':
-				log.debug(config)
 				e = self._interface.pop(name)
 				e.finialize()
 			elif (not name in self._interface) and value == 'True':
-				log.debug(config)
 				self._interface[name] = display_map[name](self._shell, self._prefs)
 		return
 		

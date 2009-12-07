@@ -42,7 +42,6 @@ class Bzmtv(LRCBase):
 		return
 		
 	def _on_meta_arrive(self, cache, callback):
-		log.debug('enter')
 		if cache is None:
 			log.warn('network error')
 			# the following code make sure the main Engine to quit normally
@@ -68,16 +67,13 @@ class Bzmtv(LRCBase):
 							break
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
-		log.debug('leave')
 		return
 		
 	def search(self, callback):
-		log.debug('enter')
 		title_token = self._title.encode('GBK', 'ignore')
 		urldata = {'key':title_token, 'go':'go', 'y':1}
 		url = 'http://lrc.bzmtv.com/So.asp?%s' % urllib.urlencode(urldata)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_meta_arrive, callback)
-		log.debug('leave')
 		return
 			

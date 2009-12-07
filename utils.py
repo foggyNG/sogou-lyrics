@@ -86,7 +86,6 @@ class LyricsInfo(object):
 		
 	## Parse lyrics raw content.
 	def _parse(self):
-		log.debug('enter')
 		lines = self._raw.splitlines()
 		cache = {}
 		offset = 0
@@ -122,7 +121,6 @@ class LyricsInfo(object):
 				self._content[second] = cache[key]
 		if len(self._content) == 0:
 			log.warn('empty or invalid lyrics file')
-		log.debug('leave')
 		return
 		
 	ar = property(lambda self: self._artist)
@@ -134,12 +132,10 @@ class LyricsInfo(object):
 #  @param token Original token.
 #  @return Cleaned token.
 def clean_token(token):
-	log.debug('enter (%s)' % token)
 	result = token.lower()
 	for strip in TOKEN_STRIP.keys():
 		result = re.sub(strip, TOKEN_STRIP[strip], result)
 	result = result.strip()
-	log.debug('leave (%s)' % result)
 	return result
 
 ## Calculate edit distance.
@@ -147,7 +143,6 @@ def clean_token(token):
 #  @param right Instance B.
 #  @return Edit distance between A and B.
 def edit_distance(left, right):
-	log.debug('enter (%s, %s)' % (left, right))
 	m = len(left)
 	n = len(right)
 	if m == 0 or n == 0:
@@ -162,7 +157,6 @@ def edit_distance(left, right):
 	for i in range(1,m+1):
 		for j in range(1,n+1):
 			dist[i][j] = min(dist[i-1][j-1] + int(left[i-1] != right[j-1]), dist[i-1][j]+1, dist[i][j-1]+1)
-	log.debug('leave (%d)' % dist[m][n])
 	return dist[m][n]
 
 ## Calculate edit distance between songinfo and lyrics.
@@ -177,14 +171,12 @@ def distance(songinfo, lyrics):
 #  @param songinfo Song information of the lyrics.
 #  @param lyrics Lyrics information.
 def save_lyrics(root, pattern, songinfo, lyrics):
-	log.debug('enter')
 	path = os.path.join(root, pattern % (songinfo.ar, songinfo.ti))
 	dir = os.path.dirname(path)
 	if not os.path.exists(dir):
 		os.makedirs(dir)
 	open(path, 'w').write(lyrics.raw)
 	log.info('save <file://%s>' % urllib.pathname2url(path))
-	log.debug('leave')
 	return
 
 ## Load lyrics from file.
@@ -192,7 +184,6 @@ def save_lyrics(root, pattern, songinfo, lyrics):
 #  @param songinfo Song information of the lyrics.
 #  @return Lyrics information.
 def load_lyrics(root, songinfo):
-	log.debug('enter')
 	lyrics = None
 	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.ar, songinfo.ti))
@@ -200,7 +191,6 @@ def load_lyrics(root, songinfo):
 			log.info('load <file://%s>' % urllib.pathname2url(path))
 			lyrics = LyricsInfo(open(path, 'r').read())
 			break
-	log.debug('leave')
 	return lyrics
 
 ## Open lyrics file in system default editor.
@@ -208,7 +198,6 @@ def load_lyrics(root, songinfo):
 #  @param songinfo Song information of the lyrics.
 #  @return If successed.
 def open_lyrics(root, songinfo):
-	log.debug('enter')
 	ret = False
 	for p in LRC_PATH_TEMPLATE:
 		path = os.path.join(root, p % (songinfo.ar, songinfo.ti))
@@ -217,7 +206,6 @@ def open_lyrics(root, songinfo):
 			os.system('/usr/bin/xdg-open \"%s\"' % path)
 			ret = True
 			break
-	log.debug('leave')
 	return ret
 
 		
