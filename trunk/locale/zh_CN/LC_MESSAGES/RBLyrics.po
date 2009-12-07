@@ -113,7 +113,7 @@ msgstr "标题"
 # ui
 msgid "Lyrics"
 msgstr "歌词"
-msgid "Open Lyrics"
+msgid "Edit Lyrics"
 msgstr "编辑歌词"
 msgid "Download Lyrics Manually"
 msgstr "手动下载歌词"
