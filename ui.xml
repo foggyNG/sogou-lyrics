@@ -2,24 +2,28 @@
   <popup name="BrowserSourceViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
+	  <menuitem name="DownLyrics" action="download-lyrics"/>
     </placeholder>
   </popup>
 
   <popup name="PlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
+	  <menuitem name="DownLyrics" action="download-lyrics"/>
     </placeholder>
   </popup>
 
   <popup name="QueuePlaylistViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
+	  <menuitem name="DownLyrics" action="download-lyrics"/>
     </placeholder>
   </popup>
 
   <popup name="PodcastViewPopup">
     <placeholder name="PluginPlaceholder">
       <menuitem name="OpenLyrics" action="OpenLyricsPopup"/>
+	  <menuitem name="DownLyrics" action="download-lyrics"/>
     </placeholder>
   </popup>
 
