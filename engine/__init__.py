@@ -102,6 +102,8 @@ class Engine:
 		token = clean_token(self._songinfo.ti)
 		encoding = detect(token)['encoding']
 		title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+		if artist == clean_token('Unknown'):
+			artist = ''
 		self._alive = len(self._engine)
 		if self._alive == 0:
 			# no engine selected
