@@ -117,17 +117,16 @@ class RBLyrics(rb.Plugin):
 	def _chooser_handler(self, song, lyrics):
 		if lyrics:
 			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), song, lyrics)
-		#
-		current_song = None
-		entry = self._shell.props.shell_player.get_playing_entry()
-		if entry:
-			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
-			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
-			current_song = SongInfo(artist, title)
-		if current_song != None and song != None and current_song == song:
-			self._lyrics = lyrics
-			self._display.set_lyrics(lyrics)
-			self._display.resume()
+			current_song = None
+			entry = self._shell.props.shell_player.get_playing_entry()
+			if entry:
+				artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
+				title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
+				current_song = SongInfo(artist, title)
+			if current_song and song and current_song == song:
+				self._lyrics = lyrics
+				self._display.set_lyrics(lyrics)
+				self._display.resume()
 		return
 		
 	## Lyrics choose response hander.
