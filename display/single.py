@@ -69,6 +69,7 @@ class Single(gtk.Window):
 		self.set_keep_above(True)
 		self.stick()
 		self.set_skip_taskbar_hint(True)
+		self.set_opacity(float(prefs.get('display.single.opacity'))/100)
 		x,y,w,h = map(int, prefs.get('display.single.window').split(','))
 		self._layout.realize()
 		self.realize()
@@ -217,4 +218,6 @@ class Single(gtk.Window):
 				bgcolor = gtk.gdk.Color(value)
 				self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
 				self.modify_bg(gtk.STATE_NORMAL, bgcolor)
+			elif name == 'display.single.opacity':
+				self.set_opacity(float(self._prefs.get('display.single.opacity'))/100)
 		return

@@ -111,7 +111,11 @@ class LyricsChooser(gtk.Window):
 			self._preview[hashid] = preview
 			# show up
 			self._notebook.set_current_page(pageid)
-			selection.select_iter(model.get_iter_first())
+			iter = model.get_iter_first()
+			if iter:
+				selection.select_iter(iter)
+			else:
+				preview.get_buffer().set_text(_('Lyrics not found'))
 		return
 	
 	## Selection changed handler.

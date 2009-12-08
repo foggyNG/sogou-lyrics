@@ -73,15 +73,15 @@ class ComboDialog(gtk.Dialog):
 		self._combo.add_attribute(cell, 'text', 1)
 		container = gtk.HBox()
 		self.get_content_area().pack_start(container, False, False, 10)
-		self._label = gtk.Label()
-		container.pack_start(self._label, False, False, 10)
+		image = gtk.Image()
+		image.set_from_stock(gtk.STOCK_DIALOG_QUESTION, gtk.ICON_SIZE_DIALOG)
+		container.pack_start(image, False, False, 10)
 		container.pack_start(self._combo, False, False, 10)
 		container.show_all()
 		return
 	
 	def set_preset(self, preset):
 		gtk.Dialog.set_title(self, _(preset))
-		self._label.set_text(_(preset))
 		self._model.clear()
 		for c in COMBO_PRESET[preset]:
 			self._model.append([c, _(c)])
@@ -99,6 +99,42 @@ class ComboDialog(gtk.Dialog):
 				self._combo.set_active_iter(iter)
 				break
 			iter = self._model.iter_next(iter)
+		return
+
+SCALE_PRESET = {
+	'display.roller.opacity' : [0, 100, 5],
+	'display.single.opacity' : [0, 100, 5]
+	}
+class ScaleDialog(gtk.Dialog):
+	
+	def __init__(self):
+		gtk.Dialog.__init__(self, buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		self._adj = gtk.Adjustment()
+		hscale = gtk.HScale(self._adj)
+		hscale.set_digits(0)
+		container = gtk.HBox()
+		self.get_content_area().pack_start(container, False, False, 10)
+		image = gtk.Image()
+		image.set_from_stock(gtk.STOCK_DIALOG_QUESTION, gtk.ICON_SIZE_DIALOG)
+		container.pack_start(image, False, False, 10)
+		container.pack_start(hscale, True, True, 10)
+		container.show_all()
+		return
+	
+	def set_preset(self, preset):
+		gtk.Dialog.set_title(self, _(preset))
+		config = SCALE_PRESET[preset]
+		self._adj.lower = config[0]
+		self._adj.upper = config[1]
+		self._adj.step_increment = config[2]
+		return
+		
+	def get_value(self):
+		value = self._adj.get_value()
+		return str(int(value))
+	
+	def set_value(self, value):
+		self._adj.set_value(int(float(value)))
 		return
 		
 ## Application preference.
@@ -127,12 +163,14 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.embedded.background'] = Config('display.embedded.background', '/apps/rhythmbox/plugins/RBLyrics/display.embedded.background', '#EDECEB', False)
 		self._setting['display.roller'] = Config('display.roller', '/apps/rhythmbox/plugins/RBLyrics/display.roller', 'True', False)
 		self._setting['display.roller.window'] = Config('display.roller.window', '/apps/rhythmbox/plugins/RBLyrics/display.roller.window', '0,0,%d,%d' % (gtk.gdk.screen_width()/4, gtk.gdk.screen_height()/4), True)
+		self._setting['display.roller.opacity'] = Config('display.roller.opacity', '/apps/rhythmbox/plugins/RBLyrics/display.roller.opacity', '100', False)
 		self._setting['display.roller.font'] = Config('display.roller.font', '/apps/rhythmbox/plugins/RBLyrics/display.roller.font', '14', False)
 		self._setting['display.roller.foreground'] = Config('display.roller.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.roller.foreground', '#FF0080', False)
 		self._setting['display.roller.highlight'] = Config('display.roller.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.roller.highlight', '#00FF00', False)
 		self._setting['display.roller.background'] = Config('display.roller.background', '/apps/rhythmbox/plugins/RBLyrics/display.roller.background', '#000000', False)
 		self._setting['display.single'] = Config('display.single', '/apps/rhythmbox/plugins/RBLyrics/display.single', 'True', False)
 		self._setting['display.single.window'] = Config('display.single.window', '/apps/rhythmbox/plugins/RBLyrics/display.single.window', '0,0,%d,%d' % (gtk.gdk.screen_width()/4, 1), True)
+		self._setting['display.single.opacity'] = Config('display.single.opacity', '/apps/rhythmbox/plugins/RBLyrics/display.single.opacity', '100', False)
 		self._setting['display.single.font'] = Config('display.single.font', '/apps/rhythmbox/plugins/RBLyrics/display.single.font', '14', False)
 		self._setting['display.single.foreground'] = Config('display.single.foreground', '/apps/rhythmbox/plugins/RBLyrics/display.single.foreground', '#FF0080', False)
 		self._setting['display.single.highlight'] = Config('display.single.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.single.highlight', '#00FF00', False)
@@ -201,6 +239,7 @@ class Preference(gtk.Dialog, object):
 		self._dlgfont = None
 		self._dlgdirectory = None
 		self._dlgcombo = None
+		self._dlgscale = None
 		return
 	
 	def _on_delete_event(self, widget, event):
@@ -286,6 +325,18 @@ class Preference(gtk.Dialog, object):
 			value = self._dlgcombo.get_selection()
 			self._on_value_changed(c, iter, value)
 		return
+	
+	def _on_scale_set(self, c, iter):
+		if not self._dlgscale:
+			self._dlgscale = ScaleDialog()
+		self._dlgscale.set_preset(c.name)
+		self._dlgscale.set_value(c.value)
+		response = self._dlgscale.run()
+		self._dlgscale.hide()
+		if response == gtk.RESPONSE_OK:
+			value = self._dlgscale.get_value()
+			self._on_value_changed(c, iter, value)
+		return
 		
 	def _on_row_activated(self, treeview, path, column):
 		iter = self._model.get_iter(path)
@@ -309,6 +360,8 @@ class Preference(gtk.Dialog, object):
 				self._on_directory_set(c, iter)
 			elif c.name in ['main.file_pattern', 'display.gosd.vpos', 'display.gosd.halignment']:
 				self._on_combo_set(c, iter)
+			elif c.name in ['display.roller.opacity', 'display.single.opacity']:
+				self._on_scale_set(c, iter)
 		return
 		
 	def _on_btnlog_released(self, widget):
