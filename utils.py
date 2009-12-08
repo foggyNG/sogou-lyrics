@@ -23,6 +23,7 @@
 #  Utilities.
 
 import re, logging, os, sys, urllib, gettext
+from chardet import detect
 _ = gettext.gettext
 
 ## Pattern for token strip.
@@ -189,7 +190,27 @@ def load_lyrics(root, songinfo):
 		path = os.path.join(root, p % (songinfo.ar, songinfo.ti))
 		if os.path.exists(path):
 			log.info('load <file://%s>' % urllib.pathname2url(path))
-			lyrics = LyricsInfo(open(path, 'r').read())
+			try:
+				cache = open(path, 'r').read()
+				guess = {}
+				for l in cache.splitlines():
+					encoding = detect(l)
+					if encoding:
+						charset = encoding['encoding']
+						if guess.has_key(charset):
+							guess[charset] += 1
+						else:
+							guess[charset] = 1
+				charset = 'UTF-8'
+				threshold = 0
+				for c in guess:
+					if guess[c] > threshold:
+						threshold = guess[c]
+						charset = c
+				cache = cache.decode(charset, 'ignore').encode('UTF-8', 'ignore')
+				lyrics = LyricsInfo(cache)
+			except Exception, e:
+				log.error(e)
 			break
 	return lyrics
 
