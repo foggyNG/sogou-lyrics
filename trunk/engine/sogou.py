@@ -83,7 +83,7 @@ class Sogou(LRCBase):
 				self._receiver(None)
 				callback(self.__class__.__name__)
 			else:
-				pattern = re.compile(r'onclick="dyama\(\'geci\'\);" href="(?P<url>[^"]+?)"')
+				pattern = re.compile(r'onclick="dyama\(\'gecd?i\'\);" href="(?P<url>[^"]+?)"')
 				for line in cache:
 					seg = pattern.findall(line)
 					if len(seg):
