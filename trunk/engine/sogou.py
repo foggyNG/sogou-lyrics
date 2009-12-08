@@ -91,6 +91,10 @@ class Sogou(LRCBase):
 						log.debug('lyrics page url <%s>' % url)
 						rb.Loader().get_url(url, self._on_lyrics_page_arrive, callback)
 						break
+				else:
+					log.debug('lyrics page not found')
+					self._receiver(None)
+					callback(self.__class__.__name__)
 		return
 	
 	def search(self, callback):
