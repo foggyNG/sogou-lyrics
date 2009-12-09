@@ -140,8 +140,11 @@ class LyricsChooser(gtk.Window):
 		hashid = hash(self._notebook.get_tab_label_text(child))
 		song = self._songinfo[hashid]
 		selected = self._selection[hashid].get_selected()
-		index = selected[0].get_value(selected[1], 3)
-		lyrics = self._candidate[hashid][index][1]
+		if selected[1]:
+			index = selected[0].get_value(selected[1], 3)
+			lyrics = self._candidate[hashid][index][1]
+		else:
+			lyrics = None
 		self._notebook.remove_page(pageid)
 		del self._preview[hashid]
 		del self._selection[hashid]
