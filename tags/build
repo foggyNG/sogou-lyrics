@@ -1,6 +1,6 @@
 #!/bin/bash
 ROOT=$PWD
-SRC=../trunk
+SRC=~/.gnome2/rhythmbox/plugins/RBLyrics
 VERSION=`svn info $SRC | grep Revision | awk '{print $2}'`
 DEST="${ROOT}/rblyrics-svn$VERSION"
 # remove old files
@@ -14,7 +14,7 @@ mkdir -p $APPDIR
 mkdir -p `dirname $CONTROL`
 # copy app files
 cd $SRC
-for i in `find . -name .svn -prune -o -type f -print | grep -v po$ | grep -v conf$`;
+for i in `find . -name .svn -prune -o -type f -print | grep -v po$ | grep -v conf$ | grep -v doc`;
 do
 	cp --parents -t $APPDIR $i
 done
