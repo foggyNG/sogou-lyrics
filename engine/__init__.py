@@ -97,12 +97,8 @@ class Engine:
 	
 	## 启动搜索引擎。
 	def _searcher(self, plexer):
-		token = clean_token(self._songinfo.ar)
-		encoding = detect(token)['encoding']
-		artist = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-		token = clean_token(self._songinfo.ti)
-		encoding = detect(token)['encoding']
-		title = token.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+		artist = clean_token(self._songinfo.ar)
+		title = clean_token(self._songinfo.ti)
 		if artist == clean_token('Unknown'):
 			artist = ''
 		self._alive = len(self._engine)
