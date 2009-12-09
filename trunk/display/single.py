@@ -23,7 +23,7 @@
 ## @package RBLyrics.display.single
 #  水平滚动显示模式。
 
-import logging, gtk, gtk.gdk, gettext, pango, bisect, sys, glib, datetime
+import logging, gtk, gtk.gdk, gettext, pango, bisect, sys, datetime, gobject
 
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
@@ -104,7 +104,7 @@ class Single(gtk.Window):
 	## 销毁。	
 	def finialize(self):
 		self._prefs.watcher.remove(self)
-		if self._update_source and not glib.source_remove(self._update_source):
+		if self._update_source and not gobject.source_remove(self._update_source):
 			log.warn('update source remove failed %d' % self._update_source)
 		self._update_source = None
 		self.destroy()
@@ -158,7 +158,7 @@ class Single(gtk.Window):
 		if not self._running:
 			self._running = True
 			if not self._update_source:
-				self._update_source = glib.timeout_add(100, self._scroll_left)
+				self._update_source = gobject.timeout_add(100, self._scroll_left)
 			self.present()
 			x,y,w,h = map(int, self._prefs.get('display.single.window').split(','))
 			self.move(x, y)
@@ -168,7 +168,7 @@ class Single(gtk.Window):
 	def pause(self):
 		if self._running:
 			self._running = False
-			if self._update_source and not glib.source_remove(self._update_source):
+			if self._update_source and not gobject.source_remove(self._update_source):
 				log.warn('update source remove failed %d' % self._update_source)
 			self._update_source = None
 			self.hide()
