@@ -220,13 +220,6 @@ class Preference(gtk.Dialog, object):
 		self.get_content_area().add(scroll)
 		self.get_content_area().show_all()
 		#
-		btnlog = gtk.Button(_('Log'))
-		icon = gtk.Image()
-		icon.set_from_stock(gtk.STOCK_INFO, gtk.ICON_SIZE_BUTTON)
-		btnlog.set_image(icon)
-		btnlog.connect('released', self._on_btnlog_released)
-		self.get_action_area().pack_end(btnlog, False, False)
-		#
 		btnrestore = gtk.Button(_('Restore'))
 		icon = gtk.Image()
 		icon.set_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
@@ -370,12 +363,6 @@ class Preference(gtk.Dialog, object):
 				self._on_combo_set(c, iter)
 			elif c.name in ['display.roller.opacity', 'display.single.opacity']:
 				self._on_scale_set(c, iter)
-		return
-		
-	def _on_btnlog_released(self, widget):
-		path = rb.find_user_cache_file('RBLyrics/log')
-		log.info('open <file://%s>' % urllib.pathname2url(path))
-		os.system('/usr/bin/xdg-open \"%s\"' % path)
 		return
 	
 	def _on_btnclose_released(self, widget):

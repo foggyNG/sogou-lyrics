@@ -141,7 +141,7 @@ class RBLyrics(rb.Plugin):
 	#  @param auto 是否自动选择歌词。
 	def _on_lyrics_arrive(self, songinfo, candidate, auto):
 		n_candidates = len(candidate)
-		log.info('%d candidates found for %s' % (n_candidates, songinfo))
+		log.debug('%d candidates found for %s' % (n_candidates, songinfo))
 		if auto:
 			if n_candidates == 0:
 				self._chooser_handler(songinfo, None)
@@ -198,16 +198,9 @@ class RBLyrics(rb.Plugin):
 		# logging
 		log.setLevel(logging.DEBUG)
 		console_handler = logging.StreamHandler()
-		console_handler.setLevel(logging.INFO)
+		console_handler.setLevel(logging.DEBUG)
 		console_handler.setFormatter(logging.Formatter('RBLyrics %(levelname)-8s %(module)s::%(funcName)s - %(message)s'))
 		log.addHandler(console_handler)
-		cachedir = os.path.join(rb.user_cache_dir(), 'RBLyrics')
-		if not os.path.exists(cachedir):
-			os.makedirs(cachedir)
-		filename = os.path.join(cachedir, 'log')
-		file_handler = logging.handlers.RotatingFileHandler(filename, maxBytes=102400, backupCount=0)
-		file_handler.setFormatter(logging.Formatter('%(levelname)-8s %(module)s::%(funcName)s - %(message)s', '%m-%d %H:%M'))
-		log.addHandler(file_handler)
 		#
 		log.info(sys.version)
 		#

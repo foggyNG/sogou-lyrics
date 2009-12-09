@@ -148,8 +148,8 @@ class TTPlayer(LRCBase):
 					self._job.append(url)
 					if len(self._job) >= self._max:
 						break
-				log.debug('%d lyrics url found' % len(self._job))
-				self._get_next_lyrics(callback, self.__class__.__name__)
+				log.debug('%d jobs found' % len(self._job))
+				self._get_next_lyrics(callback)
 		return
 	
 	## 开始搜索。
