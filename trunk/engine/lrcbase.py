@@ -45,33 +45,31 @@ class LRCBase:
 	## 歌词收取响应函数。
 	#  @param cache 歌词原始文本。
 	#  @param callback 线程回调函数。
-	#  @param engine_name 下载引擎名称。
-	def _on_lyrics_arrive(self, cache, callback, engine_name):
+	def _on_lyrics_arrive(self, cache, callback):
 		if cache is None:
 			# rb.Loader failed, stop the engine
 			self._receiver(cache)
-			callback(engine_name)
+			callback(self.__class__.__name__)
 		else:
 			encoding = detect(cache)['encoding']
 			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
 			if self._receiver(cache):
-				self._get_next_lyrics(callback, engine_name)
+				self._get_next_lyrics(callback)
 			else:
 				self._receiver(None)
-				callback(engine_name)
+				callback(self.__class__.__name__)
 		return
 	
 	## 获取下一个歌词。
 	#  @param callback 线程回调函数。
-	#  @param engine_name 下载引擎名称。
-	def _get_next_lyrics(self, callback, engine_name):
-		log.debug('%s, %d jobs left' % (engine_name, len(self._job)))
+	def _get_next_lyrics(self, callback):
+		log.debug('%s, %d jobs left' % (self.__class__.__name__, len(self._job)))
 		if len(self._job) > 0:
 			url = self._job.pop(0)
-			log.info('%s <%s>' % (engine_name, url))
-			rb.Loader().get_url(url, self._on_lyrics_arrive, callback, engine_name)
+			log.info('%s <%s>' % (self.__class__.__name__, url))
+			rb.Loader().get_url(url, self._on_lyrics_arrive, callback)
 		else:
 			self._receiver(None)
-			callback(engine_name)
+			callback(self.__class__.__name__)
 		return
 			

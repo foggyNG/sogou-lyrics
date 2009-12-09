@@ -102,6 +102,7 @@ class Engine:
 		if artist == clean_token('Unknown'):
 			artist = ''
 		self._alive = len(self._engine)
+		log.debug('search begin <%s - %s>' % (artist, title))
 		if self._alive == 0:
 			# no engine selected
 			self._callback(self._songinfo, self._candidate, self._auto)
@@ -113,6 +114,7 @@ class Engine:
 				yield None
 				_, (engine_name,) = plexer.receive()
 				log.debug('%s finished' % engine_name)
+		log.debug('search finished <%s - %s>' % (artist, title))
 		return
 	
 	## 开始搜索。
