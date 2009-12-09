@@ -20,34 +20,32 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.utils
-#  Utilities.
+#  包含歌曲信息和歌词信息的定义，相关操作和辅助函数。
 
 import re, logging, os, sys, urllib, gettext
 from chardet import detect
 _ = gettext.gettext
-
-## Pattern for token strip.
-TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
-
-## Pattern for generate lyrics path.
-LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
-
-## Logging system.
 log = logging.getLogger('RBLyrics')
 
-#
+## 用于提取歌曲信息的模板。
+TOKEN_STRIP = {'\([^\)]*\)':'', '[\ -]+':' '}
+## 歌词存储的结构模式。
+LRC_PATH_TEMPLATE = ['%s/%s.lrc', '%s - %s.lrc']
+## 歌词标题提取模板。
 re_ti = re.compile(r'\[ti:([^\]]*)\]')
+## 歌词艺术家提取模板。
 re_ar = re.compile(r'\[ar:([^\]]*)\]')
+## 歌词时间偏移提取模板。
 re_offset = re.compile(r'\[offset:([+-]{0,1}[0-9]+)\]')
+## 歌词时间标签提取模板。
 re_time = re.compile(r'\[(?P<min>[0-9]{2}):(?P<sec>[0-9]{2})(\.(?P<milli>[0-9]{1,3}))?\]')
 
-		
-## Song information.
+## 歌曲信息。
 class SongInfo(object):
 	
-	## The constructor.
-	#  @param artist Artist.
-	#  @param title Title.
+	## 构造函数。
+	#  @param artist 艺术家。
+	#  @param title 标题。
 	def __init__(self, artist, title):
 		self._artist = artist
 		self._title = title
@@ -59,14 +57,16 @@ class SongInfo(object):
 	def __eq__(self, other):
 		return self._title == other.ti and self._artist == other.ar
 
+	## 艺术家(只读)。
 	ar = property(lambda self: self._artist)
+	## 标题(只读)。
 	ti = property(lambda self: self._title)
 	
-## Lyrics information.
+## 歌词信息。
 class LyricsInfo(object):
 	
-	## The constructor.
-	#  @param raw Lyrics raw content.
+	## 构造函数。
+	#  @param raw 歌词原始文本数据。
 	def __init__(self, raw):
 		self._raw = raw
 		self._artist = ''
@@ -75,6 +75,9 @@ class LyricsInfo(object):
 		self._parse()
 		return
 	
+	## 由歌词时间标签生成时间，以毫秒为单位。
+	#  @param group 时间标签。
+	#  @return 毫秒。
 	def _make_time(self, group):
 		min = int(group.group('min'))
 		sec = int(group.group('sec'))
@@ -85,7 +88,7 @@ class LyricsInfo(object):
 			milli = 0
 		return min*60000 + sec*1000 + milli
 		
-	## Parse lyrics raw content.
+	## 解析歌词文本。
 	def _parse(self):
 		lines = self._raw.splitlines()
 		cache = {}
@@ -123,15 +126,19 @@ class LyricsInfo(object):
 		if len(self._content) == 0:
 			log.warn('empty or invalid lyrics file')
 		return
-		
+	
+	## 艺术家(只读)。
 	ar = property(lambda self: self._artist)
+	## 标题(只读)。
 	ti = property(lambda self: self._title)
+	## 原始文本(只读)。
 	raw = property(lambda self: self._raw)
+	## 解析后的歌词内容(只读)。
 	content = property(lambda self: self._content)
 	
-## Clean token.
-#  @param token Original token.
-#  @return Cleaned token.
+## 清除信息字段中的冗余部分。
+#  @param token 输入信息.
+#  @return 清除冗余后的信息.
 def clean_token(token):
 	result = token.lower()
 	for strip in TOKEN_STRIP.keys():
@@ -139,10 +146,10 @@ def clean_token(token):
 	result = result.strip()
 	return result
 
-## Calculate edit distance.
-#  @param left Instance A.
-#  @param right Instance B.
-#  @return Edit distance between A and B.
+## 计算两个序列的编辑距离。
+#  @param left 序列A。
+#  @param right 序列B。
+#  @return 序列A和B的编辑距离。
 def edit_distance(left, right):
 	m = len(left)
 	n = len(right)
@@ -160,17 +167,18 @@ def edit_distance(left, right):
 			dist[i][j] = min(dist[i-1][j-1] + int(left[i-1] != right[j-1]), dist[i-1][j]+1, dist[i][j-1]+1)
 	return dist[m][n]
 
-## Calculate edit distance between songinfo and lyrics.
-#  @param songinfo Song information.
-#  @param lyrics Lyrics information.
-#  @return Edit distance between songinfo and lyrics.
+## 计算歌曲信息和歌词信息间的编辑距离。
+#  @param songinfo 歌曲信息。
+#  @param lyrics 歌词信息。
+#  @return 编辑距离。
 def distance(songinfo, lyrics):
 	return edit_distance(songinfo.ar.lower(), lyrics.ar.lower()) + edit_distance(songinfo.ti.lower(), lyrics.ti.lower())
 
-## Save lyrics to file.
-#  @param root Lyrics root directory.
-#  @param songinfo Song information of the lyrics.
-#  @param lyrics Lyrics information.
+## 将歌词写入磁盘。
+#  @param root 歌词存储根目录。
+#  @param pattern 歌词存储结构。
+#  @param songinfo 歌曲信息。
+#  @param lyrics 歌词信息。
 def save_lyrics(root, pattern, songinfo, lyrics):
 	path = os.path.join(root, pattern % (songinfo.ar, songinfo.ti))
 	dir = os.path.dirname(path)
@@ -180,10 +188,10 @@ def save_lyrics(root, pattern, songinfo, lyrics):
 	log.info('save <file://%s>' % urllib.pathname2url(path))
 	return
 
-## Load lyrics from file.
-#  @param root Lyrics root directory.
-#  @param songinfo Song information of the lyrics.
-#  @return Lyrics information.
+## 从本地载入歌词。
+#  @param root 歌词存储根目录。
+#  @param songinfo 歌曲信息。
+#  @return 歌词信息，未找到时返回None。
 def load_lyrics(root, songinfo):
 	lyrics = None
 	for p in LRC_PATH_TEMPLATE:
@@ -214,10 +222,10 @@ def load_lyrics(root, songinfo):
 			break
 	return lyrics
 
-## Open lyrics file in system default editor.
-#  @param root Lyrics root directory.
-#  @param songinfo Song information of the lyrics.
-#  @return If successed.
+## 使用系统默认编辑器打开歌词。
+#  @param root 歌词存储根目录。
+#  @param songinfo 歌曲信息。
+#  @return 操作是否成功。
 def open_lyrics(root, songinfo):
 	ret = False
 	for p in LRC_PATH_TEMPLATE:

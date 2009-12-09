@@ -20,17 +20,22 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.prefs
-#  Preference.
-import rb
-import os, gtk, gconf, logging, urllib, gettext, pango, gtk.gdk
-from gnomeosd import capplet
+#  插件配置模块。
+
+import rb, os, gtk, gconf, logging, urllib, gettext, pango, gtk.gdk
 from engine import engine_map
 from utils import LRC_PATH_TEMPLATE
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
+## 选项。
 class Config(object):
 	
+	## 构造函数。
+	#  @param name 选项名称。
+	#  @param key 选项存储位置。
+	#  @param default 选项默认值。
+	#  @param readonly 是否只读。
 	def __init__(self, name, key, default, readonly):
 		self._name = name
 		self._key = key
@@ -42,7 +47,7 @@ class Config(object):
 			self._value = default
 		log.info(self)
 		return
-		
+	
 	def _set_value(self, value):
 		self._value = value
 		gconf.client_get_default().set_string(self._key, value)
@@ -50,11 +55,16 @@ class Config(object):
 		
 	def __str__(self):
 		return 'Config %s = %s' % (self._name, self._value)
-		
+	
+	## 选项名称(只读)。
 	name = property(lambda self : self._name)
+	## 选项存储位置(只读)。
 	key = property(lambda self : self._key)
+	## 选项默认值(只读)。
 	default = property(lambda self : self._default)
+	## 选项当前取值(读写)。
 	value = property(lambda self : self._value, _set_value)
+	## 是否只读(只读)。
 	readonly = property(lambda self : self._readonly)
 
 COMBO_PRESET = {
@@ -137,12 +147,10 @@ class ScaleDialog(gtk.Dialog):
 		self._adj.set_value(int(float(value)))
 		return
 		
-## Application preference.
-#
-#  Parse and retrieve application preferece, display preference dialog.
+## 首选项配置对话框。
 class Preference(gtk.Dialog, object):
 	
-	## The constructor.
+	## 构造函数。
 	def __init__(self):
 		gtk.Dialog.__init__(self, title = _('Preferences'), flags = gtk.DIALOG_NO_SEPARATOR)
 		self._setting = {}
@@ -395,6 +403,8 @@ class Preference(gtk.Dialog, object):
 				if v.value == 'True':
 					engine.append(k)
 		return engine
-
+	
+	## 选项(只读)。
 	setting = property(lambda self : self._setting)
+	## 监视者(只读)，选项改变时会通知监视者做相应的改变。
 	watcher = property(lambda self : self._watcher)
