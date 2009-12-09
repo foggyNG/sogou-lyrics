@@ -20,16 +20,19 @@
 #	   MA 02110-1301, USA.
 
 
-## @package RBLyrics.display.embedded
-#  Embedded displayer.
+## @package RBLyrics.display.roller
+#  垂直滚动显示模式。
 
 import logging, gtk, gtk.gdk, gettext, pango, bisect, sys, glib, datetime
-
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
+## 垂直滚动显示模式。
 class Roller(gtk.Window):
 	
+	## 构造函数。
+	#  @param shell RBShell。
+	#  @param prefs 选项管理器。
 	def __init__(self, shell, prefs):
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 		#
@@ -85,7 +88,7 @@ class Roller(gtk.Window):
 		self._layout.move(self._vbox, (event.width - box_w)/2, event.height/2)
 		self._prefs.set('display.roller.window', '%d,%d,%d,%d' % (event.x,event.y,event.width,event.height), False)
 		return False
-		
+	
 	def _on_button_press(self, widget, event):
 		catched = False
 		if event.button == 3 and isinstance(widget, gtk.Window):
@@ -100,7 +103,8 @@ class Roller(gtk.Window):
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		return catched
-		
+	
+	## 销毁。
 	def finialize(self):
 		self._prefs.watcher.remove(self)
 		if self._update_source and not glib.source_remove(self._update_source):
@@ -108,7 +112,9 @@ class Roller(gtk.Window):
 		self._update_source = None
 		self.destroy()
 		return
-
+	
+	## 设置歌词。
+	#  @param lyrics 歌词信息。
 	def set_lyrics(self, lyrics):
 		if lyrics != self._lyrics:
 			self._lyrics = lyrics
@@ -150,6 +156,7 @@ class Roller(gtk.Window):
 			self._scroll = 0
 		return
 	
+	## 继续。
 	def resume(self):
 		if not self._running:
 			self._running = True
@@ -160,6 +167,7 @@ class Roller(gtk.Window):
 			self.move(x, y)
 		return
 	
+	## 暂停。
 	def pause(self):
 		if self._running:
 			self._running = False
@@ -189,14 +197,18 @@ class Roller(gtk.Window):
 	
 	def _get_milli(self, delta):
 		return delta.days * 24 * 3600 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000
-		
+	
+	## 同步。
+	#  @param elapsed 播放时间。
 	def synchronize(self, elapsed):
 		start_new = datetime.datetime.now() - datetime.timedelta(seconds = elapsed)
 		milli = self._get_milli(start_new - self._start_time)
 		if abs(milli) > 500:
 			self._start_time = start_new
 		return
-		
+	
+	## 更新配置。
+	#  @param config 待更新的配置项。
 	def update_config(self, config):
 		name = config.name
 		value = config.value

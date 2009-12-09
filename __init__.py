@@ -20,7 +20,7 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics
-#  RBLyrics.
+#  鲁班歌词。
 
 import rhythmdb, rb
 import os, gettext, logging, logging.handlers, sys, gtk, gtk.glade
@@ -31,14 +31,16 @@ from display import Display
 from utils import save_lyrics, load_lyrics, open_lyrics, SongInfo
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
-## RBLyrics plugin.
+
+## 鲁班歌词。
 class RBLyrics(rb.Plugin):
 
-	## The constructor.
+	## 构造函数。
 	def __init__(self):
 		rb.Plugin.__init__(self)
 		return
 	
+	## "playing-changed"事件处理函数。
 	def _on_playing_changed(self, player, playing):
 		if playing:
 			self._display.set_lyrics(self._lyrics)
@@ -47,7 +49,7 @@ class RBLyrics(rb.Plugin):
 			self._display.pause()
 		return
 		
-	## Elapsed changed handler.
+	## "elapsed-changed"事件处理函数。
 	def _on_elapsed_changed(self, player, elapsed):
 		if player.get_playing():
 			self._display.set_lyrics(self._lyrics)
@@ -55,7 +57,7 @@ class RBLyrics(rb.Plugin):
 			self._display.resume()
 		return
 	
-	## Playing song changed handler.
+	## "playing-song-changed"事件处理函数。
 	def _on_playing_song_changed(self, player, entry):
 		#self._display.pause()
 		self._lyrics = None
@@ -71,10 +73,10 @@ class RBLyrics(rb.Plugin):
 				self._display.set_lyrics(self._lyrics)
 				self._display.resume()
 			elif self._prefs.get('main.download') == 'True':
-				Engine(self._prefs.get_engine(), songinfo, self._receive_lyrics, True).search()
+				Engine(self._prefs.get_engine(), songinfo, self._on_lyrics_arrive, True).search()
 		return
 	
-	## Open lyrics handler for popup menu.
+	## 右键菜单编辑歌词事件处理函数。
 	def _on_lyrics_popup_activated(self, action):
 		source = self._shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
@@ -84,13 +86,14 @@ class RBLyrics(rb.Plugin):
 			self._open_lyrics(entry)
 		return
 	
-	## Open lyrics handler for shortcut menu.
+	## 工具栏打开歌词事件处理函数。
 	def _on_lyrics_shortcut_activated(self, action):
 		entry = self._shell.props.shell_player.get_playing_entry ()
 		if entry:
 			self._open_lyrics(entry)
 		return
 	
+	## 右键菜单手动下载歌词事件处理函数。
 	def _on_download_activated(self, action):
 		source = self._shell.get_property("selected_source")
 		entry = rb.Source.get_entry_view(source)
@@ -100,11 +103,11 @@ class RBLyrics(rb.Plugin):
 			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
 			songinfo = SongInfo(artist, title)
-			Engine(self._prefs.get_engine(), songinfo, self._download_handler, False).search()
+			Engine(self._prefs.get_engine(), songinfo, self._on_lyrics_arrive, False).search()
 		return
 		
-	## Open lyrics file.
-	#  @param entry Song entry to be opened.
+	## 打开歌词文件。
+	#  @param entry 歌曲条目。
 	def _open_lyrics(self, entry):
 		artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 		title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
@@ -114,6 +117,9 @@ class RBLyrics(rb.Plugin):
 			rb.error_dialog(title = _('Lyrics not found'), message = str(songinfo))
 		return
 	
+	## 歌词选择对话框响应函数。
+	#  @param song 歌曲信息。
+	#  @param lyrics 歌词信息。
 	def _chooser_handler(self, song, lyrics):
 		if lyrics:
 			save_lyrics(self._prefs.get('main.directory'), self._prefs.get('main.file_pattern'), song, lyrics)
@@ -129,28 +135,26 @@ class RBLyrics(rb.Plugin):
 				self._display.resume()
 		return
 		
-	## Lyrics choose response hander.
-	def _receive_lyrics(self, songinfo, candidate):
+	## 歌词下载模块响应函数。
+	#  @param songinfo 歌曲信息。
+	#  @param candidate 候选歌词。
+	#  @param auto 是否自动选择歌词。
+	def _on_lyrics_arrive(self, songinfo, candidate, auto):
 		n_candidates = len(candidate)
 		log.info('%d candidates found for %s' % (n_candidates, songinfo))
-		if n_candidates == 0:
-			self._chooser_handler(songinfo, None)
-		elif candidate[0][0] == 0:
-			self._chooser_handler(songinfo, candidate[0][1])
+		if auto:
+			if n_candidates == 0:
+				self._chooser_handler(songinfo, None)
+			elif candidate[0][0] == 0:
+				self._chooser_handler(songinfo, candidate[0][1])
+			else:
+				self._chooser.add_task(songinfo, candidate)
+				self._chooser.present()
 		else:
-			#gtk.gdk.threads_enter()
 			self._chooser.add_task(songinfo, candidate)
 			self._chooser.present()
-			#gtk.gdk.threads_leave()
 		return
 	
-	def _download_handler(self, songinfo, candidate):
-		n_candidates = len(candidate)
-		log.info('%d candidates found for %s' % (n_candidates, songinfo))
-		self._chooser.add_task(songinfo, candidate)
-		self._chooser.present()
-		return
-		
 	def _on_embedded_toggled(self, widget):
 		if widget.get_active():
 			value = 'True'
@@ -183,7 +187,7 @@ class RBLyrics(rb.Plugin):
 		self._prefs.set('display.single', value)
 		return
 		
-	## Plugin activation.
+	## 开启插件。
 	def activate(self, shell):
 		# internationalization
 		LOCALE_DIR = self.find_file('locale')
@@ -259,7 +263,7 @@ class RBLyrics(rb.Plugin):
 		log.info('activated')
 		return
 	
-	## Plugin deactivation.
+	## 关闭插件。
 	def deactivate(self, shell):
 		self._prefs.watcher.remove(self)
 		for handler in self._handler:
@@ -282,11 +286,13 @@ class RBLyrics(rb.Plugin):
 			log.removeHandler(handler)
 		return
 	
-	## Configure dialog interface.
+	## 打开首选项配置对话框。
 	def create_configure_dialog(self):
 		self._prefs.present()
 		return self._prefs
-		
+	
+	## 更新配置。
+	#  @param config 待更新的配置项。
 	def update_config(self, config):
 		name = config.name
 		value = config.value

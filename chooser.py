@@ -20,18 +20,17 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.chooser
-#  Lyrics chooser.
+#  歌词选择对话框。
 
 import gtk, gettext, logging
-
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
-## Lyrics chooser dialog.
+## 歌词选择对话框。
 class LyricsChooser(gtk.Window):
 	
-	## The constructor.
-	#  @param callback Response callback.
+	## 构造函数。
+	#  @param callback 响应回调函数。
 	def __init__(self, callback):
 		gtk.Window.__init__(self, type = gtk.WINDOW_TOPLEVEL)
 		self.set_title(_('Select lyrics'))
@@ -65,6 +64,9 @@ class LyricsChooser(gtk.Window):
 		self._preview = {}
 		return
 	
+	## 添加一个选择任务。
+	#  @param songinfo 歌曲信息。
+	#  @param candidate 候选歌词。
 	def add_task(self, songinfo, candidate):
 		labeltext = '%s(%d)' % (songinfo, len(candidate))
 		hashid = hash(labeltext)
@@ -118,7 +120,6 @@ class LyricsChooser(gtk.Window):
 				preview.get_buffer().set_text(_('Lyrics not found'))
 		return
 	
-	## Selection changed handler.
 	def _selection_changed(self, widget):
 		pageid = self._notebook.get_current_page()
 		child = self._notebook.get_nth_page(pageid)
@@ -168,7 +169,6 @@ class LyricsChooser(gtk.Window):
 		self._callback(song, None)
 		return
 		
-	## Dialog response handler.
 	def _on_delete_event(self, widget, event):
 		self.hide()
 		for pageid in range(self._notebook.get_n_pages()):
