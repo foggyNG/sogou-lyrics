@@ -19,28 +19,30 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-## @package RBLyrics.engine.lyricist
-#  Lyricist search engine.
+## @package RBLyrics.engine.jpwy
+#  极品网页歌词下载引擎。
 
 import rb, urllib, re, logging
 from xml.dom.minidom import parseString
 from chardet import detect
-
 from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
-## Lyricist engine.
-#
-#  Retrieve lyrics from www.winampcn.com.
+## 极品网页歌词下载引擎。
 class Jpwy(LRCBase):
 	
-	## The constructor.
-	#  @param timeout HTTP request timeout.
-	#  @param max Max number of lyrics expected.
+	## 构造函数。
+	#  @param artist 艺术家。
+	#  @param title 标题。
+	#  @param receiver 歌词回调函数。
+	#  @param max 最大尝试次数。
 	def __init__(self, artist, title, receiver, max = 5):
 		LRCBase.__init__(self, artist, title, receiver, max)
 		return
-
+	
+	## 搜索页响应函数。
+	#  @param cache 得到的响应文本。
+	#  @param callback 线程回调函数。
 	def _on_meta_arrive(self, cache, callback):
 		if cache is None:
 			log.warn('network error')
@@ -68,7 +70,9 @@ class Jpwy(LRCBase):
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
 		return
-		
+	
+	## 开始搜索。
+	#  @param callback 线程回调函数。
 	def search(self, callback):
 		artist_token = self._artist.encode('GBK', 'ignore')
 		title_token = self._title.encode('GBK', 'ignore')

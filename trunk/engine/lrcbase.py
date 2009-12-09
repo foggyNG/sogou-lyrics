@@ -19,21 +19,21 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-## @package RBLyrics.engine.lyricist
-#  Lyricist search engine.
+## @package RBLyrics.engine.lrcbase
+#  歌词下载引擎基类。
+
 import rb, logging
 from chardet import detect
-
 log = logging.getLogger('RBLyrics')
 
-## Lyricist engine.
-#
-#  Retrieve lyrics from www.winampcn.com.
+## 歌词下载引擎基类。
 class LRCBase:
 	
-	## The constructor.
-	#  @param timeout HTTP request timeout.
-	#  @param max Max number of lyrics expected.
+	## 构造函数。
+	#  @param artist 艺术家。
+	#  @param title 标题。
+	#  @param receiver 歌词回调函数。
+	#  @param max 最大尝试次数。
 	def __init__(self, artist, title, receiver, max):
 		self._artist = artist
 		self._title = title
@@ -42,6 +42,10 @@ class LRCBase:
 		self._job = []
 		return
 	
+	## 歌词收取响应函数。
+	#  @param cache 歌词原始文本。
+	#  @param callback 线程回调函数。
+	#  @param engine_name 下载引擎名称。
 	def _on_lyrics_arrive(self, cache, callback, engine_name):
 		if cache is None:
 			# rb.Loader failed, stop the engine
@@ -56,7 +60,10 @@ class LRCBase:
 				self._receiver(None)
 				callback(engine_name)
 		return
-		
+	
+	## 获取下一个歌词。
+	#  @param callback 线程回调函数。
+	#  @param engine_name 下载引擎名称。
 	def _get_next_lyrics(self, callback, engine_name):
 		log.debug('%s, %d jobs left' % (engine_name, len(self._job)))
 		if len(self._job) > 0:

@@ -20,17 +20,20 @@
 #       MA 02110-1301, USA.
 
 
-## @package RBLyrics.display.embedded
-#  Embedded displayer.
+## @package RBLyrics.display.gosd
+#  OSD显示模式。
 
 import logging, gettext, bisect, sys
 from gnomeosd import eventbridge
-
 _ = gettext.gettext
 log = logging.getLogger('RBLyrics')
 
+## OSD显示模式。
 class GOSD:
 	
+	## 构造函数。
+	#  @param shell RBShell。
+	#  @param prefs 选项管理器。
 	def __init__(self, shell, prefs):
 		self._osd = eventbridge.OSD()
 		self._prefs = prefs
@@ -51,19 +54,24 @@ class GOSD:
 		prefs.watcher.append(self)
 		return
 	
+	## 销毁。
 	def finialize(self):
 		self._prefs.watcher.remove(self)
 		del self._osd
 		return
-		
+	
+	## 继续。
 	def resume(self):
 		self._running = True
 		return
 	
+	## 暂停。
 	def pause(self):
 		self._running = False
 		return
 	
+	## 设置歌词。
+	#  @param lyrics 歌词信息。
 	def set_lyrics(self, lyrics):
 		if lyrics != self._lyrics:
 			self._lyrics = lyrics
@@ -81,11 +89,15 @@ class GOSD:
 				self._timestamp = [0, sys.maxint]
 		return
 	
+	## 获取当前歌词行。
+	#  @param elapsed 播放时间。
 	def _get_line(self, elapsed):
 		index = bisect.bisect_right(self._timestamp, elapsed)
 		line = self._lines[index-1]
 		return line
-		
+	
+	## 同步。
+	#  @param elapsed 播放时间。
 	def synchronize(self, elapsed):
 		if self._running:
 			line = self._get_line(elapsed)
@@ -97,6 +109,8 @@ class GOSD:
 				self._osd.send(message)
 		return
 	
+	## 更新配置。
+	#  @param config 待更新的配置项。
 	def update_config(self, config):
 		name = config.name
 		value = config.value

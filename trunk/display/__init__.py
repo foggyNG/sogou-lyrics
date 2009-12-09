@@ -20,16 +20,16 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.display
-#  Displayer.
+#  歌词显示模块。
 
 import logging
-
 from embedded import Embedded
 from gosd import GOSD
 from roller import Roller
 from single import Single
 log = logging.getLogger('RBLyrics')
 
+## 歌词显示引擎。
 display_map = {
 	'display.single' : Single,
 	'display.roller' : Roller,
@@ -37,11 +37,12 @@ display_map = {
 	'display.embedded' : Embedded
 }
 
-## Lyrics displayer manager.
+## 歌词显示模块管理器。
 class Display:
 	
-	## The constructor.
-	#  @param prefs Preference.
+	## 构造函数。
+	#  @param shell RBShell。
+	#  @param prefs 选项管理器。
 	def __init__(self, shell, prefs):
 		self._shell = shell
 		self._prefs = prefs
@@ -50,33 +51,42 @@ class Display:
 		for config in prefs.setting.values():
 			self.update_config(config)
 		return
-		
+	
+	## 继续。
 	def resume(self):
 		for e in self._interface.values():
 			e.resume()
 		return
 	
+	## 暂停。
 	def pause(self):
 		for e in self._interface.values():
 			e.pause()
 		return
 	
+	## 设置歌词。
+	#  @param lyrics 歌词信息。
 	def set_lyrics(self, lyrics):
 		for e in self._interface.values():
 			e.set_lyrics(lyrics)
 		return
 	
+	## 同步。
+	#  @param elapsed 播放时间。
 	def synchronize(self, elapsed):
 		for e in self._interface.values():
 			e.synchronize(elapsed)
 		return
 	
+	## 销毁。
 	def finialize(self):
 		for e in self._interface.values():
 			e.finialize()
 		self._prefs.watcher.remove(self)
 		return
 	
+	## 更新配置。
+	#  @param config 待更新的配置项。
 	def update_config(self, config):
 		name = config.name
 		value = config.value

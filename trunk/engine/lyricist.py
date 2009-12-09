@@ -20,31 +20,34 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.engine.lyricist
-#  Lyricist search engine.
+#  乐辞歌词下载引擎。
+
 import rb, urllib, re, logging
 from xml.dom.minidom import parseString
-
 from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
-## Lyricist engine.
-#
-#  Retrieve lyrics from www.winampcn.com.
+## 乐辞歌词下载引擎。
 class Lyricist(LRCBase):
 	
-	## The constructor.
-	#  @param timeout HTTP request timeout.
-	#  @param max Max number of lyrics expected.
+	## 构造函数。
+	#  @param artist 艺术家。
+	#  @param title 标题。
+	#  @param receiver 歌词回调函数。
+	#  @param max 最大尝试次数。
 	def __init__(self, artist, title, receiver, max = 5):
 		LRCBase.__init__(self, artist, title, receiver, max)
 		return
 	
-	## Clean special characters.
-	#  @param token Original token.
-	#  @return Cleaned token.
+	## 清除特殊字符。
+	#  @param token 输入字符串。
+	#  @return 清除后的字符串。
 	def _clean_token(self, token):
 		return re.sub('[\ \t~`!@#$%\^&*\(\)-_+=|\\\{\}\[\]:\";\'<>\?,\./]', '', token)
-		
+	
+	## 搜索页响应函数。
+	#  @param xml 得到的响应文本。
+	#  @param callback 线程回调函数。
 	def _on_meta_arrive(self, xml, callback):
 		if xml is None:
 			log.warn('network error')
@@ -67,7 +70,9 @@ class Lyricist(LRCBase):
 				log.debug('%d lyrics url found' % len(self._job))
 				self._get_next_lyrics(callback, self.__class__.__name__)
 		return
-		
+	
+	## 开始搜索。
+	#  @param callback 线程回调函数。
 	def search(self, callback):
 		artist_token = urllib.quote(self._clean_token(self._artist))
 		title_token = urllib.quote(self._clean_token(self._title))

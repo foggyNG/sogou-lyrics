@@ -20,22 +20,21 @@
 #       MA 02110-1301, USA.
 
 ## @package RBLyrics.engine
-#  Lyrics search engine.
+#  歌词下载模块。
 
 import rb, logging, sys
 from chardet import detect
 
 from sogou import Sogou
 from ttplayer import TTPlayer
-#from minilyrics import Minilyrics
 from lyricist import Lyricist
 from jpwy import Jpwy
 from bzmtv import Bzmtv
 from utils import clean_token, distance, LyricsInfo
 log = logging.getLogger('RBLyrics')
-## Lyrics search engine map.
+
+## 歌词搜索引擎。
 engine_map = {
-	#'engine.minilyrics': Minilyrics,
 	'engine.sogou' : Sogou,
 	'engine.bzmtv' : Bzmtv,
 	'engine.jpwy' : Jpwy,
@@ -43,16 +42,17 @@ engine_map = {
 	'engine.lyricist': Lyricist
 }
 
-## Lyrics candidate comparison handler.
 def candidate_cmp(x, y):
 	return x[0] - y[0]
 
-## Lyrics search engine manager.
+## 歌词下载启动器。
 class Engine:
 	
-	## The constructor.
-	#  @param engine Engine list.
-	#  @param songinfo Song information.
+	## 构造函数。
+	#  @param engine 歌词引擎列表。
+	#  @param songinfo 歌曲信息。
+	#  @param callback 下载回调函数。
+	#  @param auto 是否自动选择歌词。
 	def __init__(self, engine, songinfo, callback, auto):
 		self._engine = engine
 		self._songinfo = songinfo
@@ -65,9 +65,10 @@ class Engine:
 		self._alive = 0
 		return
 	
-	## Lyrics receive handler.
-	#  @return True if continue
-	def _receive_lyrics(self, raw):
+	## 歌词收取响应函数。
+	#  @param raw 得到的歌词原始文本。
+	#  @return 是否继续下载。
+	def on_lyrics_arrive(self, raw):
 		ret = False
 		if raw == None:
 			# while rb.Loader failed or finished
@@ -84,17 +85,17 @@ class Engine:
 			if self._found:
 				# upcoming raw distance=0
 				self._candidate.sort(candidate_cmp)
-				self._callback(self._songinfo, self._candidate)
+				self._callback(self._songinfo, self._candidate, self._auto)
 				self._alive -= 1
 			else:
 				# continue to next lyrics
 				ret = True
 		if self._alive == 0 and not self._found:
 			self._candidate.sort(candidate_cmp)
-			self._callback(self._songinfo, self._candidate)
+			self._callback(self._songinfo, self._candidate, self._auto)
 		return ret
 	
-	## Retrieve lyrics.
+	## 启动搜索引擎。
 	def _searcher(self, plexer):
 		token = clean_token(self._songinfo.ar)
 		encoding = detect(token)['encoding']
@@ -107,17 +108,18 @@ class Engine:
 		self._alive = len(self._engine)
 		if self._alive == 0:
 			# no engine selected
-			self._callback(self._songinfo, self._candidate)
+			self._callback(self._songinfo, self._candidate, self._auto)
 		else:
 			for key in self._engine:
 				plexer.clear()
-				engine = engine_map[key](artist, title, self._receive_lyrics)
+				engine = engine_map[key](artist, title, self.on_lyrics_arrive)
 				engine.search(plexer.send())
 				yield None
 				_, (engine_name,) = plexer.receive()
 				log.debug('%s finished' % engine_name)
 		return
 	
+	## 开始搜索。
 	def search(self):
 		rb.Coroutine(self._searcher).begin()
 		return
