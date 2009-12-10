@@ -93,10 +93,10 @@ class Single(gtk.Window):
 		
 	def _on_button_press(self, widget, event):
 		catched = False
-		if event.button == 3 and isinstance(widget, gtk.Window):
+		if event.button == 3:
 			widget.begin_resize_drag(gtk.gdk.WINDOW_EDGE_EAST, event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
-		elif event.button == 1 and isinstance(widget, gtk.Window):
+		elif event.button == 1:
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		return catched

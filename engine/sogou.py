@@ -25,6 +25,7 @@
 import rb, urllib, re, logging
 from xml.dom.minidom import parseString
 from chardet import detect
+from ..utils import clean_token
 from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
@@ -32,84 +33,73 @@ log = logging.getLogger('RBLyrics')
 class Sogou(LRCBase):
 	
 	## 构造函数。
-	#  @param artist 艺术家。
-	#  @param title 标题。
-	#  @param receiver 歌词回调函数。
+	#  @param songinfo 歌曲信息。
+	#  @param auto 是否自动匹配歌词。
 	#  @param max 最大尝试次数。
-	def __init__(self, artist, title, receiver, max = 5):
-		LRCBase.__init__(self, artist, title, receiver, max)
+	def __init__(self, songinfo, auto, max = 5):
+		LRCBase.__init__(self, songinfo, auto, max)
 		return
 	
 	## 歌词页响应函数。
 	#  @param cache 得到的响应文本。
 	#  @param callback 线程回调函数。
 	def _on_lyrics_page_arrive(self, cache, callback):
-		if cache is None:
-			log.warn('network error')
-			# the following code make sure the main Engine to quit normally
-			self._receiver(None)
-			callback(self.__class__.__name__)
+		try:
+			encoding = detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').splitlines()
+		except Exception, e:
+			log.warn(e)
+			callback(self.__class__.__name__, self._candidate)
 		else:
-			try:
-				encoding = detect(cache)['encoding']
-				cache = cache.decode(encoding, 'ignore').splitlines()
-			except Exception, e:
-				log.error(e)
-				# the following code make sure the main Engine to quit normally
-				self._receiver(None)
-				callback(self.__class__.__name__)
-			else:
-				pattern = re.compile(r'<a href="downlrc\.jsp\?(?P<url>[^"]+?)">')
-				for line in cache:
-					for seg in pattern.findall(line):
-						self._job.append('http://mp3.sogou.com/downlrc.jsp?%s' % seg)
-						if len(self._job) >= self._max:
-							break
+			pattern = re.compile(r'<a href="downlrc\.jsp\?(?P<url>[^"]+?)">')
+			for line in cache:
+				for seg in pattern.findall(line):
+					self._job.append('http://mp3.sogou.com/downlrc.jsp?%s' % seg)
 					if len(self._job) >= self._max:
-							break
-				log.debug('%d jobs found' % len(self._job))
-				self._get_next_lyrics(callback)
+						break
+				if len(self._job) >= self._max:
+						break
+			log.debug('%d jobs found' % len(self._job))
+			self._get_next_lyrics(callback)
 		return
 	
 	## 搜索页响应函数。
 	#  @param cache 得到的响应文本。
 	#  @param callback 线程回调函数。
 	def _on_search_page_arrive(self, cache, callback):
-		if cache is None:
-			log.warn('network error')
-			# the following code make sure the main Engine to quit normally
-			self._receiver(None)
-			callback(self.__class__.__name__)
+		try:
+			encoding = detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').splitlines()
+		except Exception, e:
+			log.warn(e)
+			callback(self.__class__.__name__, self._candidate)
 		else:
-			try:
-				encoding = detect(cache)['encoding']
-				cache = cache.decode(encoding, 'ignore').splitlines()
-			except Exception, e:
-				log.error(e)
-				# the following code make sure the main Engine to quit normally
-				self._receiver(None)
-				callback(self.__class__.__name__)
+			pattern = re.compile(r'onclick="dyama\(\'gecd?i\'\);" href="(?P<url>[^"]+?)"')
+			for line in cache:
+				seg = pattern.findall(line)
+				if len(seg):
+					url = 'http://mp3.sogou.com' + seg[0]
+					log.debug('lyrics page url <%s>' % url)
+					rb.Loader().get_url(url, self._on_lyrics_page_arrive, callback)
+					break
 			else:
-				pattern = re.compile(r'onclick="dyama\(\'gecd?i\'\);" href="(?P<url>[^"]+?)"')
-				for line in cache:
-					seg = pattern.findall(line)
-					if len(seg):
-						url = 'http://mp3.sogou.com' + seg[0]
-						log.debug('lyrics page url <%s>' % url)
-						rb.Loader().get_url(url, self._on_lyrics_page_arrive, callback)
-						break
-				else:
-					log.debug('lyrics page not found')
-					self._receiver(None)
-					callback(self.__class__.__name__)
+				log.debug('lyrics page not found')
+				callback(self.__class__.__name__, self._candidate)
 		return
 	
 	## 开始搜索。
 	#  @param callback 线程回调函数。
 	def search(self, callback):
-		artist_token = urllib.quote(self._artist.encode('GBK', 'ignore'))
-		title_token = urllib.quote(self._title.encode('GBK', 'ignore'))
-		url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
+		artist = clean_token(self._songinfo.ar)
+		if artist == clean_token('Unknown'):
+			artist = ''
+		title = clean_token(self._songinfo.ti)
+		artist_token = urllib.quote(artist.encode('GBK', 'ignore'))
+		title_token = urllib.quote(title.encode('GBK', 'ignore'))
+		if len(artist_token) > 0:
+			url = 'http://mp3.sogou.com/music.so?query=%s%%20%s' % (artist_token, title_token)
+		else:
+			url = 'http://mp3.sogou.com/music.so?query=%s' % title_token
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_search_page_arrive, callback)
 		return
