@@ -56,12 +56,11 @@ class Minilyrics(threading.Thread):
 		m = md5()
 		m.update(xml + 'Mlv1clt4.0')
 		request = '\x02\x00\x04\x00\x00\x00%s%s' % (m.digest(), xml)
-		url = 'http://www.viewlyrics.com:1212/searchlyrics.htm'
-		print url
-		print request.__class__
+		url = 'http://www.viewlyrics.com:1212/searchlyrics.htm?%s' % request
+		print request
 		#return
 		try:
-			xml = urllib.urlopen(url, request, self._timeout).read()
+			xml = urllib2.urlopen(url, None, self._timeout).read()
 			elements = parseString(xml).getElementsByTagName('fileinfo')
 		except Exception as e:
 			log.error(e)
