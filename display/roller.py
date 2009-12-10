@@ -39,7 +39,7 @@ class Roller(gtk.Window):
 		self._shell = shell
 		self._prefs = prefs
 		self._running = False
-		self._drag_base = None
+		self._drag_base = -1
 		self._start_time = datetime.datetime.now()
 		self._lyrics = None
 		self._timestamp = [0, sys.maxint]
@@ -58,6 +58,7 @@ class Roller(gtk.Window):
 		self._vbox = gtk.VBox(True)
 		self._vbox.pack_start(self._firstline)
 		self._layout = gtk.Layout()
+		self._layout.add_events(gtk.gdk.BUTTON_RELEASE_MASK|gtk.gdk.BUTTON2_MOTION_MASK|gtk.gdk.POINTER_MOTION_HINT_MASK)
 		bgcolor = gtk.gdk.Color(prefs.get('display.roller.background'))
 		self._layout.modify_bg(gtk.STATE_NORMAL, bgcolor)
 		self._layout.put(self._vbox, 0, 0)
@@ -78,10 +79,40 @@ class Roller(gtk.Window):
 		self.move(x, y)
 		self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
 		self._prefs.watcher.append(self)
+		self._layout.connect('motion-notify-event', self._on_motion_notify)
 		self.connect('configure-event', self._on_configure)
 		self.connect('button-press-event', self._on_button_press)
+		self._layout.connect('button-release-event', self._on_button_release)
 		return
 	
+	def _on_motion_notify(self, widget, event):
+		children = self._vbox.get_children()
+		offset = int(event.y - self._drag_base)
+		temp = self._scroll - offset
+		if temp < 0 or temp >= (len(self._timestamp)-1)*self._firstline.allocation.height:
+			pass
+		else:
+			index = (self._scroll -offset) / self._firstline.allocation.height
+			index = min(len(children)-1, max(0, index))
+			line = children[index]
+			if line != self._lastline:
+				self._lastline.modify_fg(gtk.STATE_NORMAL, self._foreground)
+				line.modify_fg(gtk.STATE_NORMAL, self._highlight)
+				self._lastline = line
+			self._layout.window.scroll(0, offset)
+			self._scroll -= offset
+		return True
+	
+	def _on_button_release(self, widget, event):
+		catched = False
+		if event.button == 2:
+			index = self._scroll / self._firstline.allocation.height
+			index = min(len(self._timestamp)-1, max(0, index))
+			self._shell.props.shell_player.set_playing_time(self._timestamp[index])
+			self._drag_base = -1
+			catched = True
+		return catched
+		
 	def _on_configure(self, widget, event):
 		box_w, box_h = self._vbox.size_request()
 		self._layout.set_size(self._layout.allocation.width, box_h + event.height)
@@ -91,11 +122,18 @@ class Roller(gtk.Window):
 	
 	def _on_button_press(self, widget, event):
 		catched = False
-		if event.button == 3:
-			widget.begin_resize_drag(gtk.gdk.WINDOW_EDGE_SOUTH_EAST, event.button, int(event.x_root), int(event.y_root), event.time)
-			catched = True
-		elif event.button == 1:
+		if event.button == 1:
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+			catched = True
+		elif event.button == 2:
+			self._drag_base = event.y
+			self._running = False
+			if self._update_source and not gobject.source_remove(self._update_source):
+				log.warn('update source remove failed %d' % self._update_source)
+			self._update_source = None
+			catched = True
+		elif event.button == 3:
+			widget.begin_resize_drag(gtk.gdk.WINDOW_EDGE_SOUTH_EAST, event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		return catched
 	
@@ -153,7 +191,7 @@ class Roller(gtk.Window):
 	
 	## 继续。
 	def resume(self):
-		if not self._running:
+		if not self._running and self._drag_base < 0:
 			self._running = True
 			if not self._update_source:
 				self._update_source = gobject.timeout_add(100, self._scroll_up)
