@@ -202,9 +202,8 @@ def load_lyrics(root, songinfo):
 				cache = open(path, 'r').read()
 				guess = {}
 				for l in cache.splitlines():
-					encoding = detect(l)
-					if encoding:
-						charset = encoding['encoding']
+					charset = detect(l)['encoding']
+					if charset:
 						if guess.has_key(charset):
 							guess[charset] += 1
 						else:

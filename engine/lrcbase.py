@@ -49,14 +49,18 @@ class LRCBase:
 		if cache is None:
 			callback(self.__class__.__name__, self._candidate)
 		else:
-			encoding = detect(cache)['encoding']
-			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			l = LyricsInfo(cache)
-			d = distance(self._songinfo, l)
-			self._candidate.append([d, l])
-			if self._auto and d == 0:
-				callback(self.__class__.__name__, self._candidate)
-			else:
+			try:
+				encoding = detect(cache)['encoding']
+				cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
+				l = LyricsInfo(cache)
+				d = distance(self._songinfo, l)
+				self._candidate.append([d, l])
+				if self._auto and d == 0:
+					callback(self.__class__.__name__, self._candidate)
+				else:
+					self._get_next_lyrics(callback)
+			except Exception, e:
+				log.warn(e)
 				self._get_next_lyrics(callback)
 		return
 	
