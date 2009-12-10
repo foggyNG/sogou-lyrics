@@ -22,7 +22,7 @@
 ## @package RBLyrics.prefs
 #  插件配置模块。
 
-import rb, os, gtk, gconf, logging, urllib, gettext, pango, gtk.gdk
+import os, gtk, gconf, logging, urllib, gettext, pango, gtk.gdk
 from engine import engine_map
 from utils import LRC_PATH_TEMPLATE
 _ = gettext.gettext
@@ -184,7 +184,7 @@ class Preference(gtk.Dialog, object):
 		self._setting['display.single.highlight'] = Config('display.single.highlight', '/apps/rhythmbox/plugins/RBLyrics/display.single.highlight', '#00FF00', False)
 		self._setting['display.single.background'] = Config('display.single.background', '/apps/rhythmbox/plugins/RBLyrics/display.single.background', '#000000', False)
 		self._setting['main.download'] = Config('main.download', '/apps/rhythmbox/plugins/RBLyrics/main.download', 'True', False)
-		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.join(rb.user_cache_dir(), 'lyrics'), False)
+		self._setting['main.directory'] = Config('main.directory', '/apps/rhythmbox/plugins/RBLyrics/main.directory', os.path.expanduser('~/lyrics'), False)
 		self._setting['main.file_pattern'] = Config('main.file_pattern', '/apps/rhythmbox/plugins/RBLyrics/main.file_pattern', LRC_PATH_TEMPLATE[0], False)
 		# init dialog widgets
 		self.connect('delete-event', self._on_delete_event)
