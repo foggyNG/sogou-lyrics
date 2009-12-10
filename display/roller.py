@@ -106,9 +106,12 @@ class Roller(gtk.Window):
 	def _on_button_release(self, widget, event):
 		catched = False
 		if event.button == 2:
+			event.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.ARROW))
 			index = self._scroll / self._firstline.allocation.height
+			remaind = self._scroll % self._firstline.allocation.height
 			index = min(len(self._timestamp)-1, max(0, index))
-			self._shell.props.shell_player.set_playing_time(self._timestamp[index])
+			elapsed = self._timestamp[index] + (self._timestamp[index+1] - self._timestamp[index]) * remaind / self._firstline.allocation.height
+			self._shell.props.shell_player.set_playing_time(elapsed)
 			self._drag_base = -1
 			catched = True
 		return catched
@@ -126,6 +129,7 @@ class Roller(gtk.Window):
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		elif event.button == 2:
+			event.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
 			self._drag_base = event.y
 			self._running = False
 			if self._update_source and not gobject.source_remove(self._update_source):
