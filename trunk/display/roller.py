@@ -91,15 +91,10 @@ class Roller(gtk.Window):
 	
 	def _on_button_press(self, widget, event):
 		catched = False
-		if event.button == 3 and isinstance(widget, gtk.Window):
-			w = widget.get_size()[0] / 2
-			if event.x < w:
-				hinter = gtk.gdk.WINDOW_EDGE_SOUTH_WEST
-			else:
-				hinter = gtk.gdk.WINDOW_EDGE_SOUTH_EAST
-			widget.begin_resize_drag(hinter, event.button, int(event.x_root), int(event.y_root), event.time)
+		if event.button == 3:
+			widget.begin_resize_drag(gtk.gdk.WINDOW_EDGE_SOUTH_EAST, event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
-		elif event.button == 1 and isinstance(widget, gtk.Window):
+		elif event.button == 1:
 			widget.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
 			catched = True
 		return catched

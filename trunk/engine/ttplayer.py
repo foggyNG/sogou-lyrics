@@ -24,7 +24,7 @@
 
 import rb, urllib, re, logging, random
 from xml.dom.minidom import parseString
-
+from ..utils import clean_token
 from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
@@ -114,49 +114,44 @@ class ttpClient:
 class TTPlayer(LRCBase):
 	
 	## 构造函数。
-	#  @param artist 艺术家。
-	#  @param title 标题。
-	#  @param receiver 歌词回调函数。
+	#  @param songinfo 歌曲信息。
+	#  @param auto 是否自动匹配歌词。
 	#  @param max 最大尝试次数。
-	def __init__(self, artist, title, receiver, max = 5):
-		LRCBase.__init__(self, artist, title, receiver, max)
+	def __init__(self, songinfo, auto, max = 5):
+		LRCBase.__init__(self, songinfo, auto, max)
 		return
 	
 	## 搜索页响应函数。
 	#  @param xml 得到的响应文本。
 	#  @param callback 线程回调函数。
 	def _on_meta_arrive(self, xml, callback):
-		if xml is None:
-			log.warn('network error')
-			# the following code make sure the main Engine to quit normally
-			self._receiver(None)
-			callback(self.__class__.__name__)
+		try:
+			elements = parseString(xml).getElementsByTagName('lrc')
+		except Exception, e:
+			log.warn(e)
+			callback(self.__class__.__name__, self._candidate)
 		else:
-			try:
-				elements = parseString(xml).getElementsByTagName('lrc')
-			except Exception, e:
-				log.error(e)
-				# the following code make sure the main Engine to quit normally
-				self._receiver(None)
-				callback(self.__class__.__name__)
-			else:
-				for element in elements:
-					artist = element.getAttribute('artist')
-					title = element.getAttribute('title')
-					id = int(element.getAttribute('id'))
-					url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
-					self._job.append(url)
-					if len(self._job) >= self._max:
-						break
-				log.debug('%d jobs found' % len(self._job))
-				self._get_next_lyrics(callback)
+			for element in elements:
+				artist = element.getAttribute('artist')
+				title = element.getAttribute('title')
+				id = int(element.getAttribute('id'))
+				url = 'http://lrcct2.ttplayer.com/dll/lyricsvr.dll?dl?Id=%d&Code=%d&uid=01&mac=%012x' %(id,ttpClient.CodeFunc(id,(artist+title).encode('UTF-8', 'ignore')), random.randint(0,0xFFFFFFFFFFFF))
+				self._job.append(url)
+				if len(self._job) >= self._max:
+					break
+			log.debug('%d jobs found' % len(self._job))
+			self._get_next_lyrics(callback)
 		return
 	
 	## 开始搜索。
 	#  @param callback 线程回调函数。
 	def search(self, callback):
-		artist_token = ttpClient.EncodeArtTit(self._artist.replace(' ','').lower())
-		title_token = ttpClient.EncodeArtTit(self._title.replace(' ','').lower())
+		artist = clean_token(self._songinfo.ar)
+		if artist == clean_token('Unknown'):
+			artist = ''
+		title = clean_token(self._songinfo.ti)
+		artist_token = ttpClient.EncodeArtTit(artist.replace(' ','').lower())
+		title_token = ttpClient.EncodeArtTit(title.replace(' ','').lower())
 		url='http://lrcct2.ttplayer.com/dll/lyricsvr.dll?sh?Artist=%s&Title=%s&Flags=0' %(artist_token, title_token)
 		log.debug('search url <%s>' % url)
 		rb.Loader().get_url(url, self._on_meta_arrive, callback)

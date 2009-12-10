@@ -58,63 +58,31 @@ class Engine:
 		self._songinfo = songinfo
 		self._callback = callback
 		self._candidate = []
-		# if lyrics with distance=0 found
-		self._found = False
 		self._auto = auto
-		# number of working lyrics engines
-		self._alive = 0
 		return
-	
-	## 歌词收取响应函数。
-	#  @param raw 得到的歌词原始文本。
-	#  @return 是否继续下载。
-	def on_lyrics_arrive(self, raw):
-		ret = False
-		if raw == None:
-			# while rb.Loader failed or finished
-			self._alive -= 1
-		elif self._found:
-			# while lyrics already found
-			self._alive -= 1
-		else:
-			# upcoming raw should be processed
-			l = LyricsInfo(raw)
-			d = distance(self._songinfo, l)
-			self._candidate.append([d, l])
-			self._found = (self._auto and (d == 0))
-			if self._found:
-				# upcoming raw distance=0
-				self._candidate.sort(candidate_cmp)
-				self._callback(self._songinfo, self._candidate, self._auto)
-				self._alive -= 1
-			else:
-				# continue to next lyrics
-				ret = True
-		if self._alive == 0 and not self._found:
-			self._candidate.sort(candidate_cmp)
-			self._callback(self._songinfo, self._candidate, self._auto)
-		return ret
 	
 	## 启动搜索引擎。
 	def _searcher(self, plexer):
-		artist = clean_token(self._songinfo.ar)
-		title = clean_token(self._songinfo.ti)
-		if artist == clean_token('Unknown'):
-			artist = ''
-		self._alive = len(self._engine)
-		log.debug('search begin <%s - %s>' % (artist, title))
-		if self._alive == 0:
-			# no engine selected
-			self._callback(self._songinfo, self._candidate, self._auto)
-		else:
-			for key in self._engine:
-				plexer.clear()
-				engine = engine_map[key](artist, title, self.on_lyrics_arrive)
-				engine.search(plexer.send())
-				yield None
-				_, (engine_name,) = plexer.receive()
-				log.debug('%s finished' % engine_name)
-		log.debug('search finished <%s - %s>' % (artist, title))
+		log.debug('search begin <%s>' % str(self._songinfo))
+		for key in self._engine:
+			plexer.clear()
+			engine = engine_map[key](self._songinfo, self._auto)
+			engine.search(plexer.send())
+			yield None
+			_, (engine_name, candidate) = plexer.receive()
+			log.debug('%s finished' % engine_name)
+			self._candidate += candidate
+			if self._auto:
+				found = False
+				for c in candidate:
+					if c[0] == 0:
+						found = True
+						break
+				if found:
+					break
+		self._candidate.sort(candidate_cmp)
+		self._callback(self._songinfo, self._candidate, self._auto)
+		log.debug('search finished <%s>' % str(self._songinfo))
 		return
 	
 	## 开始搜索。

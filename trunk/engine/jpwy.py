@@ -25,6 +25,7 @@
 import rb, urllib, re, logging
 from xml.dom.minidom import parseString
 from chardet import detect
+from ..utils import clean_token
 from lrcbase import LRCBase
 log = logging.getLogger('RBLyrics')
 
@@ -32,50 +33,45 @@ log = logging.getLogger('RBLyrics')
 class Jpwy(LRCBase):
 	
 	## 构造函数。
-	#  @param artist 艺术家。
-	#  @param title 标题。
-	#  @param receiver 歌词回调函数。
+	#  @param songinfo 歌曲信息。
+	#  @param auto 是否自动匹配歌词。
 	#  @param max 最大尝试次数。
-	def __init__(self, artist, title, receiver, max = 5):
-		LRCBase.__init__(self, artist, title, receiver, max)
+	def __init__(self, songinfo, auto, max = 5):
+		LRCBase.__init__(self, songinfo, auto, max)
 		return
 	
 	## 搜索页响应函数。
 	#  @param cache 得到的响应文本。
 	#  @param callback 线程回调函数。
 	def _on_meta_arrive(self, cache, callback):
-		if cache is None:
-			log.warn('network error')
-			# the following code make sure the main Engine to quit normally
-			self._receiver(None)
-			callback(self.__class__.__name__)
+		try:
+			encoding = detect(cache)['encoding']
+			cache = cache.decode(encoding, 'ignore').splitlines()
+		except Exception, e:
+			log.warn(e)
+			callback(self.__class__.__name__, self._candidate)
 		else:
-			try:
-				encoding = detect(cache)['encoding']
-				cache = cache.decode(encoding, 'ignore').splitlines()
-			except Exception, e:
-				log.error(e)
-				# the following code make sure the main Engine to quit normally
-				self._receiver(None)
-				callback(self.__class__.__name__)
-			else:
-				pattern = re.compile(r'<[Aa] href="(?P<url>[^"]+?)"><img border=0 src=http://ww.jpwy.net/gc/image/lrc.gif>')
-				for line in cache:
-					for url in pattern.findall(line):
-						self._job.append(url)
-						if len(self._job) >= self._max:
-							break
+			pattern = re.compile(r'<[Aa] href="(?P<url>[^"]+?)"><img border=0 src=http://ww.jpwy.net/gc/image/lrc.gif>')
+			for line in cache:
+				for url in pattern.findall(line):
+					self._job.append(url)
 					if len(self._job) >= self._max:
-							break
-				log.debug('%d jobs found' % len(self._job))
-				self._get_next_lyrics(callback)
+						break
+				if len(self._job) >= self._max:
+						break
+			log.debug('%d jobs found' % len(self._job))
+			self._get_next_lyrics(callback)
 		return
 	
 	## 开始搜索。
 	#  @param callback 线程回调函数。
 	def search(self, callback):
-		artist_token = self._artist.encode('GBK', 'ignore')
-		title_token = self._title.encode('GBK', 'ignore')
+		artist = clean_token(self._songinfo.ar)
+		if artist == clean_token('Unknown'):
+			artist = ''
+		title = clean_token(self._songinfo.ti)
+		artist_token = artist.encode('GBK', 'ignore')
+		title_token = title.encode('GBK', 'ignore')
 		urldata = {'singer':artist_token, 'song':title_token}
 		url = 'http://www.jpwy.net/gc/search.php?%s' % urllib.urlencode(urldata)
 		log.debug('search url <%s>' % url)

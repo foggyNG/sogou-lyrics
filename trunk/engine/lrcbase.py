@@ -24,21 +24,21 @@
 
 import rb, logging
 from chardet import detect
+from ..utils import distance, LyricsInfo
 log = logging.getLogger('RBLyrics')
 
 ## 歌词下载引擎基类。
 class LRCBase:
 	
 	## 构造函数。
-	#  @param artist 艺术家。
-	#  @param title 标题。
-	#  @param receiver 歌词回调函数。
+	#  @param songinfo 歌曲信息。
+	#  @param auto 是否自动匹配歌词。
 	#  @param max 最大尝试次数。
-	def __init__(self, artist, title, receiver, max):
-		self._artist = artist
-		self._title = title
-		self._receiver = receiver
+	def __init__(self, songinfo, auto, max):
+		self._songinfo = songinfo
+		self._auto = auto
 		self._max = max
+		self._candidate = []
 		self._job = []
 		return
 	
@@ -47,29 +47,27 @@ class LRCBase:
 	#  @param callback 线程回调函数。
 	def _on_lyrics_arrive(self, cache, callback):
 		if cache is None:
-			# rb.Loader failed, stop the engine
-			self._receiver(cache)
-			callback(self.__class__.__name__)
+			callback(self.__class__.__name__, self._candidate)
 		else:
 			encoding = detect(cache)['encoding']
 			cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-			if self._receiver(cache):
-				self._get_next_lyrics(callback)
+			l = LyricsInfo(cache)
+			d = distance(self._songinfo, l)
+			self._candidate.append([d, l])
+			if self._auto and d == 0:
+				callback(self.__class__.__name__, self._candidate)
 			else:
-				self._receiver(None)
-				callback(self.__class__.__name__)
+				self._get_next_lyrics(callback)
 		return
 	
 	## 获取下一个歌词。
 	#  @param callback 线程回调函数。
 	def _get_next_lyrics(self, callback):
-		log.debug('%s, %d jobs left' % (self.__class__.__name__, len(self._job)))
 		if len(self._job) > 0:
 			url = self._job.pop(0)
 			log.info('%s <%s>' % (self.__class__.__name__, url))
 			rb.Loader().get_url(url, self._on_lyrics_arrive, callback)
 		else:
-			self._receiver(None)
-			callback(self.__class__.__name__)
+			callback(self.__class__.__name__, self._candidate)
 		return
 			
