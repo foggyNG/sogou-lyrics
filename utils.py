@@ -105,15 +105,21 @@ class LyricsInfo(object):
 				offset = int(off)
 			# parse lrc
 			timestamp = []
-			result = re_time.search(line)
-			if result:
-				while result:
-					timestamp.append(self._make_time(result))
-					line = line[result.end():]
-					result = re_time.search(line)
-				if len(line):
+			while len(line) > 0:
+				stamp = re_time.search(line)
+				if stamp is None:
 					for t in timestamp:
 						cache[t] = line
+					break
+				else:
+					if stamp.start() != 0:
+						subline = line[:stamp.start()]
+						for t in timestamp:
+							cache[t] = subline
+						timestamp = [self._make_time(stamp)]
+					else:
+						timestamp.append(self._make_time(stamp))
+					line = line[stamp.end():]
 		tags = cache.keys()
 		tags.sort()
 		for key in tags:
