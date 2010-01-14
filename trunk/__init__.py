@@ -62,7 +62,7 @@ class RBLyrics(rb.Plugin):
 		#self._display.pause()
 		self._lyrics = None
 		self._display.set_lyrics(None)
-		if entry:
+		if entry:# and player.get_playing_source().get_name() != 'RBIRadioSource':
 			# get playing song properties		
 			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
