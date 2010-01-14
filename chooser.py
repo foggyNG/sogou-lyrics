@@ -74,16 +74,17 @@ class LyricsChooser(gtk.Window):
 			log.warn('song already exist %s' % songinfo)
 		else:
 			# build widgets
-			model = gtk.ListStore(int, str, str, int)
+			model = gtk.ListStore(int, str, str, int, str)
 			count = 0
 			for c in candidate:
-				model.append([c[0], c[1].ar, c[1].ti, count])
+				model.append([c[0], c[1].ar, c[1].ti, count, _(c[1].source)])
 				count = count + 1
 			treeview = gtk.TreeView(model)
 			treeview.set_rules_hint(True)
 			treeview.append_column(gtk.TreeViewColumn('', gtk.CellRendererText(), text = 0))
 			treeview.append_column(gtk.TreeViewColumn(_('Artist'), gtk.CellRendererText(), text = 1))
 			treeview.append_column(gtk.TreeViewColumn(_('Title'), gtk.CellRendererText(), text = 2))
+			treeview.append_column(gtk.TreeViewColumn(_('Source'), gtk.CellRendererText(), text = 4))
 			selection = treeview.get_selection()
 			selection.connect('changed', self._selection_changed)
 			preview = gtk.TextView()

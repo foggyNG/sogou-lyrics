@@ -67,10 +67,11 @@ class LyricsInfo(object):
 	
 	## 构造函数。
 	#  @param raw 歌词原始文本数据。
-	def __init__(self, raw):
+	def __init__(self, raw, source = ''):
 		self._raw = raw
 		self._artist = ''
 		self._title = ''
+		self._source = source
 		self._content = {}
 		self._parse()
 		return
@@ -137,6 +138,8 @@ class LyricsInfo(object):
 	ar = property(lambda self: self._artist)
 	## 标题(只读)。
 	ti = property(lambda self: self._title)
+	## 歌词来源(只读)。
+	source = property(lambda self: self._source)
 	## 原始文本(只读)。
 	raw = property(lambda self: self._raw)
 	## 解析后的歌词内容(只读)。

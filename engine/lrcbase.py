@@ -52,7 +52,7 @@ class LRCBase:
 			try:
 				encoding = detect(cache)['encoding']
 				cache = cache.decode(encoding, 'ignore').encode('UTF-8', 'ignore')
-				l = LyricsInfo(cache)
+				l = LyricsInfo(cache, self.__class__.__name__)
 				d = distance(self._songinfo, l)
 				self._candidate.append([d, l])
 				if self._auto and d == 0:
