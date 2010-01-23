@@ -102,8 +102,13 @@ class RBLyrics(rb.Plugin):
 			entry = selected[0]
 			artist = self._shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
 			title = self._shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)
-			songinfo = SongInfo(artist, title)
-			Engine(self._prefs.get_engine(), songinfo, self._on_lyrics_arrive, False).search()
+			dialog = SearchConfirmDialog(artist, title)
+			response = dialog.run()
+			dialog.hide()
+			if response == gtk.RESPONSE_OK:
+				songinfo = SongInfo(dialog.artist(), dialog.title())
+				Engine(self._prefs.get_engine(), songinfo, self._on_lyrics_arrive, False).search()
+			del dialog
 		return
 		
 	## 打开歌词文件。
@@ -293,3 +298,24 @@ class RBLyrics(rb.Plugin):
 			self._action[name].set_active(value == 'True')
 		return
 
+class SearchConfirmDialog(gtk.Dialog):
+	def __init__(self, artist, title):
+		gtk.Dialog.__init__(self, title=_('Download Lyrics Manually'), buttons=(gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+		container = gtk.Table(2,2)
+		container.attach(gtk.Label(_('Title')), 0, 1, 0, 1)
+		self._title_entry = gtk.Entry()
+		self._title_entry.set_text(title)
+		container.attach(self._title_entry, 1, 2, 0, 1)
+		container.attach(gtk.Label(_('Artist')), 0, 1, 1, 2)
+		self._artist_entry = gtk.Entry()
+		self._artist_entry.set_text(artist)
+		container.attach(self._artist_entry, 1, 2, 1, 2)
+		self.get_content_area().add(container)
+		self.get_content_area().show_all()
+	
+	def title(self):
+		return self._title_entry.get_text()
+	
+	def artist(self):
+		return self._artist_entry.get_text()
+		
