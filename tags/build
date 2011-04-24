@@ -2,7 +2,7 @@
 ROOT=$PWD
 SRC=~/.gnome2/rhythmbox/plugins/RBLyrics
 VERSION=`svn info $SRC | grep Revision | awk '{print $2}'`
-DEST="${ROOT}/rblyrics-svn$VERSION"
+DEST="${ROOT}/rblyrics-0.1.$VERSION"
 # remove old files
 if [ -x $DEST ];then
 	rm -rf $DEST
@@ -22,7 +22,7 @@ done
 cd $ROOT
 cp control $CONTROL
 SIZE=`du $APPDIR -sc | tail -n 1 | awk '{print $1}'`
-perl -p -i -e "s|^Version:*$|Version:\ svn$VERSION|g" $CONTROL
+perl -p -i -e "s|^Version:*$|Version:\ 0.1.$VERSION|g" $CONTROL
 perl -p -i -e "s|^Installed-Size:*$|Installed-Size:\ $SIZE|g" $CONTROL
 # package
 dpkg -b $DEST $DEST.deb
